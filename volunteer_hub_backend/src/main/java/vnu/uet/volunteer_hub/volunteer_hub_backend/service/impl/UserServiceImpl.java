@@ -58,4 +58,25 @@ public class UserServiceImpl implements UserService {
         return userRepository.existsByEmailIgnoreCase(email);
 
     }
+
+    @Override
+    public void updatePassword(String email, String newPassword) {
+        try {
+            logger.debug("Attempting to update password for email: {}", email);
+
+            User user = userRepository.findByEmailIgnoreCase(email)
+                    .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+            String encodedPassword = passwordEncoder.encode(newPassword);
+            logger.debug("Encoded new password for user: {}", user.getEmail());
+
+            user.setPassword(encodedPassword);
+            userRepository.save(user);
+
+            logger.info("Password updated successfully for user: {}", email);
+        } catch (Exception e) {
+            logger.error("Error updating password for email {}: {}", email, e.getMessage(), e);
+            throw e; // Re-throw để rollback transaction
+        }
+    }
 }

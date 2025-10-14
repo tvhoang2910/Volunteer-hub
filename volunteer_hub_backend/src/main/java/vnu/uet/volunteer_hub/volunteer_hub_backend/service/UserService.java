@@ -6,4 +6,6 @@ public interface UserService {
     void registerUser(RegistrationRequest registrationRequest);
 
     boolean existsByEmail(String email);
+
+    void updatePassword(String email, String newPassword);
 }
