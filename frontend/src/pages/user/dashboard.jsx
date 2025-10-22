@@ -1,95 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
-import { Calendar, MapPin, Users } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardDescription, CardTitle, CardFooter, CardContent } from "@/components/ui/card";
 import BasicPagination from "@/components/ui/pagination.jsx";
+import EventCard from "@/components/ui/card-detail.jsx";
 
-// EventCard Component
-const EventCard = ({ event, onRegister, onCancel }) => {
-  const [applied, setApplied] = useState(event.user_registration_status === "Applied");
-
-  const formatDate = (dateStr) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric"
-    });
-  };
-
-  const now = new Date();
-  const isClosed = new Date(event.registration_deadline) < now;
-
-  const handleRegister = () => {
-    setApplied(true);
-    onRegister && onRegister(event.event_id);
-  };
-
-  const handleCancel = () => {
-    setApplied(false);
-    onCancel && onCancel(event.event_id);
-  };
-
-  return (
-    <div className="relative max-w-md rounded-xl bg-gradient-to-r from-indigo-200 to-sky-300 pt-0 shadow-lg overflow-hidden">
-      {/* Header hình ảnh */}
-      <div
-        className="h-48 bg-cover bg-center"
-        style={{ backgroundImage: `url(${event.image || 'https://cdn.shadcnstudio.com/ss-assets/components/card/image-11.png'})` }}
-      />
-
-      <Card className="border-none">
-        <CardHeader>
-          <CardTitle className="text-lg font-bold">{event.title}</CardTitle>
-          <CardDescription className="flex flex-col gap-1 text-sm">
-            <span className="flex items-center gap-1">
-              <MapPin className="size-4" /> {event.location}
-            </span>
-            <span className="flex items-center gap-1">
-              <Calendar className="size-4" />{" "}
-              {formatDate(event.start_time)} - {formatDate(event.end_time)}
-            </span>
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent>
-          <p className="text-sm text-muted-foreground line-clamp-3">
-            {event.description}
-          </p>
-          <div className="mt-3 flex items-center gap-2 text-sm">
-            <Users className="size-4" />
-            {event.current_volunteers || 0}/{event.max_volunteers || 0} người tham gia
-          </div>
-
-          <div className="mt-2">
-            <Badge variant={isClosed ? "secondary" : "outline"}>
-              Hạn đăng ký: {formatDate(event.registration_deadline)}
-            </Badge>
-          </div>
-        </CardContent>
-
-        <CardFooter className="justify-end">
-          {isClosed ? (
-            <Button disabled variant="secondary" className="w-full">
-              Đã đóng đăng ký
-            </Button>
-          ) : applied ? (
-            <Button variant="destructive" className="w-full" onClick={handleCancel}>
-              Hủy đăng ký
-            </Button>
-          ) : (
-            <Button className="w-full" onClick={handleRegister}>
-              Đăng ký tham gia
-            </Button>
-          )}
-        </CardFooter>
-      </Card>
-    </div>
-  );
-};
 
 export default function EventShowcase() {
   const [featuredEvents, setFeaturedEvents] = useState([]);

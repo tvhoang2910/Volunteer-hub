@@ -12,21 +12,6 @@ import {
     CardContent
 } from "@/components/ui/card"
 
-// 🧩 Dữ liệu demo — sau này bạn có thể nhận từ props hoặc API
-const eventData = {
-    event_id: "b1a23f4c",
-    title: "Chiến dịch Làm sạch bãi biển Đà Nẵng",
-    description:
-        "Cùng chung tay bảo vệ môi trường biển — thu gom rác thải, tuyên truyền ý thức bảo vệ môi trường và kết nối cộng đồng.",
-    location: "Bãi biển Mỹ Khê, Đà Nẵng",
-    start_time: "2025-10-25T08:00:00Z",
-    end_time: "2025-10-25T17:00:00Z",
-    registration_deadline: "2025-10-23T23:59:00Z",
-    max_volunteers: 50,
-    current_volunteers: 32,
-    user_registration_status: null // 'Applied' | 'Cancelled' | null
-}
-
 const formatDate = dateStr => {
     const d = new Date(dateStr)
     return d.toLocaleDateString("vi-VN", {
@@ -36,57 +21,59 @@ const formatDate = dateStr => {
     })
 }
 
-const EventCard = () => {
+const EventCard = ({ event, onRegister, onCancel }) => {
     const [applied, setApplied] = useState(
-        eventData.user_registration_status === "Applied"
+        event?.user_registration_status === "Applied"
     )
 
     const now = new Date()
-    const isClosed = new Date(eventData.registration_deadline) < now
+    const isClosed = new Date(event?.registration_deadline) < now
 
     const handleRegister = () => {
         setApplied(true)
-        // 🔧 Gọi API đăng ký ở đây
+        onRegister && onRegister(event?.event_id)
     }
 
     const handleCancel = () => {
         setApplied(false)
-        // 🔧 Gọi API hủy đăng ký ở đây
+        onCancel && onCancel(event?.event_id)
     }
 
     return (
         <div className="relative max-w-md rounded-xl bg-gradient-to-r from-indigo-200 to-sky-300 pt-0 shadow-lg overflow-hidden">
             {/* Header hình ảnh */}
-            <div className='h-48 bg-[url("https://cdn.shadcnstudio.com/ss-assets/components/card/image-11.png")] bg-cover bg-center' />
+            <div
+                className="h-48 bg-cover bg-center"
+                style={{ backgroundImage: `url(${event?.image || 'https://cdn.shadcnstudio.com/ss-assets/components/card/image-11.png'})` }}
+            />
 
             <Card className="border-none">
                 <CardHeader>
-                    <CardTitle className="text-lg font-bold">{eventData.title}</CardTitle>
+                    <CardTitle className="text-lg font-bold">{event?.title}</CardTitle>
                     <CardDescription className="flex flex-col gap-1 text-sm">
                         <span className="flex items-center gap-1">
-                            <MapPinIcon className="size-4" /> {eventData.location}
+                            <MapPinIcon className="size-4" /> {event?.location}
                         </span>
                         <span className="flex items-center gap-1">
                             <CalendarIcon className="size-4" />{" "}
-                            {formatDate(eventData.start_time)} -{" "}
-                            {formatDate(eventData.end_time)}
+                            {formatDate(event?.start_time)} -{" "}
+                            {formatDate(event?.end_time)}
                         </span>
                     </CardDescription>
                 </CardHeader>
 
                 <CardContent>
                     <p className="text-sm text-muted-foreground line-clamp-3">
-                        {eventData.description}
+                        {event?.description}
                     </p>
                     <div className="mt-3 flex items-center gap-2 text-sm">
                         <UsersIcon className="size-4" />
-                        {eventData.current_volunteers}/{eventData.max_volunteers} người tham
-                        gia
+                        {event?.current_volunteers || 0}/{event?.max_volunteers || 0} người tham gia
                     </div>
 
                     <div className="mt-2">
                         <Badge variant={isClosed ? "secondary" : "outline"}>
-                            Hạn đăng ký: {formatDate(eventData.registration_deadline)}
+                            Hạn đăng ký: {formatDate(event?.registration_deadline)}
                         </Badge>
                     </div>
                 </CardContent>
