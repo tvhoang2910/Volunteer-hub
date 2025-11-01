@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
-import { LayoutDashboard, Plane, Users, MessageSquare, BellRing, UserCircle, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Plane, Users, MessageSquare, BellRing, UserCircle, Menu, X, ChevronLeft, ChevronRight } from 'lucide-react'
 
 const navItems = [
     {
@@ -16,7 +16,7 @@ const navItems = [
     },
     {
         name: 'Kênh trao đổi',
-        href: '/user/exChange/groups',
+        href: '/user/exchangeChannel/groups',
         icon: MessageSquare
     },
     {
@@ -34,6 +34,7 @@ const navItems = [
 export default function Navbar() {
     const router = useRouter()
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+    const [isCollapsed, setIsCollapsed] = useState(false)
 
     const toggleMobileMenu = () => {
         setIsMobileMenuOpen(!isMobileMenuOpen)
@@ -41,6 +42,10 @@ export default function Navbar() {
 
     const closeMobileMenu = () => {
         setIsMobileMenuOpen(false)
+    }
+
+    const toggleCollapse = () => {
+        setIsCollapsed(!isCollapsed)
     }
 
     return (
@@ -146,16 +151,38 @@ export default function Navbar() {
             </div>
 
             {/* Desktop Sidebar */}
-            <div className="hidden lg:block h-screen w-64 bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-950 text-zinc-400 shadow-2xl border-r border-zinc-800/50">
-                <div className="p-6 border-b border-zinc-800/50 backdrop-blur-sm">
+            <div className={`hidden lg:block h-screen bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-950 text-zinc-400 shadow-2xl border-r border-zinc-800/50 transition-all duration-300 ${
+                isCollapsed ? 'w-20' : 'w-64'
+            }`}>
+                <div className={`border-b border-zinc-800/50 backdrop-blur-sm transition-all duration-300 ${
+                    isCollapsed ? 'p-4' : 'p-6'
+                }`}>
                     <div className="flex items-center gap-3 group">
-                        <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg shadow-lg shadow-green-500/20 group-hover:shadow-green-500/40 transition-all duration-300 group-hover:scale-110">
+                        <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg shadow-lg shadow-green-500/20 group-hover:shadow-green-500/40 transition-all duration-300 group-hover:scale-110 flex-shrink-0">
                             <Plane className="w-5 h-5 text-white" />
                         </div>
-                        <h1 className="text-lg font-bold text-white tracking-tight">Volunteer Hub</h1>
+                        <h1 className={`text-lg font-bold text-white tracking-tight transition-all duration-300 whitespace-nowrap ${
+                            isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
+                        }`}>
+                            Volunteer Hub
+                        </h1>
                     </div>
+                    {/* Toggle Button */}
+                    <button
+                        onClick={toggleCollapse}
+                        className="mt-4 w-full flex items-center justify-center p-2 text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-lg transition-all duration-300 group"
+                        aria-label={isCollapsed ? 'Mở rộng menu' : 'Thu gọn menu'}
+                    >
+                        {isCollapsed ? (
+                            <ChevronRight className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        ) : (
+                            <ChevronLeft className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        )}
+                    </button>
                 </div>
-                <nav className="p-4 space-y-1">
+                <nav className={`space-y-1 transition-all duration-300 ${
+                    isCollapsed ? 'p-2' : 'p-4'
+                }`}>
                     {navItems.map((item) => {
                         const isActive = router.pathname === item.href
                         return (
@@ -163,13 +190,18 @@ export default function Navbar() {
                                 key={item.name}
                                 href={item.href}
                                 className={`
-                                    group relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
+                                    group relative flex items-center rounded-xl text-sm font-medium
                                     transition-all duration-300 ease-out overflow-hidden
+                                    ${isCollapsed 
+                                        ? 'justify-center px-2 py-3' 
+                                        : 'gap-3 px-4 py-3'
+                                    }
                                     ${isActive
                                         ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/10 text-green-400 shadow-lg shadow-green-500/10'
                                         : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
                                     }
                                 `}
+                                title={isCollapsed ? item.name : ''}
                             >
                                 {/* Active indicator bar */}
                                 <div className={`
@@ -197,7 +229,9 @@ export default function Navbar() {
                                 </div>
 
                                 {/* Text */}
-                                <span className="relative z-10 transition-all duration-300">
+                                <span className={`relative z-10 transition-all duration-300 whitespace-nowrap ${
+                                    isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
+                                }`}>
                                     {item.name}
                                 </span>
 

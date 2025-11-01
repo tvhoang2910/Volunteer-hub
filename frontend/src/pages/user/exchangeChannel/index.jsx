@@ -1,54 +1,162 @@
-import * as React from "react"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { SlideUpDetail } from "@/components/ui/slide-up"
-import { useState } from "react"
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+import EventCard from "@/components/ui/card-detail.jsx";
+import BasicPagination from "@/components/ui/pagination.jsx";
+import ActionSymbol from "@/components/ui/exchangeChannel/Action.jsx";
 
-export default function EventList() {
+export default function ExchangeChannelPage() {
+    const router = useRouter();
+    const [allEvents, setAllEvents] = useState([]);
+    const [filteredEvents, setFilteredEvents] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-    const [open, setOpen] = useState(false)
-    const [selected, setSelected] = useState(null)
+    const eventsPerPage = 9;
 
-    const events = [
-        { id: 1, title: "Summer Music Fest", desc: "Lễ hội âm nhạc mùa hè sôi động" },
-        { id: 2, title: "Startup Expo 2025", desc: "Triển lãm khởi nghiệp công nghệ" },
-    ]
+    const getAllEvents = async (page = 1) => {
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/enrolled?page=${page}&limit=${eventsPerPage}`;
+        setIsLoading(true);
+        setError(null);
+    
+        try {
+          const response = await fetch(apiUrl, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+    
+          if (!response.ok) {
+            throw new Error("Lỗi khi tải danh sách sự kiện");
+          }
+    
+          const data = await response.json();
+          setAllEvents(data.events || data.data || []);
+          setTotalPages(data.totalPages || Math.ceil((data.total || 0) / eventsPerPage));
+        } catch (error) {
+          console.error("Lỗi tải danh sách sự kiện:", error);
+          setError(error.message);
+        } finally {
+          setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        getAllEvents(currentPage);
+    }, [currentPage]);
+
+    useEffect(() => {
+        setFilteredEvents(allEvents);
+    }, [allEvents]);
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+        getAllEvents(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleRegister = async (eventId) => {
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/register`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+    
+          if (!response.ok) {
+            throw new Error("Lỗi khi đăng ký sự kiện");
+          }
+    
+          getAllEvents(currentPage);
+        } catch (error) {
+          console.error("Lỗi đăng ký:", error);
+        }
+    };
+
+    const handleCancelRegistration = async (eventId) => {
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/cancel`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+    
+          if (!response.ok) {
+            throw new Error("Lỗi khi hủy đăng ký");
+          }
+    
+          getAllEvents(currentPage);
+        } catch (error) {
+          console.error("Lỗi hủy đăng ký:", error);
+        }
+    };
+
+    const handleEventClick = (eventId) => {
+        // Chuyển hướng đến kênh trao đổi của sự kiện với groupID = eventID
+        router.push(`/user/exchangeChannel/groups/${eventId}`);
+    };
 
     return (
         <div className="container mx-auto pt-10 pl-64 space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-                {events.map((e) => (
-                    <Card
-                        key={e.id}
-                        onClick={() => {
-                            setSelected(e)
-                            setOpen(true)
-                        }}
-                        className="cursor-pointer hover:shadow-lg transition"
-                    >
-                        <CardHeader>
-                            <CardTitle>{e.title}</CardTitle>
-                        </CardHeader>
-                        <CardContent>{e.desc}</CardContent>
-                    </Card>
-                ))}
-
-                <SlideUpDetail
-                    isOpen={open}
-                    onClose={() => setOpen(false)}
-                    title={selected?.title}
-                >
-                    <p>{selected?.desc}</p>
-                    <p className="mt-3 text-sm text-gray-600">
-                        Thời gian: 20/10/2025 — Địa điểm: Nhà hát lớn Hà Nội
-                    </p>
-                    <button
-                        onClick={() => setOpen(false)}
-                        className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                    >
-                        Đóng
-                    </button>
-                </SlideUpDetail>
-            </div>
+        <div className="p-6">
+            <section>
+                <h2 className="text-2xl font-bold mb-4">Kênh trao đổi</h2>
+                {isLoading ? (
+                    <div className="text-center py-10">
+                        <p>Đang tải...</p>
+                    </div>
+                ) : error ? (
+                    <div className="text-center py-10 text-red-500">
+                        <p>Lỗi: {error}</p>
+                    </div>
+                ) : filteredEvents.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filteredEvents.map((event) => (
+                            <EventCard
+                                key={event.event_id}
+                                event={event}
+                                onRegister={handleRegister}
+                                onCancel={handleCancelRegistration}
+                                onClick={() => handleEventClick(event.event_id)}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-10">
+                        <p className="text-muted-foreground">Không tìm thấy sự kiện</p>
+                    </div>
+                )}
+            </section>
+            <ActionSymbol />
+            <ActionSymbol type="love" count={10} />
+            <ActionSymbol type="support" count={5} />
+            <ActionSymbol type="comment" count={3} />
+            <ActionSymbol type="share" count={2} />
+            <ActionSymbol type="bookmark" count={1} />
+            <ActionSymbol type="report" count={0} />
+            <ActionSymbol type="delete" count={0} />
+            <ActionSymbol type="edit" count={0} />
+            {/* Pagination */}
+            {!isLoading && filteredEvents.length > 0 && (
+                <div className="flex justify-center my-6">
+                    <BasicPagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                    />
+                </div>
+            )}
         </div>
-    )
+        </div>
+    );
 }
