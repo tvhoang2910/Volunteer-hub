@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -27,6 +29,7 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.EventApprovalStat
 @AttributeOverride(name = "id", column = @Column(name = "event_id", nullable = false, updatable = false))
 public class Event extends BaseEntity {
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "created_by_user_id", nullable = false)
     private User createdBy;
@@ -56,12 +59,15 @@ public class Event extends BaseEntity {
     @Column(name = "is_archived", nullable = false)
     private Boolean isArchived = Boolean.FALSE;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "event", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Registration> registrations = new HashSet<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "event", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Post> posts = new HashSet<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "event", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Notification> notifications = new HashSet<>();
 

@@ -9,6 +9,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,16 +21,20 @@ import jakarta.validation.Valid;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.ForgotPasswordRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.RegistrationRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.ResetPasswordRequest;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.LoginRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.ResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.model.utils.TokenUtil;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.EmailService;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.RateLimitService;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.RecoveryCodeService;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.UserService;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.authentication.AuthenticationManager;
 
 /**
  * REST API endpoints cho authentication và password recovery.
- * 
  * Security improvements:
  * - Không tiết lộ thông tin user enumeration
  * - Sử dụng secure random token thay vì mã số ngắn
@@ -43,13 +51,16 @@ public class AuthAPI {
     private final EmailService emailService;
     private final RecoveryCodeService recoveryCodeService;
     private final RateLimitService rateLimitService;
+    private final AuthenticationManager authenticationManager;
 
     public AuthAPI(UserService userService, EmailService emailService,
-            RecoveryCodeService recoveryCodeService, RateLimitService rateLimitService) {
+            RecoveryCodeService recoveryCodeService, RateLimitService rateLimitService,
+            AuthenticationManager authenticationManager) {
         this.userService = userService;
         this.emailService = emailService;
         this.recoveryCodeService = recoveryCodeService;
         this.rateLimitService = rateLimitService;
+        this.authenticationManager = authenticationManager;
     }
 
     @PostMapping("/register")
@@ -57,18 +68,9 @@ public class AuthAPI {
             BindingResult bindingResult) {
 
         // Xử lý validation
-        if (bindingResult.hasErrors()) {
-            List<String> errors = bindingResult.getFieldErrors().stream()
-                    .map(FieldError::getDefaultMessage)
-                    .toList();
-
-            ResponseDTO<List<String>> errorResponse = ResponseDTO.<List<String>>builder()
-                    .message("Validation failed")
-                    .data(errors)
-                    .build();
-
-            return ResponseEntity.badRequest().body(errorResponse);
-        }
+        ResponseEntity<?> errorResponse1 = getErrorResponse(bindingResult);
+        if (errorResponse1 != null)
+            return errorResponse1;
 
         // Xử lý đăng ký
         try {
@@ -94,9 +96,48 @@ public class AuthAPI {
         }
     }
 
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, BindingResult bindingResult) {
+        ResponseEntity<?> errorResponse = getErrorResponse(bindingResult);
+        if (errorResponse != null)
+            return errorResponse;
+
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            ResponseDTO<Void> successResponse = ResponseDTO.<Void>builder()
+                    .message("Login successful")
+                    .build();
+            return ResponseEntity.ok(successResponse);
+        } catch (Exception e) {
+            ResponseDTO<Void> errorResponse1 = ResponseDTO.<Void>builder()
+                    .message("Invalid email or password")
+                    .build();
+            return ResponseEntity.status(401).body(errorResponse1);
+        }
+    }
+
+    private ResponseEntity<?> getErrorResponse(BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            List<String> errors = bindingResult.getFieldErrors().stream()
+                    .map(FieldError::getDefaultMessage)
+                    .toList();
+
+            ResponseDTO<List<String>> errorResponse = ResponseDTO.<List<String>>builder()
+                    .message("Validation failed")
+                    .data(errors)
+                    .build();
+
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+        return null;
+    }
+
     /**
      * Endpoint để request password reset.
-     * 
+     * <p>
      * Security features:
      * - Không tiết lộ thông tin email có tồn tại hay không (generic response)
      * - Tạo secure random token (32 bytes = 256 bits entropy)
@@ -165,13 +206,13 @@ public class AuthAPI {
 
     /**
      * Endpoint để reset password sử dụng token (stateless approach).
-     * 
+     * <p>
      * Flow:
      * 1. User nhận email với link chứa token
      * 2. Frontend mở link và hiển thị form reset password
      * 3. User nhập password mới và confirm
      * 4. Frontend gửi request này kèm token + password
-     * 
+     * <p>
      * Security features:
      * - Stateless (không dùng session)
      * - Token single-use (tự động xóa sau validate)
@@ -185,16 +226,9 @@ public class AuthAPI {
     public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request,
             BindingResult bindingResult) {
 
-        if (bindingResult.hasErrors()) {
-            List<String> errors = bindingResult.getFieldErrors().stream()
-                    .map(FieldError::getDefaultMessage)
-                    .toList();
-            ResponseDTO<List<String>> errorResponse = ResponseDTO.<List<String>>builder()
-                    .message("Validation failed")
-                    .data(errors)
-                    .build();
-            return ResponseEntity.badRequest().body(errorResponse);
-        }
+        ResponseEntity<?> errorResponse1 = getErrorResponse(bindingResult);
+        if (errorResponse1 != null)
+            return errorResponse1;
 
         String token = request.getToken();
         String newPassword = request.getPassword();
@@ -239,6 +273,65 @@ public class AuthAPI {
                     .detail(e.getMessage())
                     .build();
             return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            if (request.getSession(false) != null) {
+                request.getSession(false).invalidate();
+            }
+
+            Cookie cookie = new Cookie("JSESSIONID", null);
+            cookie.setPath("/");
+            cookie.setHttpOnly(true);
+            cookie.setMaxAge(0);
+            response.addCookie(cookie);
+
+            ResponseDTO<Void> success = ResponseDTO.<Void>builder()
+                    .message("Logout successful")
+                    .build();
+            return ResponseEntity.ok(success);
+        } catch (Exception e) {
+            ResponseDTO<Void> error = ResponseDTO.<Void>builder()
+                    .message("Error during logout")
+                    .detail(e.getMessage())
+                    .build();
+            return ResponseEntity.status(500).body(error);
+        }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> me() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+                ResponseDTO<Void> unauthorized = ResponseDTO.<Void>builder()
+                        .message("Not authenticated")
+                        .build();
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(unauthorized);
+            }
+
+            // Build minimal safe user info
+            java.util.Map<String, Object> info = new java.util.HashMap<>();
+            info.put("email", auth.getName());
+            java.util.UUID id = userService.getViewerIdFromAuthentication(auth);
+            info.put("id", id);
+            info.put("roles", auth.getAuthorities().stream()
+                    .map(a -> a.getAuthority()).toList());
+
+            ResponseDTO<java.util.Map<String, Object>> resp = ResponseDTO.<java.util.Map<String, Object>>builder()
+                    .message("Current user retrieved")
+                    .data(info)
+                    .build();
+            return ResponseEntity.ok(resp);
+        } catch (Exception e) {
+            ResponseDTO<Void> error = ResponseDTO.<Void>builder()
+                    .message("Unable to retrieve current user")
+                    .detail(e.getMessage())
+                    .build();
+            return ResponseEntity.status(500).body(error);
         }
     }
 }

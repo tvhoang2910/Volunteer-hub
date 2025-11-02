@@ -1,11 +1,15 @@
 package vnu.uet.volunteer_hub.volunteer_hub_backend.service.impl;
 
+import java.util.UUID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.RegistrationRequest;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.BaseEntity;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Role;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.User;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.RoleRepository;
@@ -78,5 +82,31 @@ public class UserServiceImpl implements UserService {
             logger.error("Error updating password for email {}: {}", email, e.getMessage(), e);
             throw e; // Re-throw để rollback transaction
         }
+    }
+
+    @Override
+    public void lockUserById(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("User not found"));
+        user.setIsActive(Boolean.FALSE);
+        userRepository.save(user);
+    }
+
+    @Override
+    public void unlockUserById(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("User not found"));
+        user.setIsActive(Boolean.TRUE);
+        userRepository.save(user);
+    }
+
+    @Override
+    public UUID getViewerIdFromAuthentication(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated() || auth.getName() == null) {
+            return null;
+        }
+        return userRepository.findByEmailIgnoreCase(auth.getName())
+                .map(BaseEntity::getId)
+                .orElse(null);
     }
 }
