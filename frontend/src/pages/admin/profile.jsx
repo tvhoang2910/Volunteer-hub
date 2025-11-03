@@ -37,19 +37,19 @@ export default function AdminProfilePage() {
     const getAdminApi = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin`
 
     try {
-        const response = await fetch(getAdminApi, {
-            method: "GET",
-            headers: {
-                "admin": "true",
-                "authorization": "Bearer " + localStorage.getItem("token")
-            },
-        })
-        if (!response.ok) {
-            throw new Error("Send request failed")
-        }
+      const response = await fetch(getAdminApi, {
+        method: "GET",
+        headers: {
+          "admin": "true",
+          "authorization": "Bearer " + localStorage.getItem("token")
+        },
+      })
+      if (!response.ok) {
+        throw new Error("Send request failed")
+      }
 
-        const res = await response.json()
-        setAdmin({"uid": res.data.uid, "firstName": res.data.firstName, "lastName": res.data.lastName, "email": res.data.email})
+      const res = await response.json()
+      setAdmin({ "uid": res.data.uid, "firstName": res.data.firstName, "lastName": res.data.lastName, "email": res.data.email })
     } catch (error) {
       toast({
         title: "Lỗi",
@@ -64,23 +64,23 @@ export default function AdminProfilePage() {
     const updateAdminApi = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin`
 
     try {
-        const response = await fetch(updateAdminApi, {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                "admin": "true",
-                "authorization": "Bearer " + localStorage.getItem("token")
-            },
-            body: JSON.stringify(editForm)
-        })
-        if (!response.ok) {
-            throw new Error("Send request failed")
-        }
-        toast({
-          title: "Thành công",
-          description: "Thông tin của bạn đã được cập nhật",
-        })
-        getAdmin()
+      const response = await fetch(updateAdminApi, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "admin": "true",
+          "authorization": "Bearer " + localStorage.getItem("token")
+        },
+        body: JSON.stringify(editForm)
+      })
+      if (!response.ok) {
+        throw new Error("Send request failed")
+      }
+      toast({
+        title: "Thành công",
+        description: "Thông tin của bạn đã được cập nhật",
+      })
+      getAdmin()
     } catch (error) {
       toast({
         title: "Cập nhật thông tin thất bại",
@@ -94,16 +94,16 @@ export default function AdminProfilePage() {
     const deleteAdminApi = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin`
 
     try {
-        const response = await fetch(deleteAdminApi, {
-            method: "DELETE",
-            headers: {
-                "admin": "true",
-                "authorization": "Bearer " + localStorage.getItem("token")
-            },
-        })
-        if (!response.ok) {
-            throw new Error("Send request failed")
-        }
+      const response = await fetch(deleteAdminApi, {
+        method: "DELETE",
+        headers: {
+          "admin": "true",
+          "authorization": "Bearer " + localStorage.getItem("token")
+        },
+      })
+      if (!response.ok) {
+        throw new Error("Send request failed")
+      }
     } catch (error) {
       toast({
         title: "Xóa tài khoản thất bại",
@@ -130,27 +130,27 @@ export default function AdminProfilePage() {
     }
 
     try {
-        const response = await fetch(changePasswordApi +
-          new URLSearchParams({
-            id: admin.uid,
-            admin: "true",
-          }).toString(), {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                "admin": "true",
-                "authorization": "Bearer " + localStorage.getItem("token")
-            },
-            body: JSON.stringify({"email": admin.email, "oldPassword": oldPassword, "newPassword": newPassword})
-        })
-        if (!response.ok) {
-            throw new Error("Send request failed")
-        }
-        toast({
-          title: "Thành công",
-          description: "Đổi mật khẩu thành công. Vui lòng đăng nhập lại",
-        })
-        router.push("/admin")
+      const response = await fetch(changePasswordApi +
+        new URLSearchParams({
+          id: admin.uid,
+          admin: "true",
+        }).toString(), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "admin": "true",
+          "authorization": "Bearer " + localStorage.getItem("token")
+        },
+        body: JSON.stringify({ "email": admin.email, "oldPassword": oldPassword, "newPassword": newPassword })
+      })
+      if (!response.ok) {
+        throw new Error("Send request failed")
+      }
+      toast({
+        title: "Thành công",
+        description: "Đổi mật khẩu thành công. Vui lòng đăng nhập lại",
+      })
+      router.push("/admin")
     } catch (error) {
       toast({
         title: "Đổi mật khẩu thất bại",
@@ -166,7 +166,7 @@ export default function AdminProfilePage() {
   }
 
   return (
-    <div className="container mx-auto pt-10 pl-64 space-y-6">
+    <div className="container mx-auto pt-10 pl-64 pr-64 space-y-6">
       <h1 className="text-2xl font-semibold">Hồ Sơ Cá Nhân</h1>
 
       <Card>
@@ -197,7 +197,7 @@ export default function AdminProfilePage() {
                     <Input
                       id="firstName"
                       value={editForm.firstName}
-                      onChange={(e) => setEditForm({...editForm, firstName: e.target.value})}
+                      onChange={(e) => setEditForm({ ...editForm, firstName: e.target.value })}
                     />
                   </div>
                   <div>
@@ -205,7 +205,7 @@ export default function AdminProfilePage() {
                     <Input
                       id="lastName"
                       value={editForm.lastName}
-                      onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
+                      onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
                     />
                   </div>
                 </div>

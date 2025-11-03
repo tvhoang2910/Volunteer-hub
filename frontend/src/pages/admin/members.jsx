@@ -37,20 +37,20 @@ export default function AdminManagementPage() {
     const registerAdminApi = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin`
 
     try {
-        const response = await fetch(registerAdminApi, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "admin": "true",
-                "authorization": "Bearer " + localStorage.getItem("token")
-            },
-            body: JSON.stringify(formData)
-        })
-        if (!response.ok) {
-            throw new Error("Send request failed")
-        }
+      const response = await fetch(registerAdminApi, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "admin": "true",
+          "authorization": "Bearer " + localStorage.getItem("token")
+        },
+        body: JSON.stringify(formData)
+      })
+      if (!response.ok) {
+        throw new Error("Send request failed")
+      }
 
-        getAllAdmins()
+      getAllAdmins()
     } catch (error) {
       toast({
         title: "Lỗi",
@@ -64,23 +64,25 @@ export default function AdminManagementPage() {
     const getAllAdminsApi = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin/all`
 
     try {
-        const response = await fetch(getAllAdminsApi, {
-            method: "GET",
-            headers: {
-                "admin": "true",
-                "authorization": "Bearer " + localStorage.getItem("token")
-            },
-        })
-        if (!response.ok) {
-            throw new Error("Send request failed")
-        }
+      const response = await fetch(getAllAdminsApi, {
+        method: "GET",
+        headers: {
+          "admin": "true",
+          "authorization": "Bearer " + localStorage.getItem("token")
+        },
+      })
+      if (!response.ok) {
+        throw new Error("Send request failed")
+      }
 
-        const res = await response.json()
-        setAdmins(res.data.map(a => {return {
+      const res = await response.json()
+      setAdmins(res.data.map(a => {
+        return {
           "name": `${a.firstName} ${a.lastName}`,
           "email": a.email,
-          "createdAt": a.createdAt ? new Date(a.createdAt.seconds*1000).toISOString().split('T')[0] : '2024-12-21'
-        }}))
+          "createdAt": a.createdAt ? new Date(a.createdAt.seconds * 1000).toISOString().split('T')[0] : '2024-12-21'
+        }
+      }))
     } catch (error) {
       console.log(error)
       toast({
@@ -162,7 +164,7 @@ export default function AdminManagementPage() {
   }
 
   return (
-    <div className="container mx-auto pt-10 pl-64">
+    <div className="container mx-auto pt-10 pl-10 pr-10 space-y-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold">Quản Lý Admin</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -176,7 +178,7 @@ export default function AdminManagementPage() {
             <DialogHeader>
               <DialogTitle>Thêm admin mới</DialogTitle>
             </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+            <form onSubmit={handleSubmit} className="space-y-4 pt-4">
               <div>
                 <Input
                   type="text"

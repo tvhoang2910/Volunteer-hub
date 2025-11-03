@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
-import { LayoutDashboard, Plane, CalendarDays, User, Users, UserPen, FileText, TicketCheck, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Plane, CalendarDays, User, Users, UserPen, FileText, TicketCheck, Menu, X, ChevronLeft, ChevronRight } from 'lucide-react'
 
 const navItems = [
   {
@@ -36,12 +36,21 @@ const navItems = [
   }
 ]
 
-export default function Navbar() {
+export default function Navbar({ onCollapse }) {
   const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
+  }
+
+  const toggleCollapse = () => {
+    const newCollapsed = !isCollapsed;
+    setIsCollapsed(newCollapsed);
+    if (onCollapse) {
+      onCollapse(newCollapsed);
+    }
   }
 
   const closeMobileMenu = () => {
@@ -95,11 +104,10 @@ export default function Navbar() {
               key={item.name}
               href={item.href}
               onClick={closeMobileMenu}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-colors ${
-                router.pathname === item.href
-                  ? 'bg-green-500/10 text-green-500'
-                  : 'text-white hover:bg-green-500/10 hover:text-green-500'
-              }`}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-colors ${router.pathname === item.href
+                ? 'bg-green-500/10 text-green-500'
+                : 'text-white hover:bg-green-500/10 hover:text-green-500'
+                }`}
             >
               <item.icon className="w-5 h-5" />
               <span>{item.name}</span>
@@ -109,28 +117,83 @@ export default function Navbar() {
       </div>
 
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block h-screen w-64 bg-zinc-900 text-zinc-400">
-        <div className="p-6 border-b border-zinc-800">
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 bg-green-500 rounded">
+      <div className={`hidden lg:block h-screen bg-zinc-900 text-zinc-400 shadow-2xl border-r border-zinc-800/50 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'
+        }`}>
+        <div className={`border-b border-zinc-800/50 backdrop-blur-sm transition-all duration-300 ${isCollapsed ? 'p-4' : 'p-6'
+          }`}>
+          <div className="flex items-center gap-3 group">
+            <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg shadow-lg shadow-green-500/20 group-hover:shadow-green-500/40 transition-all duration-300 group-hover:scale-110 flex-shrink-0">
               <Plane className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-lg font-semibold text-white">Volunteer Hub</h1>
+            <h1 className={`text-lg font-bold text-white tracking-tight transition-all duration-300 whitespace-nowrap ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
+              }`}>
+              Volunteer Hub
+            </h1>
           </div>
+          {/* Toggle Button */}
+          <button
+            onClick={toggleCollapse}
+            className="mt-4 w-full flex items-center justify-center p-2 text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-lg transition-all duration-300 group"
+            aria-label={isCollapsed ? 'Mở rộng menu' : 'Thu gọn menu'}
+          >
+            {isCollapsed ? (
+              <ChevronRight className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            ) : (
+              <ChevronLeft className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            )}
+          </button>
         </div>
-        <nav className="p-4">
+        <nav className={`space-y-1 transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-4'
+          }`}>
           {navItems.map((item) => (
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-colors ${
-                router.pathname === item.href
-                  ? 'bg-green-500/10 text-green-500'
-                  : 'text-white hover:bg-green-500/10 hover:text-green-500'
-              }`}
+              className={`
+                group relative flex items-center rounded-xl text-sm font-medium
+                transition-all duration-300 ease-out overflow-hidden
+                ${isCollapsed
+                  ? 'justify-center px-2 py-3'
+                  : 'gap-3 px-4 py-3'
+                }
+                ${router.pathname === item.href
+                  ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/10 text-green-400 shadow-lg shadow-green-500/10'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
+                }
+              `}
+              title={isCollapsed ? item.name : ''}
             >
-              <item.icon className="w-5 h-5" />
-              <span>{item.name}</span>
+              {/* Active indicator bar */}
+              <div className={`
+                absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-green-400 to-emerald-500 rounded-r-full
+                transition-all duration-300
+                ${router.pathname === item.href ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}
+              `} />
+
+              {/* Icon with glow effect */}
+              <div className={`
+                relative z-10 transition-all duration-300
+                ${router.pathname === item.href ? 'scale-110' : 'group-hover:scale-110'}
+              `}>
+                <item.icon className={`
+                  w-5 h-5 transition-all duration-300
+                  ${router.pathname === item.href ? 'drop-shadow-[0_0_8px_rgba(34,197,94,0.5)]' : ''}
+                `} />
+              </div>
+
+              {/* Text */}
+              <span className={`relative z-10 transition-all duration-300 whitespace-nowrap ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
+                }`}>
+                {item.name}
+              </span>
+
+              {/* Shimmer effect on hover */}
+              <div className={`
+                absolute inset-0 -translate-x-full group-hover:translate-x-full
+                bg-gradient-to-r from-transparent via-white/5 to-transparent
+                transition-transform duration-1000 ease-in-out
+                ${router.pathname === item.href ? 'hidden' : ''}
+              `} />
             </Link>
           ))}
         </nav>

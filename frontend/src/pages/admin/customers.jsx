@@ -24,111 +24,111 @@ import { toast } from "@/hooks/use-toast"
 import { EditCustomerDialog } from "@/components/admin/EditCustomerDialog"
 
 export default function CustomerManagement() {
-    const router = useRouter()
-        
-    useEffect(() => {
-        const token = localStorage.getItem('token')
-        if (!token) {
-            router.push('/admin')
-        }
-        else getAllCustomers()
+  const router = useRouter()
 
-    }, [router])    
-
-    const [customers, setCustomers] = useState([])
-    const [searchTerm, setSearchTerm] = useState("")
-    const [selectedCustomer, setSelectedCustomer] = useState(null)
-    const [editingCustomer, setEditingCustomer] = useState(null)
-
-    const filteredCustomers = customers.filter(
-        (customer) =>
-        (`${customer.lastName} ${customer.firstName}`).toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.email.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-
-    const getAllCustomers = async () => {
-        const getAllCustomersApi = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/customer/all`
-    
-        try { 
-            const response = await fetch(getAllCustomersApi, {
-                method: "GET",
-                headers: {
-                    "admin": "true",
-                    "authorization": "Bearer " + localStorage.getItem("token")
-                }, 
-            })
-            if (!response.ok) {
-                throw new Error("Send request failed")
-            }
-    
-            const res = await response.json()
-            setCustomers(res.data.map(a => ({
-                "uid": a.uid,
-                "firstName": a.firstName,
-                "lastName": a.lastName,
-                "email": a.email,
-                "dateOfBirth": a.dateOfBirth.seconds? new Date(a.dateOfBirth.seconds*1000).toISOString().split('T')[0] : a.dateOfBirth.split('T')[0],
-                "gender": a.gender,
-                "role": "customer",
-                "loyaltyPoints": a.loyaltyPoints,
-                "createdAt": a.createdAt.seconds ? new Date(a.createdAt.seconds*1000).toISOString().split('T')[0] : a.createdAt.split('T')[0],
-            })))
-        } catch (error) {
-          toast({
-            title: "Lỗi",
-            description: "Đã có lỗi xảy ra khi kết nối với máy chủ, vui lòng tải lại trang hoặc đăng nhập lại",
-            variant: "destructive"
-          })
-        }
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      router.push('/admin')
     }
+    else getAllCustomers()
 
-    const handleEdit = (customer) => {
-      setEditingCustomer(customer)
-    }
+  }, [router])
 
-    const handleEditComplete = async (updatedCustomer) => {
-        // Here you would typically make an API call to update the customer
-        // For now, we'll just update the local state
-        setCustomers(customers.map(c => c.uid === updatedCustomer.uid ? updatedCustomer : c))
-        setEditingCustomer(null)
-        toast({
-            title: "Thành công",
-            description: "Thông tin khách hàng đã được cập nhật",
-            variant: "default"
-        })
-    }
+  const [customers, setCustomers] = useState([])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedCustomer, setSelectedCustomer] = useState(null)
+  const [editingCustomer, setEditingCustomer] = useState(null)
 
-    const handleDelete = async (customer) => {
-      setCustomers(customers.filter(a => a.uid !== customer.uid))
-      const deleteCustomerApi = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/customer/delete?id=${customer.uid}`
+  const filteredCustomers = customers.filter(
+    (customer) =>
+      (`${customer.lastName} ${customer.firstName}`).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.email.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
-      try {
-        const response = await fetch(deleteCustomerApi, 
-          {
-            method: "DELETE",
-            headers: {
-                "admin": "true",
-                "authorization": "Bearer " + localStorage.getItem("token")
-            }, 
-          })
-        if (!response.ok) {
-            throw new Error("Send request failed")
-        }
-        toast({
-          title: "Thành công",
-          description: "Tài khoản của khách hàng đã được xóa",
-        })
-      } catch (error) {
-        toast({
-          title: "Xóa tài khoản thất bại",
-          description: "Đã có lỗi xảy ra khi kết nối với máy chủ, vui lòng tải lại trang hoặc đăng nhập lại",
-          variant: "destructive"
-        })
+  const getAllCustomers = async () => {
+    const getAllCustomersApi = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/customer/all`
+
+    try {
+      const response = await fetch(getAllCustomersApi, {
+        method: "GET",
+        headers: {
+          "admin": "true",
+          "authorization": "Bearer " + localStorage.getItem("token")
+        },
+      })
+      if (!response.ok) {
+        throw new Error("Send request failed")
       }
+
+      const res = await response.json()
+      setCustomers(res.data.map(a => ({
+        "uid": a.uid,
+        "firstName": a.firstName,
+        "lastName": a.lastName,
+        "email": a.email,
+        "dateOfBirth": a.dateOfBirth.seconds ? new Date(a.dateOfBirth.seconds * 1000).toISOString().split('T')[0] : a.dateOfBirth.split('T')[0],
+        "gender": a.gender,
+        "role": "customer",
+        "loyaltyPoints": a.loyaltyPoints,
+        "createdAt": a.createdAt.seconds ? new Date(a.createdAt.seconds * 1000).toISOString().split('T')[0] : a.createdAt.split('T')[0],
+      })))
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: "Đã có lỗi xảy ra khi kết nối với máy chủ, vui lòng tải lại trang hoặc đăng nhập lại",
+        variant: "destructive"
+      })
     }
+  }
+
+  const handleEdit = (customer) => {
+    setEditingCustomer(customer)
+  }
+
+  const handleEditComplete = async (updatedCustomer) => {
+    // Here you would typically make an API call to update the customer
+    // For now, we'll just update the local state
+    setCustomers(customers.map(c => c.uid === updatedCustomer.uid ? updatedCustomer : c))
+    setEditingCustomer(null)
+    toast({
+      title: "Thành công",
+      description: "Thông tin khách hàng đã được cập nhật",
+      variant: "default"
+    })
+  }
+
+  const handleDelete = async (customer) => {
+    setCustomers(customers.filter(a => a.uid !== customer.uid))
+    const deleteCustomerApi = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/customer/delete?id=${customer.uid}`
+
+    try {
+      const response = await fetch(deleteCustomerApi,
+        {
+          method: "DELETE",
+          headers: {
+            "admin": "true",
+            "authorization": "Bearer " + localStorage.getItem("token")
+          },
+        })
+      if (!response.ok) {
+        throw new Error("Send request failed")
+      }
+      toast({
+        title: "Thành công",
+        description: "Tài khoản của khách hàng đã được xóa",
+      })
+    } catch (error) {
+      toast({
+        title: "Xóa tài khoản thất bại",
+        description: "Đã có lỗi xảy ra khi kết nối với máy chủ, vui lòng tải lại trang hoặc đăng nhập lại",
+        variant: "destructive"
+      })
+    }
+  }
 
   return (
-    <div className="container mx-auto py-10 pl-64">
+    <div className="container mx-auto pt-10 pl-10 pr-10 space-y-6">
       <h1 className="text-2xl font-semibold mb-5">Quản lý khách hàng</h1>
       <div className="flex items-center space-x-2 mb-4">
         <Input

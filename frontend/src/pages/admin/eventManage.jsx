@@ -122,7 +122,7 @@ export default function EventsManagement() {
   const formatDateTime = (d) => d ? new Date(d).toLocaleString('vi-VN') : "—"
 
   return (
-    <div className="pt-10 pl-64 mx-auto">
+    <div className="container mx-auto pt-10 pl-10 pr-10 space-y-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold">Quản Lý Sự Kiện</h1>
       </div>
