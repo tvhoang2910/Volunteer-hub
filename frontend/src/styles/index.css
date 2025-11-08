@@ -139,4 +139,18 @@ section {
   transition: all 0.5s ease-in-out;
 }
 
+@keyframes flicker {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+}
+.animate-flicker {
+  animation: flicker 1.2s infinite ease-in-out;
+}
 
+@keyframes grow {
+  0% { width: 0; }
+  100% { width: var(--tw-grow-width, 100%); }
+}
+.animate-grow {
+  animation: grow 1s ease-out forwards;
+}
