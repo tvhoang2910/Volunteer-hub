@@ -1,13 +1,24 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
-import { LayoutDashboard, CalendarDays, Users, User, Menu, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import {
+  LayoutDashboard,
+  CalendarDays,
+  MessageSquare,
+  Bell,
+  User,
+  Menu,
+  X,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react'
 
 const navItems = [
   { name: 'Tổng quan', href: '/manager/dashboard', icon: LayoutDashboard },
+  { name: 'Wall', href: '/manager/wall', icon: MessageSquare },
   { name: 'Quản lý sự kiện', href: '/manager/events', icon: CalendarDays },
-  { name: 'Thành viên', href: '/manager/members', icon: Users },
-  { name: 'Hồ sơ', href: '/manager/profile', icon: User },
+  { name: 'Thông báo', href: '/manager/notifications', icon: Bell },
+  { name: 'Thông tin hồ sơ', href: '/manager/profile', icon: User },
 ]
 
 export default function Navbar({ onCollapse }) {
@@ -54,7 +65,16 @@ export default function Navbar({ onCollapse }) {
         </div>
         <nav className={`space-y-1 ${isCollapsed ? 'p-2' : 'p-4'}`}>
           {navItems.map((item) => (
-            <Link key={item.name} href={item.href} className={`group relative flex items-center rounded-xl text-sm font-medium ${isCollapsed ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-3'} ${router.pathname === item.href ? 'bg-green-500/10 text-green-400' : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'}`} title={isCollapsed ? item.name : ''}>
+            <Link
+              key={item.name}
+              href={item.href}
+              className={`group relative flex items-center rounded-xl text-sm font-medium ${isCollapsed ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-3'} ${
+                router.pathname === item.href || router.pathname.startsWith(item.href + '/')
+                  ? 'bg-green-500/10 text-green-400'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800/50'
+              }`}
+              title={isCollapsed ? item.name : ''}
+            >
               <item.icon className="w-5 h-5" />
               <span className={`${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'}`}>{item.name}</span>
             </Link>
