@@ -20,14 +20,14 @@ export default function ManagerEventOverview() {
             <div className="rounded-2xl border border-gray-100 p-6 space-y-6">
               <div className="grid md:grid-cols-3 gap-4">
                 <div>
-                  <p className="text-sm text-gray-500">Nguoi to chuc</p>
+                  <p className="text-sm text-gray-500">Người tổ chức</p>
                   <p className="text-lg font-semibold text-gray-900">
                     {event.organizer.name}
                   </p>
                   <p className="text-gray-600">{event.organizer.organization}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Thoi gian</p>
+                  <p className="text-sm text-gray-500">Thời gian</p>
                   <p className="text-lg font-semibold text-gray-900">
                     {event.timeline.start} - {event.timeline.end}
                   </p>
@@ -35,19 +35,19 @@ export default function ManagerEventOverview() {
                 <div>
                   <p className="text-sm text-gray-500">Chi tieu</p>
                   <p className="text-lg font-semibold text-gray-900">
-                    {event.volunteersNeeded} tinh nguyen vien
+                    {event.volunteersNeeded} tình nguyện viên
                   </p>
                 </div>
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                  Nhiem vu
+                  Nhiệm vụ
                 </h2>
                 <p className="text-gray-700 leading-relaxed">{event.mission}</p>
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Mo ta chi tiet
+                  Mô tả chi tiết
                 </h3>
                 <p className="text-gray-700 leading-relaxed">
                   {event.description}
@@ -55,7 +55,7 @@ export default function ManagerEventOverview() {
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Yeu cau tham gia
+                  Yêu cầu tham gia
                 </h3>
                 <ul className="grid gap-3 sm:grid-cols-2">
                   {event.requirements.map((req) => (

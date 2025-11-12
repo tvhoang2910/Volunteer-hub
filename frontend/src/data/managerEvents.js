@@ -1,31 +1,31 @@
 export const managerEventSections = [
-  { key: "overview", label: "Thong tin chi tiet", href: "" },
-  { key: "volunteers", label: "Danh sach tinh nguyen vien", href: "/volunteers" },
-  { key: "approvals", label: "Xac nhan dang ky", href: "/approvals" },
-  { key: "completion", label: "Danh gia hoan thanh", href: "/completion" },
-  { key: "reports", label: "Bao cao & thong ke", href: "/reports" },
+  { key: "overview", label: "Thông tin chi tiết", href: "" },
+  { key: "volunteers", label: "Danh sách tình nguyện viên", href: "/volunteers" },
+  { key: "approvals", label: "Xác nhận đăng ký", href: "/approvals" },
+  { key: "completion", label: "Đánh giá hoàn thành", href: "/completion" },
+  { key: "reports", label: "Báo cáo & thống kê", href: "/reports" },
 ];
 
 export const managerEvents = [
   {
-    title: "Trong cay xanh vi cong dong",
-    subtitle: "Chien dich mua xuan 2026",
-    location: "Ha Noi, Viet Nam",
-    address: "Khuon vien Dai hoc Quoc Gia Ha Noi",
+    title: "Trồng cây xanh vì cộng đồng",
+    subtitle: "Chiến dịch mùa xuân 2026",
+    location: "Hà Nội, Việt Nam",
+    address: "Khuôn viên Đại học Quốc Gia Hà Nội",
     heroImage:
       "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1600&q=80",
-    tags: ["Moi truong", "Sinh vien", "Ho tro cong dong"],
+    tags: ["Môi trường", "Sinh viên", "Hỗ trợ cộng đồng"],
     timeline: { start: "20/03/2026", end: "25/03/2026" },
     organizer: { name: "Jane Doe", organization: "Green Earth Vietnam" },
     contact: { phone: "0123 456 789", email: "greenearth@volunteerhub.org" },
     mission:
-      "Trong 500 cay xanh tai khu vuc noi thanh va chia se kien thuc cham soc cay cho nguoi dan.",
+      "Trong 500 cây xanh tại khu vực nội thành và chia sẻ kiến thức chăm sóc cây cho người dân.",
     description:
-      "Du an thuoc chuoi hoat dong 'Xanh hon moi ngay' cua VolunteerHub. Moi nhom tinh nguyen vien phu trach mot cum duong pho va duoc trang bi day du dung cu, cay giong va huong dan ky nang.",
+      "Dự án thuộc chuỗi hoạt động 'Xanh hơn mỗi ngày' của VolunteerHub. Mỗi nhóm tình nguyện viên phụ trách một cụm đường phố và được trang bị đầy đủ dụng cụ, cây giống và hướng dẫn kỹ năng.",
     requirements: [
-      "Co the tham gia toan bo thoi gian du an",
-      "San sang lam viec ngoai troi va di chuyen nhieu",
-      "Uu tien nguoi co kinh nghiem lam viec voi tre em hoac cong dong",
+      "Có thể tham gia toàn bộ thời gian dự án",
+      "ẵn sàng làm việc ngoài trời và di chuyển nhiều",
+      "Ưu tiên người có kinh nghiệm làm việc với trẻ em hoặc cộng đồng",
     ],
     volunteersNeeded: 60,
     status: "approved",
@@ -71,7 +71,6 @@ export const managerEvents = [
       {
         id: "pending-1",
         name: "Pham Quoc Huy",
-        role: "Hau can",
         submittedAt: "05/03/2026",
         motivation:
           "Da tham gia 3 su kien trong cay truoc do va muon tiep tuc dong gop cho cong dong.",
@@ -79,7 +78,6 @@ export const managerEvents = [
       {
         id: "pending-2",
         name: "Do Cam Tu",
-        role: "Huong dan vien",
         submittedAt: "06/03/2026",
         motivation:
           "Sinh vien nam 3, co kinh nghiem lam MC va muon tham gia huong dan tre em trong du an.",
