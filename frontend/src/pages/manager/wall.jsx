@@ -77,12 +77,14 @@ export default function ManagerWallPage() {
   return (
     <div className="min-h-screen bg-slate-50 px-2 py-6 lg:px-8">
       <div className="mx-auto max-w-[1300px] grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)_320px]">
-        <LeftSidebarGroups groups={groups} selectedGroupId={selectedGroupId} onSelect={setSelectedGroupId} />
+        <aside className="sticky top-6 space-y-5 h-fit">
+          <LeftSidebarGroups groups={groups} selectedGroupId={selectedGroupId} onSelect={setSelectedGroupId} />
+        </aside>
 
-        <section className="h-[calc(100vh-100px)] overflow-y-auto pr-2 space-y-5">
+        <section className="min-h-full overflow-y-auto pr-2 space-y-5 pb-0">
           {/* Composer area could be re-used; simplified here */}
           <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="text-sm text-slate-600">Bạn đang đăng dưới tư cách: <span className="font-medium">Quản trị viên</span></div>
+            <div className="text-sm text-slate-600">Bạn đang xem dưới tư cách: <span className="font-medium">Quản trị viên</span></div>
           </div>
 
           <Feed posts={posts} filterGroupId={selectedGroupId} />
