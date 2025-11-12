@@ -87,34 +87,6 @@ export default function ManagerEventOverview() {
                 </p>
               </div>
             </div>
-            <div className="rounded-2xl border border-gray-100 p-6 space-y-4">
-              <div className="flex items-center gap-3">
-                <ClipboardList className="w-5 h-5 text-amber-500" />
-                <p className="font-semibold text-gray-900">Moc quan ly</p>
-              </div>
-              <div className="space-y-4">
-                {event.tasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex items-center justify-between gap-3"
-                  >
-                    <div>
-                      <p className="font-medium text-gray-900">{task.title}</p>
-                      <p className="text-sm text-gray-500">{task.owner}</p>
-                    </div>
-                    <span
-                      className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                        task.completed
-                          ? "text-emerald-600 bg-emerald-50"
-                          : "text-gray-600 bg-gray-100"
-                      }`}
-                    >
-                      {task.completed ? "Hoan tat" : "Dang lam"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       </div>
