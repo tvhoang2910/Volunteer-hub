@@ -36,10 +36,10 @@ export default function ManagerEventApprovals() {
       <div className="space-y-6">
         <div className="flex flex-col gap-2">
           <h2 className="text-xl font-semibold text-gray-900">
-            Xac nhan dang ky
+            Xác nhận đăng ký
           </h2>
           <p className="text-gray-500 text-sm">
-            {pending.length} ho so dang cho duyet
+            {pending.length} hồ sơ đang chờ duyệt
           </p>
         </div>
 
@@ -52,7 +52,6 @@ export default function ManagerEventApprovals() {
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="font-semibold text-gray-900">{vol.name}</p>
-                  <p className="text-sm text-gray-500">{vol.role}</p>
                 </div>
                 <p className="text-sm text-gray-500">
                   Nop ngay {vol.submittedAt}
@@ -69,10 +68,10 @@ export default function ManagerEventApprovals() {
                 </button>
                 <button
                   onClick={() => handleReject(vol.id)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 text-sm font-medium hover:border-gray-300"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-300 text-sm font-medium hover:border-gray-600"
                 >
-                  <AlertTriangle className="w-4 h-4 text-amber-500" />
-                  Tu choi
+                  <AlertTriangle className="w-4 h-4 text-amber-700" />
+                  Từ chối
                 </button>
               </div>
             </div>

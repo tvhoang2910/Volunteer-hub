@@ -56,7 +56,7 @@ export default function EventDetailLayout({
                   </span>
                   <span className="inline-flex items-center gap-2">
                     <Users className="w-4 h-4" />
-                    {event.volunteers.length}/{event.volunteersNeeded} tinh nguyen
+                    {event.volunteers.length}/{event.volunteersNeeded} tình nguyện viên
                   </span>
                 </div>
               </div>
