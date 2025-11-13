@@ -1,0 +1,35 @@
+{
+    "groups": [],
+    "properties": [
+        {
+            "name": "recovery.code.ttl-minutes",
+            "type": "java.lang.Long",
+            "description": "TTL (in minutes) for recovery codes stored in Redis. Default: 10",
+            "sourceType": "vnu.uet.volunteer_hub.volunteer_hub_backend.service.RecoveryCodeService"
+        },
+        {
+            "name": "jwt.secret",
+            "type": "java.lang.String",
+            "description": "JWT secret used to sign tokens (custom property)",
+            "sourceType": "application.properties"
+        },
+        {
+            "name": "jwt.expiration-ms",
+            "type": "java.lang.Long",
+            "description": "JWT expiration in milliseconds (custom property)",
+            "sourceType": "application.properties"
+        },
+        {
+            "name": "management.endpoints.web.exposure.include",
+            "type": "java.lang.String",
+            "description": "Actuator exposed endpoints",
+            "sourceType": "application.properties"
+        },
+        {
+            "name": "management.endpoint.health.show-details",
+            "type": "java.lang.String",
+            "description": "Actuator health show-details property",
+            "sourceType": "application.properties"
+        }
+    ]
+}
