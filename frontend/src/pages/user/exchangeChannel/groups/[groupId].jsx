@@ -1,4 +1,5 @@
 import { useRouter } from "next/router";
+import { Post } from "@/components/ui/exchangeChannel/Post";
 
 export default function GroupDetail() {
   const router = useRouter();
@@ -6,7 +7,7 @@ export default function GroupDetail() {
 
   // groupId sẽ là eventId được truyền vào từ trang exchangeChannel
   // Có thể fetch thông tin event/group từ API dựa trên groupId (eventId)
-  
+
   const groupData = {
     "react-vietnam": { name: "React Vietnam", desc: "Cộng đồng React Việt Nam" },
     "frontend-devs": { name: "Frontend Devs", desc: "Nhóm lập trình frontend" },
@@ -26,6 +27,23 @@ export default function GroupDetail() {
   //     .then(data => setEventData(data));
   // }, [groupId]);
 
+  // Mock post for demonstration
+  const mockPost = {
+    id: groupId,
+    title: `Post về sự kiện ${groupId}`,
+    content: "Nội dung bài post mẫu.",
+    comments: [
+      {
+        id: 1,
+        message: "Comment mẫu",
+        user: { id: 1, name: "User1" },
+        createdAt: new Date().toISOString(),
+        likeCount: 0,
+        likedByMe: false,
+      }
+    ]
+  };
+
   return (
     <div className="container mx-auto pt-10 pl-64 space-y-6">
       <div className="p-6">
@@ -35,7 +53,8 @@ export default function GroupDetail() {
         <p className="text-muted-foreground">
           {group ? group.desc : `Thảo luận về sự kiện với ID: ${groupId}`}
         </p>
-        {/* Ở đây sẽ thêm các component chat, messages, etc. */}
+        {/* Thêm Post component */}
+        <Post {...mockPost} />
       </div>
     </div>
   );

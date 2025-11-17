@@ -1,9 +1,14 @@
-import TextInputComment from "@/components/ui/exchangeChannel/textInput.jsx"
+import React from 'react';
+import { Comment } from './commentBox';
 
-const commentList = () => {
+const CommentList = ({ comments }) => {
     return (
-        <div>
-
+        <div className="comment-list">
+            {comments.map(comment => (
+                <Comment key={comment.id} {...comment} />
+            ))}
         </div>
-    )
-}
+    );
+};
+
+export default CommentList;
