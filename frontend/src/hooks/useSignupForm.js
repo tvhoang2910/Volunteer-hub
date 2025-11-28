@@ -1,15 +1,19 @@
-import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { toast } from "@/hooks/use-toast";
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+
 export const useSignup = (onSuccess) => {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -18,11 +22,26 @@ export const useSignup = (onSuccess) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMessage("");
 
     if (formData.password !== formData.confirmPassword) {
+      const message = "Mat khau va xac nhan khong khop.";
+      setErrorMessage(message);
       toast({
-        title: "Lỗi đăng ký",
-        description: "Mật khẩu và xác nhận mật khẩu không khớp.",
+        title: "Loi dang ky",
+        description: message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!API_BASE_URL) {
+      const message =
+        "Chua thiet lap NEXT_PUBLIC_API_BASE_URL, khong the goi API dang ky.";
+      setErrorMessage(message);
+      toast({
+        title: "Thieu cau hinh",
+        description: message,
         variant: "destructive",
       });
       return;
@@ -31,37 +50,64 @@ export const useSignup = (onSuccess) => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/customer`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          first_name: formData.firstName,
-          last_name: formData.lastName,
           email: formData.email,
           password: formData.password,
+          confirmPassword: formData.confirmPassword,
+          name: fullName,
         }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        toast({
-          title: "Đăng ký thành công!",
-          description: "Tài khoản đã được tạo thành công.",
-        });
-        if (onSuccess) onSuccess();
-      } else {
-        const errorData = await response.json();
+      // Debug: log status for easier troubleshooting
+      console.debug(
+        "[signup] request sent to",
+        `${API_BASE_URL}/api/auth/register`
+      );
+      console.debug("[signup] response status:", response.status);
+
+      const data = await response.json().catch(() => ({}));
+      // Debug: print response body when not OK to help identify server-side validation/errors/CORS
+      if (!response.ok) {
+        console.debug("[signup] response body:", data);
+      }
+
+      const serverMessage =
+        data?.message ||
+        (Array.isArray(data?.data)
+          ? data.data.join("; ")
+          : data?.data?.message) ||
+        null;
+
+      if (!response.ok) {
+        const message =
+          serverMessage || "Không thể tạo tài khoản. Vui lòng thử lại.";
+        setErrorMessage(message);
         toast({
           title: "Lỗi đăng ký",
-          description: errorData.message || "Không thể tạo tài khoản.",
+          description: message,
           variant: "destructive",
         });
+        return;
       }
+
+      toast({
+        title: serverMessage || "Đăng ký thành công",
+        description: "Tài khoản đã được tạo. Vui lòng đăng nhập.",
+      });
+      onSuccess && onSuccess();
     } catch (error) {
-      console.error('Lỗi khi đăng ký:', error);
+      console.error("Signup error:", error);
+      const message =
+        "Không thể kết nối tới server. Kiểm tra backend hoặc NEXT_PUBLIC_API_BASE_URL.";
+      setErrorMessage(message);
       toast({
         title: "Lỗi hệ thống",
-        description: "Đã xảy ra lỗi khi kết nối đến máy chủ.",
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -72,6 +118,7 @@ export const useSignup = (onSuccess) => {
   return {
     formData,
     loading,
+    errorMessage,
     handleInputChange,
     handleSubmit,
   };

@@ -1,0 +1,70 @@
+server:
+    port: 8080
+
+spring:
+  profiles:
+    active: dev
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/volunteer_hub_db
+    username: postgres
+    password: 05102005
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: true
+
+  data:
+    redis:
+      host: localhost
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: thaiviethoang2910@gmail.com
+    password: "nrgy pkui jajj njjx"
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: YOUR_GOOGLE_CLIENT_ID
+            client-secret: YOUR_GOOGLE_CLIENT_SECRET
+            scope:
+              - email
+              - profile
+
+logging:
+  level:
+    vnu.uet.volunteer_hub.volunteer_hub_backend.service.EmailService: DEBUG
+    vnu.uet.volunteer_hub.volunteer_hub_backend.api.AuthAPI: INFO
+    org.springframework.mail: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+security:
+  jwt:
+    secret: change-this-dev-secret-to-a-long-random-string-at-least-32-characters
+    expiration-ms: 86400000
+
+app:
+  oauth2:
+    # Frontend page that will receive ?token=... after Google OAuth2 succeeds
+    success-redirect-url: http://localhost:3000/oauth/callback

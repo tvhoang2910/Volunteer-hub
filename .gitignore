@@ -1,3 +1,34 @@
 .idea/
-volunteer_hub_backend/src/main/resources/application.properties
-.vscode
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node / frontend
+/frontend/node_modules/
+/frontend/.next/
+/frontend/out/
+/frontend/build/
+
+# Env files (local credentials)
+.env
+.env.*
+
+# Backend build / JVM
+/volunteer_hub_backend/target/
+/volunteer_hub_backend/.mvn/
+
+# Backend local config and secrets (do NOT commit your local credentials)
+volunteer_hub_backend/src/main/resources/application-dev.properties
+volunteer_hub_backend/src/main/resources/application-prod.properties
+volunteer_hub_backend/src/main/resources/*.local.yml
+volunteer_hub_backend/src/main/resources/*.local.properties
+
+# Database / secrets
+*.keystore
+*.jks
+*.pem
+
+# Logs
+*.log

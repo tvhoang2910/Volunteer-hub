@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+
 export const useLogin = (onSuccess) => {
-  const { login } = useAuth(); // Lấy hàm login từ AuthContext
+  const { login } = useAuth();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -16,17 +19,18 @@ export const useLogin = (onSuccess) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMessage("");
 
     try {
-      // If API_BASE_URL is not set, fallback to a mock login for local dev
       if (!API_BASE_URL) {
-        // Small delay to simulate network
-        await new Promise((res) => setTimeout(res, 500));
-        const mockToken = "mock-token-localdev";
-        login(mockToken);
-        toast({ title: "Đăng nhập (mock) thành công", description: "Bạn đang ở chế độ phát triển." });
-        if (onSuccess) onSuccess();
-        setLoading(false);
+        const message =
+          "Chua thiet lap NEXT_PUBLIC_API_BASE_URL, khong the goi API dang nhap.";
+        setErrorMessage(message);
+        toast({
+          title: "Thieu cau hinh",
+          description: message,
+          variant: "destructive",
+        });
         return;
       }
 
@@ -36,38 +40,56 @@ export const useLogin = (onSuccess) => {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
-      if (response.ok) {
-        const { token } = data;
-        login(token);
-        toast({
-          title: "Đăng nhập thành công!",
-          description: "Chào mừng bạn trở lại.",
-        });
-        if (onSuccess) onSuccess();
-      } else {
+      // Các thông điệp server có thể nằm ở `message` hoặc `data` theo ResponseDTO
+      const serverMessage =
+        data?.message ||
+        (Array.isArray(data?.data)
+          ? data.data.join("; ")
+          : data?.data?.message) ||
+        null;
+
+      if (!response.ok) {
+        const message =
+          serverMessage || "Đăng nhập thất bại. Kiểm tra email/mật khẩu.";
+        setErrorMessage(message);
         toast({
           title: "Lỗi đăng nhập",
-          description: data.message || "Đã xảy ra lỗi, vui lòng thử lại.",
+          description: message,
           variant: "destructive",
         });
+        return;
       }
-    } catch (error) {
-      console.error("Lỗi khi đăng nhập:", error);
-      // If fetch failed (server down), provide clearer guidance and fallback option
+
+      const token = data?.data?.token || data?.token;
+      if (!token) {
+        const message = serverMessage || "Không nhận được token từ server.";
+        setErrorMessage(message);
+        toast({
+          title: "Lỗi đăng nhập",
+          description: message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      login(token);
       toast({
-        title: "Lỗi hệ thống",
-        description:
-          "Không thể kết nối đến server. Kiểm tra biến môi trường NEXT_PUBLIC_API_BASE_URL hoặc chạy backend. Đang chuyển sang chế độ mock tạm thời.",
+        title: serverMessage || "Đăng nhập thành công",
+        description: "Chào mừng bạn trở lại.",
+      });
+      onSuccess && onSuccess();
+    } catch (error) {
+      console.error("Login error:", error);
+      const message =
+        "Khong the ket noi server. Kiem tra backend hoac NEXT_PUBLIC_API_BASE_URL.";
+      setErrorMessage(message);
+      toast({
+        title: "Loi he thong",
+        description: message,
         variant: "destructive",
       });
-
-      // fallback to mock token so dev can continue
-      await new Promise((res) => setTimeout(res, 500));
-      const fallbackToken = "mock-token-fallback";
-      login(fallbackToken);
-      if (onSuccess) onSuccess();
     } finally {
       setLoading(false);
     }
@@ -76,6 +98,7 @@ export const useLogin = (onSuccess) => {
   return {
     formData,
     loading,
+    errorMessage,
     handleInputChange,
     handleSubmit,
   };
