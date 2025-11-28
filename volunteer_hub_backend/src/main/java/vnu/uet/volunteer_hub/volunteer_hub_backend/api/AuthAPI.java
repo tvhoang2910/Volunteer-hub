@@ -1,6 +1,8 @@
 package vnu.uet.volunteer_hub.volunteer_hub_backend.api;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,12 +20,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
+import org.springframework.security.core.userdetails.UserDetails;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.ForgotPasswordRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.RegistrationRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.ResetPasswordRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.LoginRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.ResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.model.utils.TokenUtil;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.config.JwtTokenProvider;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.EmailService;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.RateLimitService;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.RecoveryCodeService;
@@ -52,15 +56,17 @@ public class AuthAPI {
     private final RecoveryCodeService recoveryCodeService;
     private final RateLimitService rateLimitService;
     private final AuthenticationManager authenticationManager;
+    private final JwtTokenProvider jwtTokenProvider;
 
     public AuthAPI(UserService userService, EmailService emailService,
             RecoveryCodeService recoveryCodeService, RateLimitService rateLimitService,
-            AuthenticationManager authenticationManager) {
+            AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider) {
         this.userService = userService;
         this.emailService = emailService;
         this.recoveryCodeService = recoveryCodeService;
         this.rateLimitService = rateLimitService;
         this.authenticationManager = authenticationManager;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     @PostMapping("/register")
@@ -107,8 +113,15 @@ public class AuthAPI {
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            ResponseDTO<Void> successResponse = ResponseDTO.<Void>builder()
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            String token = jwtTokenProvider.generateToken(userDetails);
+
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("token", token);
+
+            ResponseDTO<Map<String, Object>> successResponse = ResponseDTO.<Map<String, Object>>builder()
                     .message("Login successful")
+                    .data(payload)
                     .build();
             return ResponseEntity.ok(successResponse);
         } catch (Exception e) {

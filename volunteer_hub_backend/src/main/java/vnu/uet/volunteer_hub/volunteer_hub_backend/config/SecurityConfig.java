@@ -1,22 +1,53 @@
 package vnu.uet.volunteer_hub.volunteer_hub_backend.config;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
 import jakarta.servlet.http.HttpServletResponse;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.service.impl.CustomOAuth2UserService;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.service.impl.CustomUserDetailService;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final CustomUserDetailService customUserDetailService;
+
+    @Value("${app.oauth2.success-redirect-url:http://localhost:3000/oauth/callback}")
+    private String oauth2SuccessRedirectUrl;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          CustomOAuth2UserService customOAuth2UserService,
+                          JwtTokenProvider jwtTokenProvider,
+                          CustomUserDetailService customUserDetailService) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.customOAuth2UserService = customOAuth2UserService;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.customUserDetailService = customUserDetailService;
+    }
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
@@ -27,28 +58,58 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder(12);
     }
 
-    @Bean
-    public AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler() {
-        return (request, response, authentication) -> response
-                .sendRedirect(SecurityConstants.VOLUNTEER_DEFAULT_SUCCESS);
+    private CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowCredentials(true);
+        configuration.addAllowedOrigin("http://localhost:3000");
+        configuration.addAllowedOrigin("http://127.0.0.1:3000");
+        configuration.addAllowedHeader("*");
+        configuration.addAllowedMethod("GET");
+        configuration.addAllowedMethod("POST");
+        configuration.addAllowedMethod("PUT");
+        configuration.addAllowedMethod("DELETE");
+        configuration.addAllowedMethod("OPTIONS");
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/api/auth/**", "/api/**").permitAll()
-                        .anyRequest().authenticated())
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.setContentType("application/json");
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.getWriter().write(
-                                    "{\"data\":null,\"message\":\"Unauthorized\",\"detail\":\"Authentication required\"}");
-                        }))
-                .oauth2Login(oauth2 -> oauth2
-                        .successHandler(oAuth2AuthenticationSuccessHandler()));
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .csrf(csrf -> csrf.disable())
+            .sessionManagement(session ->
+                session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+            .authorizeHttpRequests(authz -> authz
+                    .requestMatchers("/api/auth/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/posts/visible").permitAll()
+                    .anyRequest().authenticated()
+            )
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setContentType("application/json");
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write(
+                        "{\"data\":null,\"message\":\"Unauthorized\",\"detail\":\"Authentication required\"}");
+                })
+            )
+            .oauth2Login(oauth2 -> oauth2
+                .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                .successHandler((request, response, authentication) -> {
+                    String username = authentication.getName();
+                    var userDetails = customUserDetailService.loadUserByUsername(username);
+                    String token = jwtTokenProvider.generateToken(userDetails);
+
+                    String target = oauth2SuccessRedirectUrl
+                            + "?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
+
+                    response.sendRedirect(target);
+                })
+            );
+
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

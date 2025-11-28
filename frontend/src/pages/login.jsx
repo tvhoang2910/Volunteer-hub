@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
+import { toast } from "@/hooks/use-toast";
 import {
   Card,
   CardContent,
@@ -19,12 +20,31 @@ const ErrorMessage = ({ message }) => (
   <p className="text-red-600 text-center">{message}</p>
 );
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+
 export default function LoginForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
 
   const { formData, loading, errorMessage, handleInputChange, handleSubmit } =
     useLogin(() => router.push("/"));
+
+  const handleGoogleSignIn = () => {
+    if (!API_BASE_URL) {
+      toast({
+        title: "Missing config",
+        description:
+          "NEXT_PUBLIC_API_BASE_URL is not set, cannot start Google login.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Ensure we do not end up with double slashes
+    const sanitizedBase = API_BASE_URL.replace(/\/+$/, "");
+    window.location.href = `${sanitizedBase}/oauth2/authorization/google`;
+  };
 
   return (
     <div
@@ -44,7 +64,10 @@ export default function LoginForm() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {errorMessage && <ErrorMessage message={errorMessage} />}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="email"
+                className="text-sm font-medium text-gray-700"
+              >
                 Email
               </Label>
               <Input
@@ -59,7 +82,10 @@ export default function LoginForm() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="password"
+                className="text-sm font-medium text-gray-700"
+              >
                 Mật khẩu
               </Label>
               <div className="relative">
@@ -77,7 +103,11 @@ export default function LoginForm() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
                 >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -101,9 +131,7 @@ export default function LoginForm() {
             variant="outline"
             type="button"
             className="w-full"
-            onClick={() => {
-              console.log("Google sign-in clicked");
-            }}
+            onClick={handleGoogleSignIn}
           >
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
               <path
@@ -127,13 +155,21 @@ export default function LoginForm() {
           </Button>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
-          <Button variant="link" className="text-green-500 hover:text-[#d55643]">
-            Quên mật khẩu?
-          </Button>
+          <Link href="/forgot-password">
+            <Button
+              variant="link"
+              className="text-green-500 hover:text-[#d55643]"
+            >
+              Quên mật khẩu?
+            </Button>
+          </Link>
           <p className="text-sm text-center text-gray-600">
             Bạn chưa có tài khoản?{" "}
             <Link href="/signup">
-              <Button variant="link" className="p-0 text-green-500 hover:text-[#d55643]">
+              <Button
+                variant="link"
+                className="p-0 text-green-500 hover:text-[#d55643]"
+              >
                 Đăng ký
               </Button>
             </Link>
