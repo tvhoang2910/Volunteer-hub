@@ -6,9 +6,9 @@
             "description": "A description for 'dashboard.top-posts.cache-ttl-seconds'"
         },
         {
-            "name": "recovery.token.ttl-minutes",
+            "name": "password-reset.token.ttl-minutes",
             "type": "java.lang.String",
-            "description": "A description for 'recovery.token.ttl-minutes'"
+            "description": "Password reset token TTL (minutes)"
         },
         {
             "name": "app.frontend.url",

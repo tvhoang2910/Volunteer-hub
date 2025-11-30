@@ -109,4 +109,12 @@ public class UserServiceImpl implements UserService {
                 .map(BaseEntity::getId)
                 .orElse(null);
     }
+
+    @Override
+    public java.util.Optional<User> findByEmail(String email) {
+        if (email == null) {
+            return java.util.Optional.empty();
+        }
+        return userRepository.findByEmailIgnoreCase(email);
+    }
 }

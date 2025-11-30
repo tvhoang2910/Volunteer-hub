@@ -3,6 +3,8 @@ package vnu.uet.volunteer_hub.volunteer_hub_backend.config;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,10 +18,10 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import jakarta.servlet.http.HttpServletResponse;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.impl.CustomOAuth2UserService;
@@ -29,7 +31,7 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.service.impl.CustomUserDetail
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-
+    private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final JwtTokenProvider jwtTokenProvider;
@@ -64,11 +66,7 @@ public class SecurityConfig {
         configuration.addAllowedOrigin("http://localhost:3000");
         configuration.addAllowedOrigin("http://127.0.0.1:3000");
         configuration.addAllowedHeader("*");
-        configuration.addAllowedMethod("GET");
-        configuration.addAllowedMethod("POST");
-        configuration.addAllowedMethod("PUT");
-        configuration.addAllowedMethod("DELETE");
-        configuration.addAllowedMethod("OPTIONS");
+        configuration.addAllowedMethod("*");
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
@@ -84,6 +82,13 @@ public class SecurityConfig {
                 session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .authorizeHttpRequests(authz -> authz
                     .requestMatchers("/api/auth/**").permitAll()
+
+                    // Mở toàn bộ endpoint OAuth2
+                    .requestMatchers("/oauth2/**").permitAll()
+                    .requestMatchers("/login/**").permitAll()
+                    .requestMatchers("/login/oauth2/**").permitAll()
+                    .requestMatchers("/oauth2/authorization/**").permitAll()
+
                     .requestMatchers(HttpMethod.GET, "/api/posts/visible").permitAll()
                     .anyRequest().authenticated()
             )
@@ -105,6 +110,7 @@ public class SecurityConfig {
                     String target = oauth2SuccessRedirectUrl
                             + "?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
 
+                    logger.info("OAuth2 login success for user={}, redirecting to {}", username, target);
                     response.sendRedirect(target);
                 })
             );

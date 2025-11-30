@@ -30,8 +30,24 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         OAuth2User oAuth2User = super.loadUser(userRequest);
         String email = oAuth2User.getAttribute("email");
         String name = oAuth2User.getAttribute("name");
-        if (email == null)
+
+        // Nếu Google không trả email ở "email" → thử lấy từ "emails"
+        if (email == null) {
+            Object emailsAttr = oAuth2User.getAttribute("emails");
+            if (emailsAttr instanceof java.util.List<?> emailsList && !emailsList.isEmpty()) {
+                Object item = emailsList.get(0);
+                if (item instanceof Map<?, ?> emailMap) {
+                    Object value = emailMap.get("value");
+                    if (value instanceof String s) {
+                        email = s;
+                    }
+                }
+            }
+        }
+
+        if (email == null) {
             throw new OAuth2AuthenticationException("Email not found from OAuth2 provider");
+        }
 
         User user = userRepository.findByEmailIgnoreCase(email).orElse(null);
         if (user == null) {

@@ -1,5 +1,5 @@
 server:
-    port: 8080
+  port: 8080
 
 spring:
   profiles:
@@ -19,6 +19,8 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
     show-sql: true
+    # Disable OpenEntityManagerInView to avoid lazy-loading during view rendering
+    open-in-view: false
 
   data:
     redis:
@@ -45,8 +47,10 @@ spring:
       client:
         registration:
           google:
-            client-id: YOUR_GOOGLE_CLIENT_ID
-            client-secret: YOUR_GOOGLE_CLIENT_SECRET
+            # Do NOT store secrets in source. Use environment variables instead.
+            client-id: 197145757314-7ubbh305cl484dtepicdsqsbt03h9quh.apps.googleusercontent.com
+            client-secret: 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
+            redirect-uri: "{baseUrl}/login/oauth2/code/google"
             scope:
               - email
               - profile
@@ -68,3 +72,7 @@ app:
   oauth2:
     # Frontend page that will receive ?token=... after Google OAuth2 succeeds
     success-redirect-url: http://localhost:3000/oauth/callback
+
+password-reset:
+  token:
+    ttl-minutes: 15
