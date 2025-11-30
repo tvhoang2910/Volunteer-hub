@@ -41,9 +41,9 @@ public class SecurityConfig {
     private String oauth2SuccessRedirectUrl;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
-                          CustomOAuth2UserService customOAuth2UserService,
-                          JwtTokenProvider jwtTokenProvider,
-                          CustomUserDetailService customUserDetailService) {
+            CustomOAuth2UserService customOAuth2UserService,
+            JwtTokenProvider jwtTokenProvider,
+            CustomUserDetailService customUserDetailService) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.customOAuth2UserService = customOAuth2UserService;
         this.jwtTokenProvider = jwtTokenProvider;
@@ -76,44 +76,37 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-            .authorizeHttpRequests(authz -> authz
-                    .requestMatchers("/api/auth/**").permitAll()
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .authorizeHttpRequests(authz -> authz
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/oauth2/**").permitAll()
+                        .requestMatchers("/login/**").permitAll()
+                        .requestMatchers("/login/oauth2/**").permitAll()
+                        .requestMatchers("/oauth2/authorization/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/posts/visible").permitAll()
+                        .anyRequest().authenticated())
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setContentType("application/json");
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.getWriter().write(
+                                    "{\"data\":null,\"message\":\"Unauthorized\",\"detail\":\"Authentication required\"}");
+                        }))
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                        .successHandler((request, response, authentication) -> {
+                            String username = authentication.getName();
+                            var userDetails = customUserDetailService.loadUserByUsername(username);
+                            String token = jwtTokenProvider.generateToken(userDetails);
 
-                    // Mở toàn bộ endpoint OAuth2
-                    .requestMatchers("/oauth2/**").permitAll()
-                    .requestMatchers("/login/**").permitAll()
-                    .requestMatchers("/login/oauth2/**").permitAll()
-                    .requestMatchers("/oauth2/authorization/**").permitAll()
+                            String target = oauth2SuccessRedirectUrl
+                                    + "?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
 
-                    .requestMatchers(HttpMethod.GET, "/api/posts/visible").permitAll()
-                    .anyRequest().authenticated()
-            )
-            .exceptionHandling(ex -> ex
-                .authenticationEntryPoint((request, response, authException) -> {
-                    response.setContentType("application/json");
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.getWriter().write(
-                        "{\"data\":null,\"message\":\"Unauthorized\",\"detail\":\"Authentication required\"}");
-                })
-            )
-            .oauth2Login(oauth2 -> oauth2
-                .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
-                .successHandler((request, response, authentication) -> {
-                    String username = authentication.getName();
-                    var userDetails = customUserDetailService.loadUserByUsername(username);
-                    String token = jwtTokenProvider.generateToken(userDetails);
-
-                    String target = oauth2SuccessRedirectUrl
-                            + "?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
-
-                    logger.info("OAuth2 login success for user={}, redirecting to {}", username, target);
-                    response.sendRedirect(target);
-                })
-            );
+                            logger.info("OAuth2 login success for user={}, redirecting to {}", username, target);
+                            response.sendRedirect(target);
+                        }));
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

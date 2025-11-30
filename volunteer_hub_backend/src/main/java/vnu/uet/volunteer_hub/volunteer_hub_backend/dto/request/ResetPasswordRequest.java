@@ -1,7 +1,6 @@
 package vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -9,19 +8,20 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Request DTO cho việc reset password dùng token (stateless).
+ * Request DTO cho viec reset password dang token (stateless).
  */
 @Getter
 @Setter
 public class ResetPasswordRequest {
 
-    @NotBlank(message = "Token không được để trống")
+    @NotBlank(message = "Token khong duoc de trong")
     private String token;
 
     @JsonAlias("password")
-    @NotBlank(message = "Mật khẩu không được để trống")
-    @Size(min = 8, message = "Mật khẩu phải có ít nhất 8 ký tự")
-    @Pattern(regexp = "^(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-={}:;\"',.<>?/\\\\|\\[\\]~`]).{8,}$", message = "Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 số và 1 ký tự đặc biệt")
+    @NotBlank(message = "Mat khau khong duoc de trong")
+    @Size(min = 8, message = "Mat khau phai co it nhat 8 ky tu")
+    @Pattern(regexp = "^(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-={}:;\"',.<>?/\\\\|\\[\\]~`]).{8,}$",
+            message = "Mat khau phai chua it nhat 1 chu hoa, 1 so va 1 ky tu dac biet")
     private String newPassword;
 
     // Optional: support confirm password when client sends it

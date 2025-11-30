@@ -145,13 +145,13 @@ public class AuthAPI {
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         String email = request.getEmail();
-        String genericMessage = "Vui lòng kiểm tra email nếu tồn tại";
+        String genericMessage = "Vui long kiem tra email neu ton tai";
 
         logger.info("Received password reset request for email={}", email);
 
         if (!rateLimitService.checkForgotPasswordRateLimit(email)) {
             ResponseDTO<Void> response = ResponseDTO.<Void>builder()
-                    .message("Bạn đã yêu cầu quá nhiều lần. Vui lòng thử lại sau.")
+                    .message("Ban da yeu cau qua nhieu lan. Vui long thu lai sau.")
                     .build();
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(response);
         }
@@ -183,7 +183,7 @@ public class AuthAPI {
         boolean valid = passwordResetTokenService.validateRawToken(request.getToken()).isPresent();
         if (!valid) {
             ResponseDTO<Void> errorResponse = ResponseDTO.<Void>builder()
-                    .message("Token không hợp lệ hoặc đã hết hạn")
+                    .message("Token khong hop le hoac da het han")
                     .build();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
@@ -213,7 +213,7 @@ public class AuthAPI {
 
         if (confirmPassword != null && !confirmPassword.isBlank() && !newPassword.equals(confirmPassword)) {
             ResponseDTO<Void> err = ResponseDTO.<Void>builder()
-                    .message("Mật khẩu xác nhận không khớp")
+                    .message("Mat khau xac nhan khong khop")
                     .build();
             return ResponseEntity.badRequest().body(err);
         }
@@ -224,7 +224,7 @@ public class AuthAPI {
 
             if (token == null) {
                 ResponseDTO<Void> err = ResponseDTO.<Void>builder()
-                        .message("Token không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu lại.")
+                        .message("Token khong hop le hoac da het han. Vui long yeu cau lai.")
                         .build();
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
             }
@@ -234,14 +234,14 @@ public class AuthAPI {
             passwordResetTokenService.markTokenUsed(token);
 
             ResponseDTO<Void> successResponse = ResponseDTO.<Void>builder()
-                    .message("Đặt lại mật khẩu thành công")
+                    .message("Dat lai mat khau thanh cong")
                     .build();
             return ResponseEntity.ok(successResponse);
 
         } catch (Exception e) {
             logger.error("Error resetting password: {}", e.getMessage(), e);
             ResponseDTO<Void> err = ResponseDTO.<Void>builder()
-                    .message("Lỗi khi cập nhật mật khẩu")
+                    .message("Loi khi cap nhat mat khau")
                     .detail(e.getMessage())
                     .build();
             return ResponseEntity.status(500).body(err);

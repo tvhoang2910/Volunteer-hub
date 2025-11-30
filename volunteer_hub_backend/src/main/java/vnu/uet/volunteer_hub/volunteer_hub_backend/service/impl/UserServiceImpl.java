@@ -1,5 +1,6 @@
 package vnu.uet.volunteer_hub.volunteer_hub_backend.service.impl;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -38,10 +39,10 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException("Email already exists!");
         }
         if (!registrationRequest.getPassword().equals(registrationRequest.getConfirmPassword())) {
-            throw new IllegalArgumentException("Mật khẩu và xác nhận mật khẩu không khớp!");
+            throw new IllegalArgumentException("Mat khau va xac nhan mat khau khong khop!");
         }
         if (registrationRequest.getName() == null || registrationRequest.getName().isBlank()) {
-            throw new IllegalArgumentException("Họ tên không được để trống!");
+            throw new IllegalArgumentException("Ho ten khong duoc de trong!");
         }
         User user = new User();
         user.setEmail(registrationRequest.getEmail().toLowerCase());
@@ -80,7 +81,7 @@ public class UserServiceImpl implements UserService {
             logger.info("Password updated successfully for user: {}", email);
         } catch (Exception e) {
             logger.error("Error updating password for email {}: {}", email, e.getMessage(), e);
-            throw e; // Re-throw để rollback transaction
+            throw e; // Re-throw to rollback transaction
         }
     }
 
@@ -111,9 +112,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public java.util.Optional<User> findByEmail(String email) {
+    public Optional<User> findByEmail(String email) {
         if (email == null) {
-            return java.util.Optional.empty();
+            return Optional.empty();
         }
         return userRepository.findByEmailIgnoreCase(email);
     }

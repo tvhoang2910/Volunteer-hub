@@ -78,6 +78,7 @@ public class EmailServiceImpl implements EmailService {
      * Deprecated: send plain recovery code (kept for backward compatibility).
      */
     @Deprecated
+    @Override
     public void sendRecoveryCode(String to, String code) {
         try {
             logger.info("Preparing legacy recovery code email for {}", to);

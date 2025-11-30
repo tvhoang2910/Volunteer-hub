@@ -31,7 +31,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String email = oAuth2User.getAttribute("email");
         String name = oAuth2User.getAttribute("name");
 
-        // Nếu Google không trả email ở "email" → thử lấy từ "emails"
+        // Google might return emails in a nested structure; try to extract the first value
         if (email == null) {
             Object emailsAttr = oAuth2User.getAttribute("emails");
             if (emailsAttr instanceof java.util.List<?> emailsList && !emailsList.isEmpty()) {
