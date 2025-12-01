@@ -501,9 +501,11 @@ WHERE NOT EXISTS (
     AND pr.user_id = (SELECT user_id FROM users WHERE email = 'sarah.johnson@example.com')
 );
 
--- 8) Comments
--- Comment 1: Sarah comments on Lisa's post (moved from reaction)
-INSERT INTO comments (comment_id, post_id, user_id, content, created_at, updated_at)
+-- 8) Comments (3-level nested structure)
+
+-- LEVEL 1: Root comments on posts
+-- Comment 1.1: Sarah's comment on Lisa's Tutoring Program post
+INSERT INTO comments (comment_id, post_id, user_id, content, parent_id, created_at, updated_at)
 SELECT gen_random_uuid(),
        (SELECT post_id FROM posts p 
         WHERE p.event_id = (SELECT event_id FROM events WHERE title = 'Tutoring Program')
@@ -511,16 +513,18 @@ SELECT gen_random_uuid(),
         LIMIT 1),
        (SELECT user_id FROM users WHERE email = 'sarah.johnson@example.com'),
        'This is going to be so much fun! I love helping kids learn.',
+       NULL,
        now(),
        now()
 WHERE NOT EXISTS (
   SELECT 1 FROM comments c
   WHERE c.content = 'This is going to be so much fun! I love helping kids learn.'
     AND c.user_id = (SELECT user_id FROM users WHERE email = 'sarah.johnson@example.com')
+    AND c.parent_id IS NULL
 );
 
--- Comment 2: Michael comments on Sarah's beach cleanup post
-INSERT INTO comments (comment_id, post_id, user_id, content, created_at, updated_at)
+-- Comment 1.2: Michael's comment on Sarah's Beach Cleanup post
+INSERT INTO comments (comment_id, post_id, user_id, content, parent_id, created_at, updated_at)
 SELECT gen_random_uuid(),
        (SELECT post_id FROM posts p 
         WHERE p.event_id = (SELECT event_id FROM events WHERE title = 'Beach Cleanup')
@@ -528,12 +532,161 @@ SELECT gen_random_uuid(),
         LIMIT 1),
        (SELECT user_id FROM users WHERE email = 'michael.chen@example.com'),
        'Great job Sarah! The beach looks amazing.',
+       NULL,
        now() - interval '1 day',
        now() - interval '1 day'
 WHERE NOT EXISTS (
   SELECT 1 FROM comments c
   WHERE c.content = 'Great job Sarah! The beach looks amazing.'
     AND c.user_id = (SELECT user_id FROM users WHERE email = 'michael.chen@example.com')
+    AND c.parent_id IS NULL
+);
+
+-- Comment 1.3: Emily's comment on Michael's Food Drive post
+INSERT INTO comments (comment_id, post_id, user_id, content, parent_id, created_at, updated_at)
+SELECT gen_random_uuid(),
+       (SELECT post_id FROM posts p 
+        WHERE p.event_id = (SELECT event_id FROM events WHERE title = 'Food Drive')
+          AND p.user_id = (SELECT user_id FROM users WHERE email = 'michael.chen@example.com')
+        LIMIT 1),
+       (SELECT user_id FROM users WHERE email = 'emily.rodriguez@example.com'),
+       'I totally agree! This event was so meaningful and rewarding.',
+       NULL,
+       now() - interval '8 days',
+       now() - interval '8 days'
+WHERE NOT EXISTS (
+  SELECT 1 FROM comments c
+  WHERE c.content = 'I totally agree! This event was so meaningful and rewarding.'
+    AND c.user_id = (SELECT user_id FROM users WHERE email = 'emily.rodriguez@example.com')
+    AND c.parent_id IS NULL
+);
+
+-- LEVEL 2: Replies to root comments
+-- Comment 2.1: Michael replies to Sarah's comment on Tutoring Program
+INSERT INTO comments (comment_id, post_id, user_id, content, parent_id, created_at, updated_at)
+SELECT gen_random_uuid(),
+       (SELECT post_id FROM posts p 
+        WHERE p.event_id = (SELECT event_id FROM events WHERE title = 'Tutoring Program')
+          AND p.user_id = (SELECT user_id FROM users WHERE email = 'lisa.anderson@example.com')
+        LIMIT 1),
+       (SELECT user_id FROM users WHERE email = 'michael.chen@example.com'),
+       'Count me in! I can help with Math subjects.',
+       (SELECT comment_id FROM comments c
+        WHERE c.content = 'This is going to be so much fun! I love helping kids learn.'
+          AND c.user_id = (SELECT user_id FROM users WHERE email = 'sarah.johnson@example.com')
+        LIMIT 1),
+       now() - interval '2 hours',
+       now() - interval '2 hours'
+WHERE NOT EXISTS (
+  SELECT 1 FROM comments c
+  WHERE c.content = 'Count me in! I can help with Math subjects.'
+    AND c.user_id = (SELECT user_id FROM users WHERE email = 'michael.chen@example.com')
+);
+
+-- Comment 2.2: Sarah replies to Michael's comment on Beach Cleanup
+INSERT INTO comments (comment_id, post_id, user_id, content, parent_id, created_at, updated_at)
+SELECT gen_random_uuid(),
+       (SELECT post_id FROM posts p 
+        WHERE p.event_id = (SELECT event_id FROM events WHERE title = 'Beach Cleanup')
+          AND p.user_id = (SELECT user_id FROM users WHERE email = 'sarah.johnson@example.com')
+        LIMIT 1),
+       (SELECT user_id FROM users WHERE email = 'sarah.johnson@example.com'),
+       'Thanks Michael! Your help was invaluable. Let''s do it again next month!',
+       (SELECT comment_id FROM comments c
+        WHERE c.content = 'Great job Sarah! The beach looks amazing.'
+          AND c.user_id = (SELECT user_id FROM users WHERE email = 'michael.chen@example.com')
+        LIMIT 1),
+       now() - interval '23 hours',
+       now() - interval '23 hours'
+WHERE NOT EXISTS (
+  SELECT 1 FROM comments c
+  WHERE c.content = 'Thanks Michael! Your help was invaluable. Let''s do it again next month!'
+    AND c.user_id = (SELECT user_id FROM users WHERE email = 'sarah.johnson@example.com')
+);
+
+-- Comment 2.3: Michael replies to Emily's comment on Food Drive
+INSERT INTO comments (comment_id, post_id, user_id, content, parent_id, created_at, updated_at)
+SELECT gen_random_uuid(),
+       (SELECT post_id FROM posts p 
+        WHERE p.event_id = (SELECT event_id FROM events WHERE title = 'Food Drive')
+          AND p.user_id = (SELECT user_id FROM users WHERE email = 'michael.chen@example.com')
+        LIMIT 1),
+       (SELECT user_id FROM users WHERE email = 'michael.chen@example.com'),
+       'Absolutely! That''s what makes volunteering so special. Can''t wait for the next one.',
+       (SELECT comment_id FROM comments c
+        WHERE c.content = 'I totally agree! This event was so meaningful and rewarding.'
+          AND c.user_id = (SELECT user_id FROM users WHERE email = 'emily.rodriguez@example.com')
+        LIMIT 1),
+       now() - interval '7 days' - interval '12 hours',
+       now() - interval '7 days' - interval '12 hours'
+WHERE NOT EXISTS (
+  SELECT 1 FROM comments c
+  WHERE c.content = 'Absolutely! That''s what makes volunteering so special. Can''t wait for the next one.'
+    AND c.user_id = (SELECT user_id FROM users WHERE email = 'michael.chen@example.com')
+);
+
+-- LEVEL 3: Replies to level 2 comments
+-- Comment 3.1: Emily replies to Michael's reply on Tutoring Program
+INSERT INTO comments (comment_id, post_id, user_id, content, parent_id, created_at, updated_at)
+SELECT gen_random_uuid(),
+       (SELECT post_id FROM posts p 
+        WHERE p.event_id = (SELECT event_id FROM events WHERE title = 'Tutoring Program')
+          AND p.user_id = (SELECT user_id FROM users WHERE email = 'lisa.anderson@example.com')
+        LIMIT 1),
+       (SELECT user_id FROM users WHERE email = 'emily.rodriguez@example.com'),
+       'That''s great Michael! We definitely need Math tutors. I''ll handle English.',
+       (SELECT comment_id FROM comments c
+        WHERE c.content = 'Count me in! I can help with Math subjects.'
+          AND c.user_id = (SELECT user_id FROM users WHERE email = 'michael.chen@example.com')
+        LIMIT 1),
+       now() - interval '1 hour',
+       now() - interval '1 hour'
+WHERE NOT EXISTS (
+  SELECT 1 FROM comments c
+  WHERE c.content = 'That''s great Michael! We definitely need Math tutors. I''ll handle English.'
+    AND c.user_id = (SELECT user_id FROM users WHERE email = 'emily.rodriguez@example.com')
+);
+
+-- Comment 3.2: Michael replies to Sarah's reply on Beach Cleanup
+INSERT INTO comments (comment_id, post_id, user_id, content, parent_id, created_at, updated_at)
+SELECT gen_random_uuid(),
+       (SELECT post_id FROM posts p 
+        WHERE p.event_id = (SELECT event_id FROM events WHERE title = 'Beach Cleanup')
+          AND p.user_id = (SELECT user_id FROM users WHERE email = 'sarah.johnson@example.com')
+        LIMIT 1),
+       (SELECT user_id FROM users WHERE email = 'michael.chen@example.com'),
+       'Definitely! I''m already looking forward to it. Same time, same place next month?',
+       (SELECT comment_id FROM comments c
+        WHERE c.content = 'Thanks Michael! Your help was invaluable. Let''s do it again next month!'
+          AND c.user_id = (SELECT user_id FROM users WHERE email = 'sarah.johnson@example.com')
+        LIMIT 1),
+       now() - interval '22 hours',
+       now() - interval '22 hours'
+WHERE NOT EXISTS (
+  SELECT 1 FROM comments c
+  WHERE c.content = 'Definitely! I''m already looking forward to it. Same time, same place next month?'
+    AND c.user_id = (SELECT user_id FROM users WHERE email = 'michael.chen@example.com')
+);
+
+-- Comment 3.3: Sarah replies to Michael's reply on Food Drive
+INSERT INTO comments (comment_id, post_id, user_id, content, parent_id, created_at, updated_at)
+SELECT gen_random_uuid(),
+       (SELECT post_id FROM posts p 
+        WHERE p.event_id = (SELECT event_id FROM events WHERE title = 'Food Drive')
+          AND p.user_id = (SELECT user_id FROM users WHERE email = 'michael.chen@example.com')
+        LIMIT 1),
+       (SELECT user_id FROM users WHERE email = 'sarah.johnson@example.com'),
+       'Yes! Let''s keep this momentum going and organize more community events!',
+       (SELECT comment_id FROM comments c
+        WHERE c.content = 'Absolutely! That''s what makes volunteering so special. Can''t wait for the next one.'
+          AND c.user_id = (SELECT user_id FROM users WHERE email = 'michael.chen@example.com')
+        LIMIT 1),
+       now() - interval '7 days' - interval '10 hours',
+       now() - interval '7 days' - interval '10 hours'
+WHERE NOT EXISTS (
+  SELECT 1 FROM comments c
+  WHERE c.content = 'Yes! Let''s keep this momentum going and organize more community events!'
+    AND c.user_id = (SELECT user_id FROM users WHERE email = 'sarah.johnson@example.com')
 );
 
 -- End of seed script

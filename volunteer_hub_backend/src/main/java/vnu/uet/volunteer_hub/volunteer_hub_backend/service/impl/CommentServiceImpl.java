@@ -47,6 +47,12 @@ public class CommentServiceImpl implements CommentService {
         comment.setPost(post);
         comment.setUser(user);
 
+        if (request.getParentId() != null) {
+            Comment parent = commentRepository.findById(request.getParentId())
+                    .orElseThrow(() -> new RuntimeException("Parent comment not found"));
+            comment.setParent(parent);
+        }
+
         Comment savedComment = commentRepository.save(comment);
         return mapToResponse(savedComment);
     }
@@ -57,7 +63,7 @@ public class CommentServiceImpl implements CommentService {
         if (!postRepository.existsById(postId)) {
             throw new RuntimeException("Post not found");
         }
-        return commentRepository.findByPostId(postId, pageable)
+        return commentRepository.findByPostIdAndParentIsNull(postId, pageable)
                 .map(this::mapToResponse);
     }
 
@@ -86,6 +92,8 @@ public class CommentServiceImpl implements CommentService {
                 .userId(comment.getUser().getId())
                 .userName(comment.getUser().getName())
                 .postId(comment.getPost().getId())
+                .parentId(comment.getParent() != null ? comment.getParent().getId() : null)
+                .replies(comment.getReplies().stream().map(this::mapToResponse).toList())
                 .createdAt(comment.getCreatedAt())
                 .updatedAt(comment.getUpdatedAt())
                 .build();
