@@ -39,4 +39,15 @@ public interface PostRepository extends JpaRepository<Post, UUID> {
 
         @Query("SELECT COUNT(p) FROM Post p WHERE p.event.id = :eventId")
         int countPostsByEventId(@Param("eventId") UUID eventId);
+
+        /**
+         * Find all posts by author ID with pagination.
+         * Fetches author and event to avoid N+1.
+         * 
+         * TODO (Future):
+         * - Add visibility filtering based on viewer
+         * - Add sorting options (by date, by score, etc.)
+         */
+        @Query("SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.author a LEFT JOIN FETCH p.event e WHERE p.author.id = :userId")
+        Page<Post> findByAuthorId(@Param("userId") UUID userId, Pageable pageable);
 }

@@ -257,8 +257,7 @@ public class TopPostsCacheServiceImpl implements TopPostsCacheService {
         double affinity = scoringService.computeAffinityScore(post);
         double recency = scoringService.computeRecencyFactor(post);
         double total = totalScoreOverride == null ? scoringService.computeTotalScore(post) : totalScoreOverride;
-        long commentCount = post.getReactions() == null ? 0
-                : post.getReactions().stream().filter(r -> r.getComment() != null && !r.getComment().isBlank()).count();
+        long commentCount = post.getCommentCount();
 
         // Keep old flat fields for compatibility; add nested summaries if available
         var builder = ScoredPostDTO.builder().postId(post.getId())
@@ -266,7 +265,7 @@ public class TopPostsCacheServiceImpl implements TopPostsCacheService {
                 .eventTitle(post.getEvent() == null ? "" : post.getEvent().getTitle())
                 .authorName(post.getAuthor() == null ? "" : post.getAuthor().getName()).content(post.getContent())
                 .createdAt(post.getCreatedAt()).commentCount((int) commentCount)
-                .reactionCount(post.getReactions() == null ? 0 : post.getReactions().size()).affinityScore(affinity)
+                .reactionCount(post.getReactionCount()).affinityScore(affinity)
                 .recencyFactor(recency).totalScore(total);
 
         // If author/event summaries exist on DTO model, map them (non-breaking - fields

@@ -199,4 +199,15 @@ public class PostRankingServiceImpl implements PostRankingService {
     public void addOrUpdatePostRanking(String postId, double score) {
         redisTemplate.opsForZSet().add(rankingKey, postId, score);
     }
+
+    /**
+     * Remove a post from the ranking ZSET.
+     * Called when a post is deleted.
+     * 
+     * @param postId the post ID to remove
+     */
+    @Override
+    public void removePostRanking(String postId) {
+        redisTemplate.opsForZSet().remove(rankingKey, postId);
+    }
 }

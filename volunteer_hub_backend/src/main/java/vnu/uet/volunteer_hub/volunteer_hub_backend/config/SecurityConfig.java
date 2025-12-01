@@ -13,20 +13,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
-
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
-            OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-        this.oAuth2AuthenticationSuccessHandler = oAuth2AuthenticationSuccessHandler;
-    }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
@@ -54,11 +50,15 @@ public class SecurityConfig {
                                 "/api/events",
                                 "/api/posts/visible",
                                 "/api/posts/{postId}",
+                                "/api/posts",
+                                "/api/users/**",
                                 "/oauth2/**",
                                 "/login/oauth2/**")
                         .permitAll()
-                        // GET /api/posts - cho phép anonymous nhưng có thêm info nếu authenticated
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/posts").permitAll()
+                        // GET /api/posts - cho phép anonymous nhưng có thêm info nếu
+                        // authenticated
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/posts")
+                        .permitAll()
                         // Admin endpoints - yêu cầu role ADMIN
                         .requestMatchers("/api/admin/**").permitAll()
                         // .hasRole("ADMIN")

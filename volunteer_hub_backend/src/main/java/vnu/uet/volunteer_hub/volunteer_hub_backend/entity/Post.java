@@ -39,18 +39,18 @@ public class Post extends BaseEntity {
     @org.hibernate.annotations.Formula("(SELECT COUNT(*) FROM post_reactions r WHERE r.post_id = post_id)")
     private int reactionCount;
 
-    @org.hibernate.annotations.Formula("(SELECT COUNT(*) FROM post_reactions r WHERE r.post_id = post_id AND r.comment IS NOT NULL AND length(trim(r.comment)) > 0)")
+    @org.hibernate.annotations.Formula("(SELECT COUNT(*) FROM comments c WHERE c.post_id = post_id)")
     private int commentCount;
 
     @org.hibernate.annotations.Formula("(SELECT COUNT(*) FROM post_reactions r WHERE r.post_id = post_id AND r.created_at > current_timestamp - interval '30 days')")
     private int recentReactionCount;
 
-    @org.hibernate.annotations.Formula("(SELECT COUNT(*) FROM post_reactions r WHERE r.post_id = post_id AND r.created_at > current_timestamp - interval '30 days' AND r.comment IS NOT NULL AND length(trim(r.comment)) > 0)")
+    @org.hibernate.annotations.Formula("(SELECT COUNT(*) FROM comments c WHERE c.post_id = post_id AND c.created_at > current_timestamp - interval '30 days')")
     private int recentCommentCount;
 
     @org.hibernate.annotations.Formula("(SELECT COUNT(*) FROM post_reactions r WHERE r.post_id = post_id AND r.created_at > current_timestamp - interval '30 days' AND (r.reaction_type = 'LIKE' OR r.reaction_type = 'LOVE'))")
     private int recentLikeCount;
 
-    @org.hibernate.annotations.Formula("(SELECT COALESCE(AVG(CASE WHEN r.comment IS NOT NULL AND length(trim(r.comment)) > 0 THEN 10.0 WHEN r.reaction_type IN ('LIKE', 'LOVE') THEN 5.0 ELSE 8.0 END), 5.0) FROM post_reactions r WHERE r.post_id = post_id)")
+    @org.hibernate.annotations.Formula("(SELECT COALESCE(AVG(CASE WHEN r.reaction_type IN ('LIKE', 'LOVE') THEN 5.0 ELSE 8.0 END), 5.0) FROM post_reactions r WHERE r.post_id = post_id)")
     private double averageEdgeWeight;
 }

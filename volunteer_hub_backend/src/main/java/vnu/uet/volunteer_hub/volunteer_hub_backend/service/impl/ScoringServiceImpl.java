@@ -9,19 +9,24 @@ import org.springframework.stereotype.Service;
 
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Post;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.User;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.CommentRepository;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.PostReactionRepository;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.RegistrationRepository;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.ScoringService;
 
 @Service
 public class ScoringServiceImpl implements ScoringService {
+
     private final PostReactionRepository postReactionRepository;
     private final RegistrationRepository registrationRepository;
+    private final CommentRepository commentRepository;
 
     public ScoringServiceImpl(PostReactionRepository postReactionRepository,
-            RegistrationRepository registrationRepository) {
+            RegistrationRepository registrationRepository,
+            CommentRepository commentRepository) {
         this.postReactionRepository = postReactionRepository;
         this.registrationRepository = registrationRepository;
+        this.commentRepository = commentRepository;
     }
 
     /**
@@ -106,7 +111,7 @@ public class ScoringServiceImpl implements ScoringService {
         try {
             long recentReactions = postReactionRepository.countRecentReactionsByPostAndUser(post.getId(), viewerId,
                     LocalDateTime.now().minusDays(30));
-            long comments = postReactionRepository.countCommentsByPostAndUser(post.getId(), viewerId);
+            long comments = commentRepository.countByPostIdAndUserId(post.getId(), viewerId);
 
             double boost = (recentReactions * 10.0) + (comments * 20.0);
             if (post.getEvent() != null

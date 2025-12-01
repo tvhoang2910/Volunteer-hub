@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.redis.core.ZSetOperations.TypedTuple;
 
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.CreatePostRequest;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.UpdatePostRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.AuthorSummaryDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.EventSummaryDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.PostDetailResponse;
@@ -268,6 +269,100 @@ public class PostServiceImpl implements PostService {
         }
 
         return response;
+    }
+
+    /**
+     * Update a post by ID.
+     * 
+     * TODO (Future):
+     * - Add authorization check: verify requester is the author or admin
+     * - Add audit logging for tracking changes
+     * - Consider adding optimistic locking with @Version
+     */
+    @Override
+    public ScoredPostDTO updatePost(UUID postId, UpdatePostRequest request) {
+        // Find the post
+        Post post = postRepository.findByIdWithAuthorAndEvent(postId);
+        if (post == null) {
+            throw new RuntimeException("Post not found with id: " + postId);
+        }
+
+        // TODO (Future): Check authorization
+        // if (!post.getAuthor().getId().equals(requesterId) && !isAdmin(requesterId)) {
+        // throw new RuntimeException("Not authorized to update this post");
+        // }
+
+        // Update content
+        post.setContent(request.getContent());
+
+        // Save to database
+        Post updatedPost = postRepository.save(post);
+
+        // Update ranking score (content might affect score calculation)
+        postRankingService.addOrUpdatePostRanking(updatedPost.getId().toString(),
+                scoringService.computeTotalScore(updatedPost));
+
+        // Return DTO
+        return mapToDTO(updatedPost, null, Optional.empty());
+    }
+
+    /**
+     * Delete a post by ID.
+     * 
+     * TODO (Future):
+     * - Add authorization check: verify requester is the author or admin
+     * - Consider soft delete (add deletedAt field) instead of hard delete
+     * - Clean up reactions, comments in cascade or manually
+     * - Add audit logging
+     */
+    @Override
+    public void deletePost(UUID postId) {
+        // Check if post exists
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found with id: " + postId));
+
+        // TODO (Future): Check authorization
+        // if (!post.getAuthor().getId().equals(requesterId) && !isAdmin(requesterId)) {
+        // throw new RuntimeException("Not authorized to delete this post");
+        // }
+
+        // Remove from ranking (Redis ZSET)
+        try {
+            postRankingService.removePostRanking(postId.toString());
+        } catch (Exception e) {
+            // Log but don't fail if Redis cleanup fails
+            // TODO: Add proper logging
+        }
+
+        // Delete from database (reactions will be cascade deleted due to orphanRemoval)
+        postRepository.delete(post);
+    }
+
+    /**
+     * Get posts by a specific user.
+     * 
+     * TODO (Future):
+     * - Add visibility filtering: only return posts that viewer can see
+     * - Add sorting options (by date, by score)
+     * - Consider caching for frequently accessed user profiles
+     */
+    @Override
+    public Page<ScoredPostDTO> getPostsByUserId(UUID userId, int page, int size) {
+        // Check if user exists
+        boolean userExists = userRepository.existsById(userId);
+        if (!userExists) {
+            throw new RuntimeException("User not found with id: " + userId);
+        }
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Post> postsPage = postRepository.findByAuthorId(userId, pageable);
+
+        // Map to DTOs
+        List<ScoredPostDTO> dtos = postsPage.getContent().stream()
+                .map(p -> mapToDTO(p, null, Optional.empty()))
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(dtos, pageable, postsPage.getTotalElements());
     }
 
 }
