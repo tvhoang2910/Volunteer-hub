@@ -6,6 +6,12 @@ import EventCard from "@/components/ui/card-detail.jsx";
 import SlideUpDetail from "@/components/ui/slide-up.jsx";
 import SearchBar from "@/components/ui/search-bar";
 
+const parseDate = (value) => {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
 export default function EventShowcase() {
   const [featuredEvents, setFeaturedEvents] = useState([]);
   const [allEvents, setAllEvents] = useState([]);
@@ -101,20 +107,23 @@ export default function EventShowcase() {
   // Filter Events
   useEffect(() => {
     const filtered = allEvents.filter((event) => {
-      // Date range filter
       let dateMatch = true;
+
+      // Date range filter
       if (filters.startDate || filters.endDate) {
-        const eventDate = new Date(event.start_time);
-        if (filters.startDate && filters.endDate) {
-          const start = new Date(filters.startDate);
-          const end = new Date(filters.endDate);
-          dateMatch = eventDate >= start && eventDate <= end;
-        } else if (filters.startDate) {
-          const start = new Date(filters.startDate);
-          dateMatch = eventDate >= start;
-        } else if (filters.endDate) {
-          const end = new Date(filters.endDate);
-          dateMatch = eventDate <= end;
+        const eventDate = parseDate(event.start_time);
+        if (!eventDate) return false;
+
+        if (filters.startDate) {
+          const start = parseDate(filters.startDate);
+          start?.setHours(0, 0, 0, 0);
+          if (start && eventDate < start) return false;
+        }
+
+        if (filters.endDate) {
+          const end = parseDate(filters.endDate);
+          end?.setHours(23, 59, 59, 999);
+          if (end && eventDate > end) return false;
         }
       }
 

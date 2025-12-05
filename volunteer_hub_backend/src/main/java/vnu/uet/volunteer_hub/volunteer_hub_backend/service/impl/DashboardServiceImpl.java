@@ -117,6 +117,7 @@ public class DashboardServiceImpl implements DashboardService {
                 .location(event.getLocation())
                 .startTime(event.getStartTime())
                 .createdAt(event.getCreatedAt())
+                .registrationDeadline(event.getRegistrationDeadline())
                 .creatorName(event.getCreatedBy() == null ? "" : event.getCreatedBy().getName())
                 .registrationCount(registrationCount)
                 .postCount(postCount)

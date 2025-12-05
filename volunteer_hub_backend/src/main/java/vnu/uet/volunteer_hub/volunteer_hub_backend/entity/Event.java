@@ -49,6 +49,9 @@ public class Event extends BaseEntity {
     @Column(name = "end_time", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private LocalDateTime endTime;
 
+    @Column(name = "registration_deadline", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    private LocalDateTime registrationDeadline;
+
     @Column(name = "max_volunteers")
     private Integer maxVolunteers;
 

@@ -12,8 +12,15 @@ import {
     CardContent
 } from "@/components/ui/card"
 
-const formatDate = dateStr => {
-    const d = new Date(dateStr)
+const parseDate = (value) => {
+    if (!value) return null
+    const d = new Date(value)
+    return Number.isNaN(d.getTime()) ? null : d
+}
+
+const formatDate = (dateStr) => {
+    const d = parseDate(dateStr)
+    if (!d) return "N/A"
     return d.toLocaleDateString("vi-VN", {
         day: "2-digit",
         month: "2-digit",
@@ -27,22 +34,23 @@ const EventCard = ({ event, onRegister, onCancel, onClick }) => {
     )
 
     const now = new Date()
-    const isClosed = new Date(event?.registration_deadline) < now
+    const deadlineDate = parseDate(event?.registration_deadline) || parseDate(event?.registrationDeadline)
+    const isClosed = deadlineDate ? deadlineDate < now : false
 
     const handleRegister = (e) => {
-        e.stopPropagation() // Ngăn event lan lên card
+        e.stopPropagation() // Stop bubbling to card
         setApplied(true)
         onRegister && onRegister(event?.event_id)
     }
 
     const handleCancel = (e) => {
-        e.stopPropagation() // Ngăn event lan lên card
+        e.stopPropagation() // Stop bubbling to card
         setApplied(false)
         onCancel && onCancel(event?.event_id)
     }
 
     const handleCardClick = () => {
-        onClick && onClick(event?.event_id)
+        onClick && onClick(event)
     }
 
     return (
@@ -58,7 +66,7 @@ const EventCard = ({ event, onRegister, onCancel, onClick }) => {
                 }
             }}
         >
-            {/* Header hình ảnh */}
+            {/* Header image */}
             <div
                 className="h-48 bg-cover bg-center"
                 style={{ backgroundImage: `url(${event?.image || 'https://cdn.shadcnstudio.com/ss-assets/components/card/image-11.png'})` }}
@@ -90,7 +98,7 @@ const EventCard = ({ event, onRegister, onCancel, onClick }) => {
 
                     <div className="mt-2">
                         <Badge variant={isClosed ? "secondary" : "outline"}>
-                            Hạn đăng ký: {formatDate(event?.registration_deadline)}
+                            Hạn đăng ký: {formatDate(event?.registration_deadline || event?.registrationDeadline)}
                         </Badge>
                     </div>
                 </CardContent>
