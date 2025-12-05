@@ -32,7 +32,6 @@ function Home() {
       {/* Hero Section với gradient transition */}
       <div className="relative">
         <Hero />
-        {/* Gradient fade transition */}
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent via-white/80 to-white pointer-events-none"></div>
       </div>
 

@@ -16,7 +16,7 @@ const navItems = [
     },
     {
         name: 'Kênh trao đổi',
-        href: '/user/exchangeChannel/groups',
+        href: '/user/exchangeChannel',
         icon: MessageSquare
     },
     {
@@ -151,19 +151,16 @@ export default function Navbar() {
             </div>
 
             {/* Desktop Sidebar */}
-            <div className={`hidden lg:block h-screen bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-950 text-zinc-400 shadow-2xl border-r border-zinc-800/50 transition-all duration-300 ${
-                isCollapsed ? 'w-20' : 'w-64'
-            }`}>
-                <div className={`border-b border-zinc-800/50 backdrop-blur-sm transition-all duration-300 ${
-                    isCollapsed ? 'p-4' : 'p-6'
+            <div className={`hidden lg:block h-screen bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-950 text-zinc-400 shadow-2xl border-r border-zinc-800/50 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'
                 }`}>
+                <div className={`border-b border-zinc-800/50 backdrop-blur-sm transition-all duration-300 ${isCollapsed ? 'p-4' : 'p-6'
+                    }`}>
                     <div className="flex items-center gap-3 group">
                         <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg shadow-lg shadow-green-500/20 group-hover:shadow-green-500/40 transition-all duration-300 group-hover:scale-110 flex-shrink-0">
                             <Plane className="w-5 h-5 text-white" />
                         </div>
-                        <h1 className={`text-lg font-bold text-white tracking-tight transition-all duration-300 whitespace-nowrap ${
-                            isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
-                        }`}>
+                        <h1 className={`text-lg font-bold text-white tracking-tight transition-all duration-300 whitespace-nowrap ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
+                            }`}>
                             Volunteer Hub
                         </h1>
                     </div>
@@ -180,9 +177,8 @@ export default function Navbar() {
                         )}
                     </button>
                 </div>
-                <nav className={`space-y-1 transition-all duration-300 ${
-                    isCollapsed ? 'p-2' : 'p-4'
-                }`}>
+                <nav className={`space-y-1 transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-4'
+                    }`}>
                     {navItems.map((item) => {
                         const isActive = router.pathname === item.href
                         return (
@@ -192,8 +188,8 @@ export default function Navbar() {
                                 className={`
                                     group relative flex items-center rounded-xl text-sm font-medium
                                     transition-all duration-300 ease-out overflow-hidden
-                                    ${isCollapsed 
-                                        ? 'justify-center px-2 py-3' 
+                                    ${isCollapsed
+                                        ? 'justify-center px-2 py-3'
                                         : 'gap-3 px-4 py-3'
                                     }
                                     ${isActive
@@ -229,9 +225,8 @@ export default function Navbar() {
                                 </div>
 
                                 {/* Text */}
-                                <span className={`relative z-10 transition-all duration-300 whitespace-nowrap ${
-                                    isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
-                                }`}>
+                                <span className={`relative z-10 transition-all duration-300 whitespace-nowrap ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
+                                    }`}>
                                     {item.name}
                                 </span>
 

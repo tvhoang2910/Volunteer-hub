@@ -8,9 +8,6 @@ import PostContainer from "@/containers/PostContainer"
 export default function Temp() {
     return (
         <div className="w-full max-w-3xl mx-auto">
-
-
-
             <PostContainer />
             <CommentList comments={[]} />
         </div>
