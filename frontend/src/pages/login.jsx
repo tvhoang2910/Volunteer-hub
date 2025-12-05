@@ -28,7 +28,7 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
 
   const { formData, loading, errorMessage, handleInputChange, handleSubmit } =
-    useLogin(() => router.push("/"));
+    useLogin(() => router.push("/user/dashboard"));
 
   const handleGoogleSignIn = () => {
     if (!API_BASE_URL) {

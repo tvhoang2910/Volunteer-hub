@@ -8,6 +8,10 @@ Thumbs.db
 # Node / frontend
 /frontend/node_modules/
 /frontend/.next/
+/frontend/.vercel/
+/frontend/.turbo/
+/frontend/.eslintcache
+/frontend/coverage/
 /frontend/out/
 /frontend/build/
 
@@ -17,7 +21,7 @@ Thumbs.db
 
 # Backend build / JVM
 /volunteer_hub_backend/target/
-/volunteer_hub_backend/.mvn/
+volunteer_hub_backend/.mvn/wrapper/maven-wrapper.jar
 
 # Backend local config and secrets (do NOT commit your local credentials)
 volunteer_hub_backend/src/main/resources/application-dev.properties

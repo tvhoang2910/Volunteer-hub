@@ -62,7 +62,11 @@ export const useLogin = (onSuccess) => {
         return;
       }
 
-      const token = data?.data?.token || data?.token;
+      const token =
+        data?.data?.accessToken ||
+        data?.accessToken ||
+        data?.data?.token ||
+        data?.token;
       if (!token) {
         const message = serverMessage || "Không nhận được token từ server.";
         setErrorMessage(message);

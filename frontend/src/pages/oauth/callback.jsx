@@ -19,9 +19,9 @@ export default function OAuthCallback() {
       login(token);
       setStatus("Login successful. Redirecting...");
 
-      // Redirect to home after we persist the token
+      // Redirect to dashboard after we persist the token
       const timer = setTimeout(() => {
-        router.replace("/");
+        router.replace("/user/dashboard");
       }, 600);
 
       return () => clearTimeout(timer);

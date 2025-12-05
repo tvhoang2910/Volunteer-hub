@@ -6,11 +6,6 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.User;
 
 import java.util.UUID;
 
-import org.springframework.security.core.Authentication;
-
-import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.RegistrationRequest;
-import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.User;
-
 public interface UserService {
     void registerUser(RegistrationRequest registrationRequest);
 
@@ -31,6 +26,4 @@ public interface UserService {
     void unlockUserById(UUID id);
 
     UUID getViewerIdFromAuthentication(Authentication auth);
-
-    Optional<User> findByEmail(String email);
 }

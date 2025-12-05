@@ -1,6 +1,5 @@
 package vnu.uet.volunteer_hub.volunteer_hub_backend.service.impl;
 
-import java.util.Optional;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -125,11 +124,4 @@ public class UserServiceImpl implements UserService {
                 .orElse(null);
     }
 
-    @Override
-    public Optional<User> findByEmail(String email) {
-        if (email == null) {
-            return Optional.empty();
-        }
-        return userRepository.findByEmailIgnoreCase(email);
-    }
 }

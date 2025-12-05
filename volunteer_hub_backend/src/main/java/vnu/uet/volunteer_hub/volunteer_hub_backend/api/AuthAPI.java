@@ -1,6 +1,5 @@
 package vnu.uet.volunteer_hub.volunteer_hub_backend.api;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -13,7 +12,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,17 +24,16 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import vnu.uet.volunteer_hub.volunteer_hub_backend.config.JwtTokenProvider;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.ForgotPasswordRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.LoginRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.RegistrationRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.ResetPasswordRequest;
-import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.LoginRequest;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.ValidateResetTokenRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.LoginResponse;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.ResponseDTO;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.PasswordResetToken;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.User;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.model.utils.JwtUtil;
-import vnu.uet.volunteer_hub.volunteer_hub_backend.model.utils.TokenUtil;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.EmailService;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.PasswordResetTokenService;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.RateLimitService;
@@ -64,11 +61,11 @@ public class AuthAPI {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
 
-    @Value("${jwt.expiration-ms}")
+    @Value("${security.jwt.expiration-ms}")
     private long jwtExpirationMs;
 
     public AuthAPI(UserService userService, EmailService emailService,
-            RecoveryCodeService recoveryCodeService, RateLimitService rateLimitService,
+            PasswordResetTokenService passwordResetTokenService, RateLimitService rateLimitService,
             AuthenticationManager authenticationManager, JwtUtil jwtUtil) {
         this.userService = userService;
         this.emailService = emailService;
@@ -161,7 +158,7 @@ public class AuthAPI {
 
         } catch (Exception e) {
             logger.warn("❌ Login failed for email: {}", request.getEmail());
-            ResponseDTO<Void> errorResponse1 = ResponseDTO.<Void>builder()
+            ResponseDTO<Void> err = ResponseDTO.<Void>builder()
                     .message("Invalid email or password")
                     .build();
             return ResponseEntity.status(401).body(err);
@@ -202,11 +199,12 @@ public class AuthAPI {
         }
 
         try {
-            userService.findByEmail(email).ifPresent(user -> {
+            User user = userService.findByEmail(email);
+            if (user != null) {
                 String rawToken = passwordResetTokenService.createTokenForUser(user);
                 emailService.sendPasswordResetEmail(user.getEmail(), rawToken,
                         passwordResetTokenService.getTtlMinutes());
-            });
+            }
 
             return ResponseEntity.ok(ResponseDTO.<Void>builder()
                     .message(genericMessage)

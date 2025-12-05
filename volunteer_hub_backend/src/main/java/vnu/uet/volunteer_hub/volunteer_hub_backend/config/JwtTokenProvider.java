@@ -1,8 +1,9 @@
 package vnu.uet.volunteer_hub.volunteer_hub_backend.config;
 
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.util.Date;
+
+import javax.crypto.SecretKey;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +15,6 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
 
@@ -32,30 +32,43 @@ public class JwtTokenProvider {
     @Value("${security.jwt.expiration-ms:86400000}") // default 1 day
     private long jwtExpirationMs;
 
+    /**
+     * Generate JWT token for a user
+     */
     public String generateToken(UserDetails userDetails) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
 
         return Jwts.builder()
-                .setSubject(userDetails.getUsername())
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(signingKey(), SignatureAlgorithm.HS256)
+                .subject(userDetails.getUsername())
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(signingKey())
                 .compact();
     }
 
+    /**
+     * Extract username from JWT token
+     */
     public String getUsernameFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(signingKey())
+        Claims claims = Jwts.parser()
+                .verifyWith(signingKey())
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
+
         return claims.getSubject();
     }
 
+    /**
+     * Validate a JWT token
+     */
     public boolean validateToken(String authToken) {
         try {
-            Jwts.parserBuilder().setSigningKey(signingKey()).build().parseClaimsJws(authToken);
+            Jwts.parser()
+                    .verifyWith(signingKey())
+                    .build()
+                    .parseSignedClaims(authToken);
             return true;
         } catch (ExpiredJwtException e) {
             log.warn("JWT token expired: {}", e.getMessage());
@@ -64,15 +77,17 @@ public class JwtTokenProvider {
         } catch (MalformedJwtException e) {
             log.warn("JWT token malformed: {}", e.getMessage());
         } catch (IllegalArgumentException e) {
-            log.warn("JWT token empty or null");
+            log.warn("JWT token is empty or null");
         } catch (Exception e) {
             log.warn("Invalid JWT token: {}", e.getMessage());
         }
         return false;
     }
 
-    private Key signingKey() {
-        // HS256 expects at least 256-bit (32-byte) secret
+    /**
+     * Create signing key from secret
+     */
+    private SecretKey signingKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 }
