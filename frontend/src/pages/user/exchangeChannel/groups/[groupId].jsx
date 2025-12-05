@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { Post } from "@/components/ui/exchangeChannel/Post";
+import Post from "@/components/post/Post";
 
 export default function GroupDetail() {
   const router = useRouter();
@@ -54,7 +54,16 @@ export default function GroupDetail() {
           {group ? group.desc : `Thảo luận về sự kiện với ID: ${groupId}`}
         </p>
         {/* Thêm Post component */}
-        <Post {...mockPost} />
+        <Post post={{
+          id: mockPost.id,
+          user: { id: 1, name: "User1", avatar: "https://i.pravatar.cc/150?u=1" },
+          content: mockPost.content,
+          media: [],
+          likes: 0,
+          comments: mockPost.comments.length,
+          isLiked: false,
+          createdAt: new Date().toISOString()
+        }} />
       </div>
     </div>
   );

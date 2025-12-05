@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { useRouter } from "next/router";
 import { get } from "rc-util";
-import { ContainerResponsive } from "@/components/ui/exchangeChannel/groupCard";
+import { get } from "rc-util";
 
 export default async function GroupDetail() {
   const router = useRouter();

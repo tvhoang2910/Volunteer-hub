@@ -1,20 +1,29 @@
-import React from "react"
-import CreatePostBox from "@/components/ui/exchangeChannel/CreatePostBox.jsx"
-import TextInputComment from "@/components/ui/exchangeChannel/textInput.jsx"
-import PostContainer from "@/components/ui/exchangeChannel/PostCotainer.jsx"
-import Emote from "@/components/ui/exchangeChannel/emote.jsx"
-import CreatePostForm from "@/components/ui/exchangeChannel/createPostBar.jsx"
-import Comment from "@/components/ui/exchangeChannel/commentBox.jsx"
+import React from 'react'
+import Comment from "@/components/comments/Comment"
+import { PostProvider } from "@/context/PostContext"
+import CommentList from "@/components/comments/CommentList"
+import CreatePostInput from "@/components/post/CreatePostInput"
+import PostSkeleton from "@/components/post/PostSkeleton"
+import PostContainer from "@/containers/PostContainer"
+
 export default function Temp() {
     return (
         <div className="w-full max-w-3xl mx-auto">
-            <CreatePostBox />
-            {/* <CreatePostForm /> */}
-            {/* <TextInputComment /> */}
-            {/* <Emote /> */}
-            <Comment />
+            <CreatePostInput />
+
+            <PostProvider post={{ id: "temp-post" }} comments={[]}>
+                <Comment
+                    id="temp-comment"
+                    message="This is powerful  "
+                    user={{ name: "Test User", id: "user-1" }}
+                    createdAt={new Date().toISOString()}
+                    likeCount={0}
+                    likedByMe={false}
+                />
+            </PostProvider>
+
             <PostContainer />
+            <CommentList comments={[]} />
         </div>
     )
 }
-

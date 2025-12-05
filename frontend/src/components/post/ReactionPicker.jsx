@@ -9,7 +9,7 @@ const reactions = [
     { name: "Angry", emoji: "😡", color: "text-red-600" },
 ];
 
-const Emote = ({ onSelect }) => {
+const ReactionPicker = ({ onSelect }) => {
     return (
         <div className="relative flex justify-center">
             {/* Bao quanh */}
@@ -38,4 +38,4 @@ const Emote = ({ onSelect }) => {
     );
 };
 
-export default Emote;
+export default ReactionPicker;

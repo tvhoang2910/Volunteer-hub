@@ -4,7 +4,7 @@ import axios from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-export function useUser() {
+export default function useUser() {
     const { isAuthenticated } = useAuth();
     const [user, setUser] = useState(null);
 

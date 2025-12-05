@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+
 export const useComments = () => {
     const [comments, setComments] = useState([]);
 
