@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
 import BasicPagination from "@/components/ui/pagination.jsx";
@@ -23,20 +23,62 @@ export default function EventShowcase() {
   const [error, setError] = useState(null);
 
   const eventsPerPage = 9;
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+
+  const normalizeEvent = useCallback((event = {}) => ({
+    event_id: event.event_id || event.eventId || event.id,
+    title: event.title || "Sự kiện",
+    description: event.description || "",
+    location: event.location || "Chưa cập nhật",
+    start_time: event.start_time || event.startTime || event.createdAt || "",
+    end_time: event.end_time || event.endTime || event.start_time || event.startTime || "",
+    registration_deadline: event.registration_deadline
+      || event.registrationDeadline
+      || event.end_time
+      || event.endTime
+      || event.start_time
+      || event.startTime
+      || "",
+    current_volunteers: event.current_volunteers
+      ?? event.currentVolunteers
+      ?? event.registrationCount
+      ?? 0,
+    max_volunteers: event.max_volunteers
+      ?? event.maxVolunteers
+      ?? event.capacity
+      ?? 0,
+    category: event.category || "Khác",
+    image: event.image || event.thumbnailUrl || ""
+  }), []);
 
   // Add state for slide-up visibility and event details
   const [isSlideUpOpen, setIsSlideUpOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
 
+  const fetchFeaturedEvents = useCallback(async () => {
+    if (!baseUrl) return;
 
-  // Fetch All Events with Pagination
-  const getAllEvents = async (page = 1) => {
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events?page=${page}&limit=${eventsPerPage}`;
-    setIsLoading(true);
+    try {
+      const response = await fetch(`${baseUrl}/api/dashboard`);
+      if (!response.ok) {
+        throw new Error("Không tải được sự kiện nổi bật");
+      }
+
+      const payload = await response.json();
+      const trending = payload?.data?.trendingEvents || payload?.trendingEvents || [];
+      setFeaturedEvents(trending.map(normalizeEvent));
+    } catch (err) {
+      console.error("Lỗi tải sự kiện nổi bật:", err);
+    }
+  }, [baseUrl, normalizeEvent]);
+
+  // Fetch All Events
+  const getAllEvents = useCallback(async () => {
+    if (!baseUrl) return;
     setError(null);
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await fetch(`${baseUrl}/api/admin/events`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -47,16 +89,14 @@ export default function EventShowcase() {
         throw new Error("Lỗi khi tải danh sách sự kiện");
       }
 
-      const data = await response.json();
-      setAllEvents(data.events || data.data || []);
-      setTotalPages(data.totalPages || Math.ceil((data.total || 0) / eventsPerPage));
-    } catch (error) {
-      console.error("Lỗi tải danh sách sự kiện:", error);
-      setError(error.message);
-    } finally {
-      setIsLoading(false);
+      const payload = await response.json();
+      const events = payload?.data || payload?.events || [];
+      setAllEvents(events.map(normalizeEvent));
+    } catch (err) {
+      console.error("Lỗi tải danh sách sự kiện:", err);
+      setError(err.message);
     }
-  };
+  }, [baseUrl, normalizeEvent]);
 
   // Filter Events
   useEffect(() => {
@@ -94,41 +134,22 @@ export default function EventShowcase() {
       return dateMatch && categoryMatch && locationMatch && searchMatch;
     });
     setFilteredEvents(filtered);
+    setTotalPages(Math.max(1, Math.ceil(filtered.length / eventsPerPage)));
+    setCurrentPage(1);
   }, [allEvents, filters]);
 
-  // Test hiển thị sự kiện khi không có API 
   useEffect(() => {
-    // MOCK 10 sự kiện để test UI
-    const mockEvents = [
-      { event_id: '1', title: 'Workshop React', start_time: '2025-10-21', category: 'Workshop', location: 'Hà Nội', description: 'Học React cơ bản', registered: false },
-      { event_id: '2', title: 'Webinar AI', start_time: '2025-10-22', category: 'Webinar', location: 'Online', description: 'Cập nhật AI mới', registered: true },
-      { event_id: '3', title: 'Tech Talk Cloud', start_time: '2025-10-23', category: 'Tech Talk', location: 'TP.HCM', description: 'Xu hướng Cloud', registered: false },
-      { event_id: '4', title: 'Meetup Dev', start_time: '2025-10-29', category: 'Meetup', location: 'Đà Nẵng', description: 'Giao lưu Dev', registered: false },
-      { event_id: '5', title: 'Workshop Next.js', start_time: '2025-11-01', category: 'Workshop', location: 'Hà Nội', description: 'Nâng cao với Next.js', registered: true },
-      { event_id: '6', title: 'Webinar DevOps', start_time: '2025-10-25', category: 'Webinar', location: 'Online', description: 'DevOps cho dự án lớn', registered: false },
-      { event_id: '7', title: 'Tech Talk GraphQL', start_time: '2025-10-21', category: 'Tech Talk', location: 'TP.HCM', description: 'API hiện đại', registered: false },
-      { event_id: '8', title: 'Meetup Tester', start_time: '2025-10-24', category: 'Meetup', location: 'Hà Nội', description: 'Cộng đồng tester', registered: false },
-      { event_id: '9', title: 'Workshop UI/UX', start_time: '2025-10-28', category: 'Workshop', location: 'Đà Nẵng', description: 'Thiết kế trải nghiệm', registered: true },
-      { event_id: '10', title: 'Tech Talk Mobile', start_time: '2025-10-30', category: 'Tech Talk', location: 'TP.HCM', description: 'Phát triển app di động', registered: false },
-      { event_id: '11', title: 'Workshop React', start_time: '2025-10-21', category: 'Workshop', location: 'Hà Nội', description: 'Học React cơ bản', registered: false },
-      { event_id: '12', title: 'Webinar AI', start_time: '2025-10-22', category: 'Webinar', location: 'Online', description: 'Cập nhật AI mới', registered: true },
-      { event_id: '13', title: 'Tech Talk Cloud', start_time: '2025-10-23', category: 'Tech Talk', location: 'TP.HCM', description: 'Xu hướng Cloud', registered: false },
-      { event_id: '14', title: 'Meetup Dev', start_time: '2025-10-29', category: 'Meetup', location: 'Đà Nẵng', description: 'Giao lưu Dev', registered: false },
-      { event_id: '15', title: 'Workshop Next.js', start_time: '2025-11-01', category: 'Workshop', location: 'Hà Nội', description: 'Nâng cao với Next.js', registered: true },
-      { event_id: '16', title: 'Webinar DevOps', start_time: '2025-10-25', category: 'Webinar', location: 'Online', description: 'DevOps cho dự án lớn', registered: false },
-      { event_id: '17', title: 'Tech Talk GraphQL', start_time: '2025-10-21', category: 'Tech Talk', location: 'TP.HCM', description: 'API hiện đại', registered: false },
-      { event_id: '18', title: 'Meetup Tester', start_time: '2025-10-24', category: 'Meetup', location: 'Hà Nội', description: 'Cộng đồng tester', registered: false },
-      { event_id: '19', title: 'Workshop UI/UX', start_time: '2025-10-28', category: 'Workshop', location: 'Đà Nẵng', description: 'Thiết kế trải nghiệm', registered: true },
-      { event_id: '20', title: 'Tech Talk Mobile', start_time: '2025-10-30', category: 'Tech Talk', location: 'TP.HCM', description: 'Phát triển app di động', registered: false }
-    ];
-    setFeaturedEvents(mockEvents);
-    setAllEvents(mockEvents);
-  }, []);
+    const load = async () => {
+      setIsLoading(true);
+      await Promise.all([getAllEvents(), fetchFeaturedEvents()]);
+      setIsLoading(false);
+    };
+    load();
+  }, [fetchFeaturedEvents, getAllEvents]);
 
   // Handle Page Change
   const handlePageChange = (page) => {
     setCurrentPage(page);
-    getAllEvents(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -149,7 +170,7 @@ export default function EventShowcase() {
         throw new Error("Lỗi khi đăng ký sự kiện");
       }
 
-      getAllEvents(currentPage);
+      getAllEvents();
     } catch (error) {
       console.error("Lỗi đăng ký:", error);
     }
@@ -172,34 +193,16 @@ export default function EventShowcase() {
         throw new Error("Lỗi khi hủy đăng ký");
       }
 
-      getAllEvents(currentPage);
+      getAllEvents();
     } catch (error) {
       console.error("Lỗi hủy đăng ký:", error);
     }
   };
 
   // Function to handle event card click
-  const handleEventClick = async (eventId) => {
-    console.log("Clicked event ID:", eventId);
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch event details");
-      }
-      const eventDetails = await response.json();
-      setSelectedEvent(eventDetails);
-    } catch (error) {
-      console.error("Error fetching event details:", error);
-      setSelectedEvent({
-        title: "Error",
-        description: "Unable to fetch event details. Please try again later.",
-        location: "N/A",
-        start_time: "N/A",
-        category: "N/A",
-      });
-    } finally {
-      setIsSlideUpOpen(true);
-    }
+  const handleEventClick = (event) => {
+    setSelectedEvent(event);
+    setIsSlideUpOpen(true);
   };
 
   // Function to close the slide-up
@@ -207,6 +210,11 @@ export default function EventShowcase() {
     setIsSlideUpOpen(false);
     setSelectedEvent(null);
   };
+
+  const paginatedEvents = filteredEvents.slice(
+    (currentPage - 1) * eventsPerPage,
+    currentPage * eventsPerPage
+  );
 
   return (
     <div className="container mx-auto pt-10 pl-64 space-y-6">
@@ -227,17 +235,17 @@ export default function EventShowcase() {
                     event={event}
                     onRegister={handleRegister}
                     onCancel={handleCancelRegistration}
-                    onClick={() => handleEventClick(event.event_id)} // Add onClick handler
+                    onClick={() => handleEventClick(event)}
                   />
                 </div>
               ))
             ) : (
-              <p className="text-muted-foreground">Không có sự kiện nổi bật</p>
+              <p className="text-muted-foreground">Chưa có sự kiện nổi bật</p>
             )}
           </motion.div>
         </section>
         <section className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">Sự kiện nhiều tương tác 🔥</h2>
+          <h2 className="text-2xl font-bold mb-4">Sự kiện tương tác nhiều</h2>
           <motion.div
             className="flex space-x-4 overflow-x-auto pb-4"
             initial={{ opacity: 0 }}
@@ -251,12 +259,12 @@ export default function EventShowcase() {
                     event={event}
                     onRegister={handleRegister}
                     onCancel={handleCancelRegistration}
-                    onClick={() => handleEventClick(event.event_id)} // Add onClick handler
+                    onClick={() => handleEventClick(event)}
                   />
                 </div>
               ))
             ) : (
-              <p className="text-muted-foreground">Không có sự kiện nhiều tương tác</p>
+              <p className="text-muted-foreground">Chưa có sự kiện tương tác</p>
             )}
           </motion.div>
         </section>
@@ -306,8 +314,7 @@ export default function EventShowcase() {
                   <SelectItem value="Cộng đồng">Cộng đồng</SelectItem>
                   <SelectItem value="Y tế">Y tế</SelectItem>
                   <SelectItem value="Văn hóa">Văn hóa</SelectItem>
-                  <SelectItem value="Cộng đồng và xã hội">Cộng đồng và xã hội</SelectItem>
-                  <SelectItem value="Công nghệ và truyền thông xã hội">Công nghệ và truyền thông xã hội</SelectItem>
+                  <SelectItem value="Công nghệ">Công nghệ</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -355,13 +362,13 @@ export default function EventShowcase() {
             </div>
           ) : filteredEvents.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredEvents.map((event) => (
+              {paginatedEvents.map((event) => (
                 <EventCard
                   key={event.event_id}
                   event={event}
                   onRegister={handleRegister}
                   onCancel={handleCancelRegistration}
-                  onClick={() => handleEventClick(event.event_id)} // Add onClick handler
+                  onClick={() => handleEventClick(event)}
                 />
               ))}
             </div>

@@ -1,55 +1,69 @@
-import { Card } from "@/components/ui/card";
-import { useRouter } from "next/router";
-import { get } from "rc-util";
-import { get } from "rc-util";
+"use client";
 
-export default async function GroupDetail() {
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import { Card } from "@/components/ui/card";
+import { CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import get from "lodash.get"; // thay rc-util cho an toàn
+
+export default function GroupDetail() {
   const router = useRouter();
   const { groupId } = router.query;
 
+  const [group, setGroup] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // API lấy danh sách group
   const getAllGroup = async () => {
-    const getAllGroupApi = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/exchange-channel/groups`;
+    const api = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/exchange-channel/groups`;
 
     try {
-      const response = await fetch(getAllGroupApi);
-      if (!response.ok) throw new Error("Failed to fetch");
-      const data = await response.json();
+      const res = await fetch(api);
+      if (!res.ok) throw new Error("Failed to fetch groups");
+      const data = await res.json();
       return data;
     } catch (error) {
-      console.error(error);
+      console.error("API error:", error);
       return [];
     }
   };
-  const groups = await getAllGroup();
+
+  useEffect(() => {
+    if (!groupId) return;
+
+    const load = async () => {
+      const groups = await getAllGroup();
+      const found = groups.find((g) => g.id == groupId);
+
+      setGroup(found || null);
+      setLoading(false);
+    };
+
+    load();
+  }, [groupId]);
+
+  if (loading) return <div>Loading...</div>;
+
   if (!group) {
-    return (
-      <div class="">Group not found</div>
-    );
+    return <div>Group not found</div>;
   }
 
   return (
-    <div>
-      <div>
-        {groups.map((group) => (
-          <div key={group.id}>
-            <Card>
-              <CardHeader>
-                <CardTitle>{get(group, "attributes.name", "No Name")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>
-                  {get(group, "attributes.description", "No Description")}
-                </CardDescription>
-              </CardContent>
-              <CardFooter>
-                <Button variant="contained" color="primary">
-                  View Details
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
-        ))}
-      </div>
-    </div>
+    <Card className="p-4">
+      <CardHeader>
+        <CardTitle>{get(group, "attributes.name", "No Name")}</CardTitle>
+      </CardHeader>
+
+      <CardContent>
+        <CardDescription>
+          {get(group, "attributes.description", "No Description")}
+        </CardDescription>
+      </CardContent>
+
+      <CardFooter>
+        <Button>View Details</Button>
+      </CardFooter>
+    </Card>
   );
 }
