@@ -16,13 +16,31 @@ export default function ManagerEventApprovals() {
     }
   }, [event]);
 
-  const handleApprove = (vol) => {
-    setPending((prev) => prev.filter((item) => item.id !== vol.id));
-    setApproved((prev) => [vol, ...prev]);
+  const handleApprove = async (vol) => {
+    try {
+      await eventService.approveRegistration(eventId, vol.id, "mock-token");
+      // Update UI
+      setPending((prev) => prev.filter((item) => item.id !== vol.id));
+      setApproved((prev) => [vol, ...prev]);
+
+      // Mock Realtime Notification
+      console.log(`[Web Push] Notification sent to ${vol.name}: Your registration has been approved!`);
+      alert(`Đã duyệt ${vol.name} thành công!`);
+    } catch (error) {
+      console.error("Approval failed", error);
+      alert("Có lỗi xảy ra khi duyệt.");
+    }
   };
 
-  const handleReject = (volId) => {
-    setPending((prev) => prev.filter((item) => item.id !== volId));
+  const handleReject = async (volId) => {
+    try {
+      await eventService.rejectRegistration(eventId, volId, "mock-token");
+      setPending((prev) => prev.filter((item) => item.id !== volId));
+      alert("Đã từ chối tình nguyện viên.");
+    } catch (error) {
+      console.error("Rejection failed", error);
+      alert("Lỗi khi từ chối.");
+    }
   };
 
   if (!isReady) return null;

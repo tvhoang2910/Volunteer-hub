@@ -101,6 +101,50 @@ export default function ManagerEventReports() {
             </div>
           </div>
         </div>
+        {/* Volunteer List Table */}
+        <div className="border border-gray-100 rounded-2xl overflow-hidden bg-white shadow-sm">
+          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+            <h3 className="font-semibold text-gray-900">Danh sách tình nguyện viên tham gia</h3>
+            <span className="text-sm text-gray-500">Tổng: {event.volunteers.length}</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-gray-50 text-gray-700 font-medium">
+                <tr>
+                  <th className="px-6 py-3">Họ và tên</th>
+                  <th className="px-6 py-3">Vai trò</th>
+                  <th className="px-6 py-3 text-center">Giờ đóng góp</th>
+                  <th className="px-6 py-3 text-center">Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {event.volunteers.map((vol) => (
+                  <tr key={vol.id} className="hover:bg-gray-50 transition">
+                    <td className="px-6 py-4 font-medium text-gray-900">{vol.name}</td>
+                    <td className="px-6 py-4 text-gray-600">{vol.role || "Tình nguyện viên"}</td>
+                    <td className="px-6 py-4 text-center text-gray-600">{vol.hours || 0}h</td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${vol.status === 'completed' ? 'bg-emerald-100 text-emerald-800' :
+                          vol.status === 'absent' ? 'bg-red-100 text-red-800' :
+                            vol.status === 'incomplete' ? 'bg-amber-100 text-amber-800' :
+                              'bg-gray-100 text-gray-800'
+                        }`}>
+                        {vol.status === 'completed' ? 'Hoàn thành' :
+                          vol.status === 'absent' ? 'Vắng mặt' :
+                            vol.status === 'incomplete' ? 'Chưa hoàn thành' : 'Đang tham gia'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {(!event.volunteers || event.volunteers.length === 0) && (
+                  <tr>
+                    <td colSpan="4" className="px-6 py-8 text-center text-gray-500 italic">Chưa có dữ liệu tình nguyện viên</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </EventDetailLayout>
   );

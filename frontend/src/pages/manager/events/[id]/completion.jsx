@@ -37,10 +37,20 @@ export default function ManagerEventCompletion() {
     setEvaluations((prev) => ({ ...prev, [volId]: value }));
   };
 
-  const handleSave = () => {
-    setSavedAt(new Date().toLocaleTimeString("vi-VN"));
-    // Gắn logic API lưu thật tại đây nếu cần
-    console.log("Đã lưu đánh giá:", evaluations, notes);
+  const handleSave = async () => {
+    try {
+      const updates = Object.entries(evaluations).map(([volId, status]) =>
+        eventService.updateVolunteerStatus(eventId, volId, status, "mock-token")
+      );
+      await Promise.all(updates);
+
+      setSavedAt(new Date().toLocaleTimeString("vi-VN"));
+      console.log("Đã lưu đánh giá:", evaluations, notes);
+      alert("Lưu đánh giá thành công!");
+    } catch (error) {
+      console.error("Save failed", error);
+      alert("Lỗi khi lưu đánh giá");
+    }
   };
 
   if (!isReady) return null;
@@ -101,22 +111,20 @@ export default function ManagerEventCompletion() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleEvaluate(vol.id, "completed")}
-                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition ${
-                        status === "completed"
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition ${status === "completed"
                           ? "bg-emerald-600 border-emerald-600 text-white"
                           : "border-gray-200 text-gray-600 hover:border-emerald-300"
-                      }`}
+                        }`}
                     >
                       <CheckCircle2 className="w-4 h-4" />
                       Hoàn thành
                     </button>
                     <button
                       onClick={() => handleEvaluate(vol.id, "pending")}
-                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition ${
-                        status === "pending"
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition ${status === "pending"
                           ? "bg-amber-100 border-amber-200 text-amber-700"
                           : "border-gray-200 text-gray-600 hover:border-amber-300"
-                      }`}
+                        }`}
                     >
                       Không hoàn thành
                     </button>

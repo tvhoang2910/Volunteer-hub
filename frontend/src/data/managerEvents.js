@@ -3,6 +3,7 @@ export const managerEventSections = [
   { key: "volunteers", label: "Danh sách tình nguyện viên", href: "/volunteers" },
   { key: "approvals", label: "Xác nhận đăng ký", href: "/approvals" },
   { key: "completion", label: "Đánh giá hoàn thành", href: "/completion" },
+  { key: "exchange", label: "Kênh trao đổi", href: "/exchange" },
   { key: "reports", label: "Báo cáo & thống kê", href: "/reports" },
 ];
 

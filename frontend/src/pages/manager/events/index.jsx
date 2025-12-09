@@ -1,10 +1,10 @@
+// Removed unused imports and state
 import React, { useState } from "react";
 import { useRouter } from "next/router";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
 import ManagerEventCard from "@/components/manager/ManagerEventCard";
-import CreateEventModal from "@/components/manager/CreateEventModal";
 import Tabs from "@/components/common/Tabs";
 import SimpleAlert from "@/components/ui/SimpleAlert";
 import { useManagerEvents } from "@/hooks/useManagerEvents";
@@ -22,48 +22,31 @@ export default function EventsIndexPage() {
     loading,
     alert,
     handleDelete,
-    handleSaveEvent,
     closeAlert,
   } = useManagerEvents();
 
-  const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState("managed");
-  const [editingContext, setEditingContext] = useState(null);
 
   const displayedEvents =
     activeTab === "managed" ? managedEvents : pendingEvents;
 
-  const editingEvent =
-    editingContext && editingContext.tab === "managed"
-      ? managedEvents[editingContext.index]
-      : editingContext
-        ? pendingEvents[editingContext.index]
-        : null;
-
   const onEdit = (tab, index) => {
-    setEditingContext({ tab, index });
-    setShowModal(true);
-  };
-
-  const onSave = (newEvent) => {
-    handleSaveEvent(newEvent, editingContext);
-    if (editingContext) {
-      setActiveTab(editingContext.tab);
-    } else {
-      setActiveTab("pending");
-    }
-    setShowModal(false);
-    setEditingContext(null);
+    // Navigate to edit page
+    const event = displayedEvents[index];
+    const id = event.event_id || event.id || index; // Fallback
+    router.push(`/manager/events/${id}/edit`);
   };
 
   const buildActions = (tab, index) => {
+    const event = displayedEvents[index];
+    const id = event.event_id || event.id || index;
     if (tab === "managed") {
       return [
         {
           label: "Thêm thông tin",
           icon: Plus,
           className: "text-[#2F80ED]",
-          onClick: () => router.push(`/manager/events/${index}`),
+          onClick: () => router.push(`/manager/events/${id}`),
         },
         {
           label: "Sửa",
@@ -93,6 +76,12 @@ export default function EventsIndexPage() {
         className: "text-[#EB5757]",
         onClick: () => handleDelete("pending", index),
       },
+      {
+        label: "Xem chi tiet",
+        icon: Plus,
+        className: "text-[#2F80ED]",
+        onClick: () => router.push(`/manager/events/${id}`),
+      }
     ];
   };
 
@@ -110,10 +99,7 @@ export default function EventsIndexPage() {
             {/* Nút tạo dự án */}
             <div className="flex justify-start mb-10 pl-96">
               <button
-                onClick={() => {
-                  setEditingContext(null);
-                  setShowModal(true);
-                }}
+                onClick={() => router.push('/manager/events/create')}
                 className="bg-white hover:bg-gray-50 shadow-md px-8 py-6 rounded-lg border flex flex-col items-center justify-center transition"
               >
                 <div className="text-5xl font-bold text-gray-700">+</div>
@@ -170,18 +156,6 @@ export default function EventsIndexPage() {
           </div>
         </div>
       </div>
-
-      {/* Modal tạo / sửa */}
-      {showModal && (
-        <CreateEventModal
-          onClose={() => {
-            setShowModal(false);
-            setEditingContext(null);
-          }}
-          onSave={onSave}
-          initialData={editingEvent}
-        />
-      )}
 
       {/* Thông báo */}
       {alert && (
