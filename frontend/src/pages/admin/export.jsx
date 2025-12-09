@@ -144,131 +144,130 @@ const ExportPanel = () => {
     };
 
     return (
-        <AdminLayout>
-            <div className="p-6 space-y-8 bg-gray-50/50 min-h-screen">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Xuất dữ liệu hệ thống</h1>
-                    <p className="text-gray-500">Tải xuống báo cáo sự kiện và thông tin người dùng</p>
-                </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Event Export Card */}
-                    <Card>
-                        <CardHeader>
-                            <div className="p-2 w-fit rounded-lg bg-blue-100 mb-2">
-                                <FileDown className="h-6 w-6 text-blue-600" />
-                            </div>
-                            <CardTitle>Export Danh sách sự kiện</CardTitle>
-                            <CardDescription>Xuất dữ liệu các chiến dịch và hoạt động tình nguyện.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Từ ngày</Label>
-                                    <Input type="date" value={eventDateStart} onChange={e => setEventDateStart(e.target.value)} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Đến ngày</Label>
-                                    <Input type="date" value={eventDateEnd} onChange={e => setEventDateEnd(e.target.value)} />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Trạng thái duyệt</Label>
-                                <select
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    value={eventStatus}
-                                    onChange={(e) => setEventStatus(e.target.value)}
-                                >
-                                    <option value="ALL">Tất cả</option>
-                                    <option value="PENDING">Chờ duyệt</option>
-                                    <option value="APPROVED">Đã duyệt</option>
-                                    <option value="REJECTED">Đã từ chối</option>
-                                </select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Định dạng</Label>
-                                <RadioGroup defaultValue="csv" value={eventFormat} onValueChange={setEventFormat} className="flex gap-4">
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="csv" id="evt-csv" />
-                                        <Label htmlFor="evt-csv">CSV</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="json" id="evt-json" />
-                                        <Label htmlFor="evt-json">JSON</Label>
-                                    </div>
-                                </RadioGroup>
-                            </div>
-                        </CardContent>
-                        <CardFooter className="flex justify-between bg-gray-50/50 p-4">
-                            <Button variant="outline" onClick={handleEmailDemo} className="gap-2">
-                                <Mail className="h-4 w-4" /> Gửi qua Email
-                            </Button>
-                            <Button onClick={handleExportEvents} className="bg-blue-600 hover:bg-blue-700">
-                                <FileDown className="h-4 w-4 mr-2" /> Tải xuống
-                            </Button>
-                        </CardFooter>
-                    </Card>
-
-                    {/* User Export Card */}
-                    <Card>
-                        <CardHeader>
-                            <div className="p-2 w-fit rounded-lg bg-green-100 mb-2">
-                                <FileDown className="h-6 w-6 text-green-600" />
-                            </div>
-                            <CardTitle>Export Danh sách người dùng</CardTitle>
-                            <CardDescription>Xuất dữ liệu tình nguyện viên và quản lý sự kiện.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label>Vai trò</Label>
-                                <select
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    value={userRole}
-                                    onChange={(e) => setUserRole(e.target.value)}
-                                >
-                                    <option value="VOLUNTEER">Tình nguyện viên (Volunteer)</option>
-                                    <option value="EVENT_MANAGER">Quản lý sự kiện (Event Manager)</option>
-                                    <option value="ALL">Tất cả</option>
-                                </select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Trạng thái tài khoản</Label>
-                                <select
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    value={userStatus}
-                                    onChange={(e) => setUserStatus(e.target.value)}
-                                >
-                                    <option value="ALL">Tất cả</option>
-                                    <option value="ACTIVE">Hoạt động (Active)</option>
-                                    <option value="LOCKED">Đang khóa (Locked)</option>
-                                </select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Định dạng</Label>
-                                <RadioGroup defaultValue="csv" value={userFormat} onValueChange={setUserFormat} className="flex gap-4">
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="csv" id="usr-csv" />
-                                        <Label htmlFor="usr-csv">CSV</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="json" id="usr-json" />
-                                        <Label htmlFor="usr-json">JSON</Label>
-                                    </div>
-                                </RadioGroup>
-                            </div>
-                        </CardContent>
-                        <CardFooter className="flex justify-between bg-gray-50/50 p-4">
-                            <Button variant="outline" onClick={handleEmailDemo} className="gap-2">
-                                <Mail className="h-4 w-4" /> Gửi qua Email
-                            </Button>
-                            <Button onClick={handleExportUsers} className="bg-green-600 hover:bg-green-700">
-                                <FileDown className="h-4 w-4 mr-2" /> Tải xuống
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                </div>
+        <div className="p-6 space-y-8 bg-gray-50/50 min-h-screen">
+            <div>
+                <h1 className="text-2xl font-bold text-gray-900">Xuất dữ liệu hệ thống</h1>
+                <p className="text-gray-500">Tải xuống báo cáo sự kiện và thông tin người dùng</p>
             </div>
-        </AdminLayout>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Event Export Card */}
+                <Card>
+                    <CardHeader>
+                        <div className="p-2 w-fit rounded-lg bg-blue-100 mb-2">
+                            <FileDown className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <CardTitle>Export Danh sách sự kiện</CardTitle>
+                        <CardDescription>Xuất dữ liệu các chiến dịch và hoạt động tình nguyện.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Từ ngày</Label>
+                                <Input type="date" value={eventDateStart} onChange={e => setEventDateStart(e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Đến ngày</Label>
+                                <Input type="date" value={eventDateEnd} onChange={e => setEventDateEnd(e.target.value)} />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Trạng thái duyệt</Label>
+                            <select
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                value={eventStatus}
+                                onChange={(e) => setEventStatus(e.target.value)}
+                            >
+                                <option value="ALL">Tất cả</option>
+                                <option value="PENDING">Chờ duyệt</option>
+                                <option value="APPROVED">Đã duyệt</option>
+                                <option value="REJECTED">Đã từ chối</option>
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Định dạng</Label>
+                            <RadioGroup defaultValue="csv" value={eventFormat} onValueChange={setEventFormat} className="flex gap-4">
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="csv" id="evt-csv" />
+                                    <Label htmlFor="evt-csv">CSV</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="json" id="evt-json" />
+                                    <Label htmlFor="evt-json">JSON</Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
+                    </CardContent>
+                    <CardFooter className="flex justify-between bg-gray-50/50 p-4">
+                        <Button variant="outline" onClick={handleEmailDemo} className="gap-2">
+                            <Mail className="h-4 w-4" /> Gửi qua Email
+                        </Button>
+                        <Button onClick={handleExportEvents} className="bg-blue-600 hover:bg-blue-700">
+                            <FileDown className="h-4 w-4 mr-2" /> Tải xuống
+                        </Button>
+                    </CardFooter>
+                </Card>
+
+                {/* User Export Card */}
+                <Card>
+                    <CardHeader>
+                        <div className="p-2 w-fit rounded-lg bg-green-100 mb-2">
+                            <FileDown className="h-6 w-6 text-green-600" />
+                        </div>
+                        <CardTitle>Export Danh sách người dùng</CardTitle>
+                        <CardDescription>Xuất dữ liệu tình nguyện viên và quản lý sự kiện.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label>Vai trò</Label>
+                            <select
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                value={userRole}
+                                onChange={(e) => setUserRole(e.target.value)}
+                            >
+                                <option value="VOLUNTEER">Tình nguyện viên (Volunteer)</option>
+                                <option value="EVENT_MANAGER">Quản lý sự kiện (Event Manager)</option>
+                                <option value="ALL">Tất cả</option>
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Trạng thái tài khoản</Label>
+                            <select
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                value={userStatus}
+                                onChange={(e) => setUserStatus(e.target.value)}
+                            >
+                                <option value="ALL">Tất cả</option>
+                                <option value="ACTIVE">Hoạt động (Active)</option>
+                                <option value="LOCKED">Đang khóa (Locked)</option>
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Định dạng</Label>
+                            <RadioGroup defaultValue="csv" value={userFormat} onValueChange={setUserFormat} className="flex gap-4">
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="csv" id="usr-csv" />
+                                    <Label htmlFor="usr-csv">CSV</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="json" id="usr-json" />
+                                    <Label htmlFor="usr-json">JSON</Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
+                    </CardContent>
+                    <CardFooter className="flex justify-between bg-gray-50/50 p-4">
+                        <Button variant="outline" onClick={handleEmailDemo} className="gap-2">
+                            <Mail className="h-4 w-4" /> Gửi qua Email
+                        </Button>
+                        <Button onClick={handleExportUsers} className="bg-green-600 hover:bg-green-700">
+                            <FileDown className="h-4 w-4 mr-2" /> Tải xuống
+                        </Button>
+                    </CardFooter>
+                </Card>
+            </div>
+        </div>
     );
 };
 
