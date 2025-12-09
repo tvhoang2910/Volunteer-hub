@@ -1,10 +1,10 @@
 // pages/index.js
 import React from "react";
-import Hero from "../components/hero";
-import Destination from "../components/destination";
-import About from "../components/about";
-import Review from "../components/review";
-import Benefit from "../components/benefit";
+import Hero from "../components/landing/hero";
+import Destination from "../components/landing/destination";
+import About from "../components/landing/about";
+import Review from "../components/landing/review";
+import Benefit from "../components/landing/benefit";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { useEffect } from "react";
@@ -23,7 +23,7 @@ function Home() {
       {/* Gradient background overlay với animation */}
       <div className="fixed inset-0 -z-10 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 opacity-30"></div>
       <div className="fixed inset-0 -z-10 bg-gradient-to-tr from-green-100/20 via-blue-100/20 to-purple-100/20 animate-pulse"></div>
-      
+
       {/* Animated gradient orbs */}
       <div className="fixed top-0 left-1/4 w-96 h-96 bg-gradient-to-r from-green-400/30 to-emerald-500/30 rounded-full blur-3xl animate-blob -z-10"></div>
       <div className="fixed top-1/2 right-1/4 w-96 h-96 bg-gradient-to-r from-teal-400/30 to-cyan-500/30 rounded-full blur-3xl animate-blob animation-delay-2000 -z-10"></div>
@@ -32,7 +32,6 @@ function Home() {
       {/* Hero Section với gradient transition */}
       <div className="relative">
         <Hero />
-        {/* Gradient fade transition */}
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent via-white/80 to-white pointer-events-none"></div>
       </div>
 

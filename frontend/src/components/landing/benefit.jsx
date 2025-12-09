@@ -47,29 +47,31 @@ export default function Benefit() {
 
     try {
       const response = await fetch(getAllNewsApi, {
-          method: "GET",
+        method: "GET",
       })
       if (!response.ok) {
-          throw new Error("Send request failed")
+        throw new Error("Send request failed")
       }
 
       const res = await response.json()
 
-      setFeaturedArticles(res.map(a => {return {
-        "slug": a.newsId,
-        "image": a.image,
-        "title": a.title,
-        "description": a.description,
-        "author": a.authorId,
-        "content": a.content,
-        "date": a.createAt.seconds ? new Date(a.arrival_time).toISOString().replace("T", " ").slice(0, -5) : a.createAt.split('T')[0],
-        "buttonText": "Đọc thêm",
-        "authorTitle": "Nhà báo",
-        "authorImage": "/AvatarUser/no_avatar.jpg",
-      }}))
+      setFeaturedArticles(res.map(a => {
+        return {
+          "slug": a.newsId,
+          "image": a.image,
+          "title": a.title,
+          "description": a.description,
+          "author": a.authorId,
+          "content": a.content,
+          "date": a.createAt.seconds ? new Date(a.arrival_time).toISOString().replace("T", " ").slice(0, -5) : a.createAt.split('T')[0],
+          "buttonText": "Đọc thêm",
+          "authorTitle": "Nhà báo",
+          "authorImage": "/AvatarUser/no_avatar.jpg",
+        }
+      }))
 
     } catch (error) {
-        // alert("Đã xảy ra lối, vui lòng thử lại(fixed)")
+      // alert("Đã xảy ra lối, vui lòng thử lại(fixed)")
     }
   }
   return (
@@ -77,13 +79,13 @@ export default function Benefit() {
       {/* Phần giới thiệu */}
       <section className="lg:flex">
         <div className="lg:w-[45%]" data-aos="fade-down">
-        <Image
-          src="/bg-2.jpg"
-          alt="Background"
-          width={1000}
-          height={900}
-          className="h-full"
-        />
+          <Image
+            src="/bg-2.jpg"
+            alt="Background"
+            width={1000}
+            height={900}
+            className="h-full"
+          />
         </div>
         <div className="relative lg:w-[55%] bg-[url(/bg-map-2.png)] bg-[#313041] bg-right-bottom bg-contain flex flex-col justify-center py-16">
           <div className="absolute lg:w-3 w-0 bg-green-500 left-0 rounded-r-[10px] top-[120px] bottom-[120px]"></div>
@@ -91,8 +93,8 @@ export default function Benefit() {
             <p className="text-xl text-green-500" data-aos="fade-up">Danh sách lợi ích của chúng tôi</p>
             <h4 className="text-white lg:text-[50px] text-[30px] py-4" data-aos="fade-up">Tại sao chọn VolunteerHub</h4>
             <p className="text-gray leading-8" data-aos="fade-down">
-            Chúng tôi tự hào mang đến nền tảng hỗ trợ quản lý hoạt động tình nguyện toàn diện, giúp các bản, xã và cộng đồng dễ dàng tổ chức, theo dõi và đánh giá mọi chương trình một cách hiệu quả – minh bạch – bền vững.
-            Với VolunteerHub, mọi công tác tình nguyện trở nên đơn giản, hiện đại và kết nối hơn bao giờ hết.
+              Chúng tôi tự hào mang đến nền tảng hỗ trợ quản lý hoạt động tình nguyện toàn diện, giúp các bản, xã và cộng đồng dễ dàng tổ chức, theo dõi và đánh giá mọi chương trình một cách hiệu quả – minh bạch – bền vững.
+              Với VolunteerHub, mọi công tác tình nguyện trở nên đơn giản, hiện đại và kết nối hơn bao giờ hết.
             </p>
 
             {/* Các lợi ích */}
@@ -103,9 +105,9 @@ export default function Benefit() {
               <span>
                 <h6 className="text-white text-xl">Chuyên nghiệp và đáng tin cậy</h6>
                 <p className="text-gray leading-8 py-4">
-                Chúng tôi đồng hành cùng các tổ chức, trưởng bản và nhóm tình nguyện trên khắp cả nước.
-Hệ thống được thiết kế bài bản và an toàn, đảm bảo dữ liệu của bạn luôn được bảo mật.
-Đội ngũ hỗ trợ tận tâm 24/7 sẵn sàng giúp bạn giải quyết mọi khó khăn trong quá trình sử dụng.
+                  Chúng tôi đồng hành cùng các tổ chức, trưởng bản và nhóm tình nguyện trên khắp cả nước.
+                  Hệ thống được thiết kế bài bản và an toàn, đảm bảo dữ liệu của bạn luôn được bảo mật.
+                  Đội ngũ hỗ trợ tận tâm 24/7 sẵn sàng giúp bạn giải quyết mọi khó khăn trong quá trình sử dụng.
                 </p>
               </span>
             </div>
@@ -116,8 +118,8 @@ Hệ thống được thiết kế bài bản và an toàn, đảm bảo dữ li
               <span>
                 <h6 className="text-white text-xl">Kết nối và lan tỏa</h6>
                 <p className="text-gray leading-8 py-4">
-                VolunteerHub không chỉ là công cụ, mà còn là cầu nối giữa con người và cộng đồng.
-                Hãy để mỗi hoạt động thiện nguyện trở thành một hành trình sẻ chia – được tổ chức tốt hơn, minh bạch hơn và lan tỏa xa hơn.
+                  VolunteerHub không chỉ là công cụ, mà còn là cầu nối giữa con người và cộng đồng.
+                  Hãy để mỗi hoạt động thiện nguyện trở thành một hành trình sẻ chia – được tổ chức tốt hơn, minh bạch hơn và lan tỏa xa hơn.
                 </p>
               </span>
             </div>
@@ -152,13 +154,13 @@ Hệ thống được thiết kế bài bản và an toàn, đảm bảo dữ li
             </div>
           </div>
           <div className="flex justify-center lg:w-1/2 w-full lg:mt-0 mt-14">
-          <Image
-            src="/image-app.png"
-            alt="Image description"
-            width={500}
-            height={500}
-            priority
-          />
+            <Image
+              src="/image-app.png"
+              alt="Image description"
+              width={500}
+              height={500}
+              priority
+            />
           </div>
         </div>
       </div>

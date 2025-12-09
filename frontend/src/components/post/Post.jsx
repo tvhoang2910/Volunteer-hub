@@ -7,9 +7,11 @@ import PostFooter from './PostFooter';
 import EditPostModal from './EditPostModal';
 import { useDeletePost } from '../../hooks/useDeletePost';
 import { useToggleReaction } from '../../hooks/useToggleReaction';
+import CommentDetailSlideUp from '../comments/CommentDetailSlideUp';
 
 const Post = ({ post, onPostUpdated, onPostDeleted }) => {
     const [isEditing, setIsEditing] = useState(false);
+    const [showComments, setShowComments] = useState(false);
     const [localPost, setLocalPost] = useState(post);
 
     const { deletePost } = useDeletePost(onPostDeleted);
@@ -64,17 +66,24 @@ const Post = ({ post, onPostUpdated, onPostDeleted }) => {
 
             <PostMedia media={localPost.media} />
 
-            <PostFooter
+            {/* <PostFooter
                 likes={localPost.likes}
                 comments={localPost.comments}
                 onViewComments={() => console.log('View comments clicked')}
-            />
+            /> */}
 
             <PostActions
                 isLiked={localPost.isLiked}
                 onLike={handleLike}
-                onComment={() => console.log('Comment clicked')}
-                onShare={() => console.log('Share clicked')}
+                onComment={() => setShowComments(true)}
+            // onShare={() => console.log('Share clicked')}
+            />
+
+            <CommentDetailSlideUp
+                isOpen={showComments}
+                onClose={() => setShowComments(false)}
+                post={localPost}
+                comments={localPost.comments || []}
             />
 
             {isEditing && (

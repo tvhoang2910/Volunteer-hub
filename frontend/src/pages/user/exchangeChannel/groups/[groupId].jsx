@@ -1,71 +1,53 @@
-import { useRouter } from "next/router";
-import Post from "@/components/post/Post";
+import React from 'react';
+import { useRouter } from 'next/router';
+import CommentList from "@/components/comments/CommentList";
+import PostContainer from "@/containers/PostContainer";
 
 export default function GroupDetail() {
   const router = useRouter();
   const { groupId } = router.query;
 
-  // groupId sẽ là eventId được truyền vào từ trang exchangeChannel
-  // Có thể fetch thông tin event/group từ API dựa trên groupId (eventId)
-
-  const groupData = {
-    "react-vietnam": { name: "React Vietnam", desc: "Cộng đồng React Việt Nam" },
-    "frontend-devs": { name: "Frontend Devs", desc: "Nhóm lập trình frontend" },
-  };
-
-  // Tạm thời sử dụng mock data, có thể thay thế bằng API call
-  const group = groupData[groupId];
-
-  if (!groupId) {
-    return <div className="p-6">Đang tải...</div>;
-  }
-
-  // Có thể fetch thông tin event từ API:
-  // useEffect(() => {
-  //   fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${groupId}`)
-  //     .then(res => res.json())
-  //     .then(data => setEventData(data));
-  // }, [groupId]);
-
-  // Mock post for demonstration
-  const mockPost = {
-    id: groupId,
-    title: `Post về sự kiện ${groupId}`,
-    content: "Nội dung bài post mẫu.",
-    comments: [
-      {
-        id: 1,
-        message: "Comment mẫu",
-        user: { id: 1, name: "User1" },
-        createdAt: new Date().toISOString(),
-        likeCount: 0,
-        likedByMe: false,
-      }
-    ]
-  };
+  // In a real app, you would fetch group details here using groupId
+  // const { data: group } = useSWR(`/api/groups/${groupId}`, fetcher);
 
   return (
-    <div className="container mx-auto pt-10 pl-64 space-y-6">
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-4">
-          {group ? group.name : `Kênh trao đổi sự kiện #${groupId}`}
-        </h1>
-        <p className="text-muted-foreground">
-          {group ? group.desc : `Thảo luận về sự kiện với ID: ${groupId}`}
-        </p>
-        {/* Thêm Post component */}
-        <Post post={{
-          id: mockPost.id,
-          user: { id: 1, name: "User1", avatar: "https://i.pravatar.cc/150?u=1" },
-          content: mockPost.content,
-          media: [],
-          likes: 0,
-          comments: mockPost.comments.length,
-          isLiked: false,
-          createdAt: new Date().toISOString()
-        }} />
+    <div className="w-full max-w-5xl mx-auto p-4">
+      {/* Group Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-400 rounded-xl p-6 mb-6 shadow-lg text-white relative overflow-hidden">
+        <div className="relative z-10">
+          <h1 className="text-3xl font-bold mb-2">Group: {groupId}</h1>
+          <p className="text-blue-100 opacity-90">
+            Welcome to the exchange channel for {groupId}. Share posts, discuss topics, and collaborate.
+          </p>
+        </div>
+        {/* Decorative circle */}
+        <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Sidebar (Optional - e.g., Group Info, Members) */}
+        <div className="hidden lg:block lg:col-span-1 space-y-4">
+          <div className="bg-white rounded-lg shadow p-4 border">
+            <h3 className="font-semibold text-gray-700 mb-3">About</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              This is the official group for {groupId}. Please follow the community guidelines.
+            </p>
+            <div className="flex items-center text-sm text-gray-500">
+              <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+              Active now
+            </div>
+          </div>
+        </div>
+
+        {/* Main Feed */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Reuse PostContainer for the feed */}
+          <PostContainer />
+
+          {/* Example Comment List (if not included in PostContainer) */}
+          {/* <CommentList comments={[]} /> */}
+        </div>
       </div>
     </div>
   );
 }
-

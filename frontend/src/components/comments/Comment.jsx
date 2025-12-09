@@ -1,4 +1,4 @@
-import { FaHeart, FaReply, FaTrash, FaEdit, FaRegHeart } from "react-icons/fa"
+import { FaHeart, FaReply, FaTrash, FaEdit, FaRegHeart, FaThumbsUp } from "react-icons/fa"
 import CommentList from "./CommentList";
 import { useState, useEffect } from "react";
 import { usePost } from "@/context/PostContext";
@@ -89,24 +89,15 @@ export default function Comment({ id, avatar, message, user, createdAt, likeCoun
                                 </div>
                             )}
 
-                            {/* Like count badge - Absolute positioned on the bubble */}
-                            {likeCount > 0 && (
-                                <div className="absolute -bottom-4 right-0 bg-white rounded-full shadow-md border border-white flex items-center gap-1 px-1 py-0.5 min-w-[20px] h-[20px] z-10 cursor-pointer">
-                                    <div className="bg-blue-500 rounded-full p-0.5">
-                                        <FaHeart className="text-white w-2 h-2" />
-                                    </div>
-                                    <span className="text-[11px] text-[#65676B] pr-1">{likeCount}</span>
-                                </div>
-                            )}
+
                         </div>
                     </div>
 
                     {/* Actions Line */}
                     <div className="flex gap-3 text-[12px] font-semibold text-[#65676B] mt-0.5 ml-3">
-                        <span className="cursor-pointer hover:underline">
+                        <span className="cursor-pointer hover:underline font-normal">
                             {localTime || "..."}
                         </span>
-
                         <button
                             onClick={onToggleCommentLike}
                             className={`hover:underline ${likedByMe ? "text-blue-600" : ""}`}
@@ -137,6 +128,14 @@ export default function Comment({ id, avatar, message, user, createdAt, likeCoun
                                 </button>
                             </>
                         )}
+                        {likeCount > 0 && (
+                            <div className="ml-auto flex items-center gap-1 cursor-pointer">
+                                <span>{likeCount}</span>
+                                <div className="flex items-center justify-center w-4 h-4 bg-blue-500 rounded-full">
+                                    <FaThumbsUp className="text-white w-2.5 h-2.5" />
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Reply Form */}
@@ -165,7 +164,7 @@ export default function Comment({ id, avatar, message, user, createdAt, likeCoun
                                 </button>
                             ) : (
                                 <>
-                                    <div className="pl-0">
+                                    <div className="pl-0 border-l-2 border-gray-200 ml-3.5">
                                         <CommentList comments={childComments} />
                                     </div>
                                 </>

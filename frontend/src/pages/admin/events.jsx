@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { useState, useEffect, useCallback } from "react";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { motion } from "framer-motion";
@@ -198,247 +199,203 @@ export default function EventShowcase() {
       console.error("Lỗi đăng ký:", error);
     }
   };
+  import React, { useState } from "react";
+  import BasicPagination from "@/components/ui/pagination.jsx";
+  import EventCard from "@/components/dashboard/EventCard";
+  import FilterBar from "@/components/dashboard/FilterBar";
+  import AnalyticsCard from "@/components/dashboard/AnalyticsCard";
+  import FeaturedSlider from "@/components/dashboard/FeaturedSlider";
+  import EventDetailSlideUp from "@/components/dashboard/EventDetailSlideUp";
+  import { useEvents } from "@/hooks/useEvents";
+  import { eventService } from "@/services/eventService";
 
-  // Handle Cancel Registration
-  const handleCancelRegistration = async (eventId) => {
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/cancel`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+  export default function EventShowcase() {
+    const {
+      allEvents,
+      featuredEvents,
+      filteredEvents,
+      filters,
+      setFilters,
+      resetFilters,
+      currentPage,
+      totalPages,
+      handlePageChange,
+      isLoading,
+      error,
+      registerEvent,
+      cancelRegistration
+    } = useEvents();
 
-      if (!response.ok) {
-        throw new Error("Lỗi khi hủy đăng ký");
+    // Slide-up state (UI specific, kept local)
+    const [isSlideUpOpen, setIsSlideUpOpen] = useState(false);
+    const [selectedEvent, setSelectedEvent] = useState(null);
+
+    // Handlers
+    const handleRegister = async (eventId) => {
+      const success = await registerEvent(eventId);
+      if (success && selectedEvent?.event_id === eventId) {
+        setSelectedEvent(prev => ({ ...prev, registered: true }));
       }
+      );
+    const handleCancelRegistration = async (eventId) => {
+      const success = await cancelRegistration(eventId);
+      if (success && selectedEvent?.event_id === eventId) {
+        setSelectedEvent(prev => ({ ...prev, registered: false }));
+      }
+    };
 
-      getAllEvents();
-    } catch (error) {
-      console.error("Lỗi hủy đăng ký:", error);
-    }
-  };
+    const handleEventClick = async (eventId) => {
+      console.log("Clicked event ID:", eventId);
+      try {
+        // Try to find in local state first for immediate feedback
+        const localEvent = allEvents.find(e => e.event_id === eventId);
+        if (localEvent) setSelectedEvent(localEvent);
 
-  // Function to handle event card click
-  const handleEventClick = (event) => {
-    setSelectedEvent(event);
-    setIsSlideUpOpen(true);
-  };
+        setIsSlideUpOpen(true);
 
-  // Function to close the slide-up
-  const closeSlideUp = () => {
-    setIsSlideUpOpen(false);
-    setSelectedEvent(null);
-  };
+        // Fetch full details
+        const details = await eventService.getEventDetails(eventId);
+        setSelectedEvent(details);
+      } catch (err) {
+        console.error("Error fetching details:", err);
+        // Keep showing local event if detail fetch fails
+        if (!selectedEvent) {
+          setSelectedEvent({
+            title: "Error",
+            description: "Unable to fetch event details. Please try again later.",
+            location: "N/A",
+            start_time: "N/A",
+            category: "N/A",
+          });
+        }
+      }
+    };
 
-  const paginatedEvents = filteredEvents.slice(
-    (currentPage - 1) * eventsPerPage,
-    currentPage * eventsPerPage
-  );
+    const closeSlideUp = () => {
+      setIsSlideUpOpen(false);
+      setSelectedEvent(null);
+    };
 
-  return (
-    <div className="container mx-auto pt-10 pr-10 space-y-6">
-      <div className="p-6">
+    return (
+      <div className="container mx-auto py-8 px-0 md:px-10 space-y-8">
+        {/* Analytics Section */}
+        <section>
+          <h1 className="text-3xl font-bold mb-6 text-zinc-900 dark:text-zinc-100">Event Dashboard</h1>
+          <AnalyticsCard events={allEvents} />
+        </section>
+
         {/* Featured Events Slider */}
-        <section className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">Sự kiện nổi bật</h2>
-          <div className="pt-10">
-            <Carousel
-              partialVisible={false}
-              swipeable
-              draggable={false}
-              responsive={responsive}
-              ssr={false}
-              infinite
-              autoPlay
-              arrows
-              keyBoardControl
-              itemClass="carouselItem"
-            >
-              {featuredEvents.length > 0 ? (
-                featuredEvents.slice(0, 5).map((event) => (
-                  <div key={event.event_id} className="min-w-[150px] max-w-[250px]">
+        <section>
+          <FeaturedSlider
+            events={featuredEvents}
+            onRegister={handleRegister}
+            onCancel={handleCancelRegistration}
+            onClick={handleEventClick}
+          />
+        </section>
+
+        {/* Main Content Area */}
+        <section className="relative">
+
+          {/* Background gradient + subtle 3D */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-zinc-50/40 dark:via-zinc-900/20 to-transparent pointer-events-none" />
+
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-3xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight drop-shadow-md">
+              ✨ Khám phá sự kiện
+            </h2>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="mb-6 backdrop-blur-xl bg-white/40 dark:bg-zinc-900/30 rounded-2xl shadow-xl border border-white/30 dark:border-zinc-800/40 p-4">
+            <FilterBar
+              filters={filters}
+              setFilters={setFilters}
+              onReset={resetFilters}
+            />
+          </div>
+
+          {/* Events List */}
+          <div className="min-h-[400px]">
+            {isLoading ? (
+              /* Loading Skeleton */
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {[1, 2, 3, 4, 5, 6].map((n) => (
+                  <div
+                    key={n}
+                    className="h-[350px] rounded-2xl bg-gradient-to-br from-zinc-200 to-zinc-100 dark:from-zinc-800 dark:to-zinc-900 animate-pulse shadow-inner"
+                    style={{ transform: "rotateX(5deg) rotateY(-5deg)" }}
+                  />
+                ))}
+              </div>
+            ) : error ? (
+              /* Error Box */
+              <div className="text-center py-20 rounded-2xl bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-700 shadow-lg">
+                <p className="text-red-700 dark:text-red-300 font-medium text-lg">
+                  Lỗi: {error}
+                </p>
+              </div>
+            ) : filteredEvents.length > 0 ? (
+              /* Animated Event List */
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+              >
+                {filteredEvents.map((event) => (
+                  <motion.div
+                    key={event.event_id}
+                    whileHover={{
+                      scale: 1.035,
+                      rotateX: 4,
+                      rotateY: -4,
+                      boxShadow: "0px 25px 60px rgba(0,0,0,0.15)",
+                    }}
+                    transition={{ type: "spring", stiffness: 250, damping: 18 }}
+                    className="transform-gpu"
+                  >
                     <EventCard
                       event={event}
                       onRegister={handleRegister}
                       onCancel={handleCancelRegistration}
-                      onClick={() => handleEventClick(event)}
+                      onClick={() => handleEventClick(event.event_id)}
                     />
-                  </div>
-                ))
-              ) : (
-                <p className="text-muted-foreground">Chưa có sự kiện nổi bật</p>
-              )}
-            </Carousel>
-          </div>
-
-        </section>
-        <section className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">Sự kiện tương tác nhiều</h2>
-          <motion.div
-            className="flex space-x-4 overflow-x-auto pb-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            {featuredEvents.length > 0 ? (
-              featuredEvents.slice(0, 10).map((event) => (
-                <div key={event.event_id} className="min-w-[250px]">
-                  <EventCard
-                    event={event}
-                    onRegister={handleRegister}
-                    onCancel={handleCancelRegistration}
-                    onClick={() => handleEventClick(event)}
-                  />
-                </div>
-              ))
+                  </motion.div>
+                ))}
+              </motion.div>
             ) : (
-              <p className="text-muted-foreground">Chưa có sự kiện tương tác</p>
+              /* Empty State */
+              <div className="text-center py-20 rounded-2xl bg-zinc-100/60 dark:bg-zinc-800/30 border border-dashed border-zinc-300 dark:border-zinc-700 shadow-lg backdrop-blur-md">
+                <p className="text-zinc-600 dark:text-zinc-400 text-lg">
+                  Không tìm thấy sự kiện nào phù hợp
+                </p>
+              </div>
             )}
-          </motion.div>
-        </section>
-
-        {/* Filter Bar */}
-        <section className="mb-6">
-          <div className="flex flex-wrap items-end gap-4">
-            {/* Date Range Filter */}
-            <div className="flex items-center gap-2">
-              <div className="flex flex-col">
-                <label className="text-sm text-muted-foreground mb-1">Từ ngày</label>
-                <input
-                  type="date"
-                  value={filters.startDate}
-                  onChange={(e) => setFilters((prev) => ({ ...prev, startDate: e.target.value }))}
-                  className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="text-sm text-muted-foreground mb-1">Đến ngày</label>
-                <input
-                  type="date"
-                  value={filters.endDate}
-                  onChange={(e) => setFilters((prev) => ({ ...prev, endDate: e.target.value }))}
-                  className="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              {(filters.startDate || filters.endDate) && (
-                <button
-                  onClick={() => setFilters((prev) => ({ ...prev, startDate: "", endDate: "" }))}
-                  className="mt-6 px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-                >
-                  Xóa
-                </button>
-              )}
-            </div>
-            <div className="flex flex-col">
-              <label className="text-sm text-muted-foreground mb-1">Thể loại</label>
-              <Select onValueChange={(value) => setFilters((prev) => ({ ...prev, category: value }))}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Tất cả" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả</SelectItem>
-                  <SelectItem value="Môi trường">Môi trường</SelectItem>
-                  <SelectItem value="Giáo dục">Giáo dục</SelectItem>
-                  <SelectItem value="Cộng đồng">Cộng đồng</SelectItem>
-                  <SelectItem value="Y tế">Y tế</SelectItem>
-                  <SelectItem value="Văn hóa">Văn hóa</SelectItem>
-                  <SelectItem value="Công nghệ">Công nghệ</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex flex-col">
-              <label className="text-sm text-muted-foreground mb-1">Địa điểm</label>
-              <Select onValueChange={(value) => setFilters((prev) => ({ ...prev, location: value }))}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Tất cả" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả</SelectItem>
-                  <SelectItem value="Hà Nội">Hà Nội</SelectItem>
-                  <SelectItem value="TP.HCM">TP.HCM</SelectItem>
-                  <SelectItem value="Đà Nẵng">Đà Nẵng</SelectItem>
-                  <SelectItem value="Online">Online</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Search Bar inline with filters */}
-            <div className="flex-1 min-w-[260px]">
-              <SearchBar
-                className="w-full"
-                placeholder="Tìm kiếm theo tên sự kiện"
-                value={filters.search}
-                onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
-                onSearch={(value) => setFilters((prev) => ({ ...prev, search: value }))}
-                size="large"
-              />
-            </div>
           </div>
         </section>
 
-        {/* Events List */}
-        <section>
-          <h2 className="text-2xl font-bold mb-4">Tất cả sự kiện</h2>
-          {isLoading ? (
-            <div className="text-center py-10">
-              <p>Đang tải...</p>
-            </div>
-          ) : error ? (
-            <div className="text-center py-10 text-red-500">
-              <p>Lỗi: {error}</p>
-            </div>
-          ) : filteredEvents.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {paginatedEvents.map((event) => (
-                <EventCard
-                  key={event.event_id}
-                  event={event}
-                  onRegister={handleRegister}
-                  onCancel={handleCancelRegistration}
-                  onClick={() => handleEventClick(event)}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-10">
-              <p className="text-muted-foreground">Không tìm thấy sự kiện</p>
-            </div>
-          )}
-        </section>
-      </div>
+        {/* Pagination */}
+        {!isLoading && filteredEvents.length > 0 && (
+          <div className="flex justify-center mt-8">
+            <BasicPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </div>
+        )}
 
-      {/* Pagination */}
-      {!isLoading && filteredEvents.length > 0 && (
-        <div className="flex justify-center my-6">
-          <BasicPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
-        </div>
-      )}
-
-      {/* Event Details Slide-up */}
-      {isSlideUpOpen && (
-        <SlideUpDetail
+        {/* Event Details Slide-up */}
+        <EventDetailSlideUp
           isOpen={isSlideUpOpen}
           onClose={closeSlideUp}
-          title={selectedEvent?.title}
-          description={selectedEvent?.description}
-          variant="phone"
-        >
-          <div>
-            <p><strong>Location:</strong> {selectedEvent?.location}</p>
-            <p><strong>Start Time:</strong> {selectedEvent?.start_time}</p>
-            <p><strong>Category:</strong> {selectedEvent?.category}</p>
-          </div>
-        </SlideUpDetail>
-      )}
-    </div>
-  );
+          event={selectedEvent}
+          onRegister={handleRegister}
+          onCancel={handleCancelRegistration}
+        />
+      </div>
+    )
+  }
 }
+<SelectContent>

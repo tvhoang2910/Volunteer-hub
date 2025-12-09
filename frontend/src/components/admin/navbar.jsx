@@ -15,23 +15,18 @@ const navItems = [
     icon: CalendarDays
   },
   {
-    name: 'Quản lý thành viên',
-    href: '/admin/customers',
+    name: 'Quản lý người dùng',
+    href: '/admin/userManage',
     icon: Users
   },
   {
-    name: 'Quản lý admin',
-    href: '/admin/members',
-    icon: UserPen
+    name: 'Xuất dữ liệu',
+    href: '/admin/export',
+    icon: FileText
   },
   {
     name: 'Hồ sơ cá nhân',
     href: '/admin/profile',
-    icon: User
-  },
-  {
-    name: 'Dashboard',
-    href: '/admin/events',
     icon: User
   }
 ]

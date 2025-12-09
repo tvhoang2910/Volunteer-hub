@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import get from "lodash.get"; // thay rc-util cho an toàn
+import get from "lodash.get";
 
 export default function GroupDetail() {
   const router = useRouter();
