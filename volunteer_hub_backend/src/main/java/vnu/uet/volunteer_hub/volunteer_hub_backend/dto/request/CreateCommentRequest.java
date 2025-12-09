@@ -17,4 +17,10 @@ public class CreateCommentRequest {
     private String content;
 
     private UUID parentId;
+
+    /**
+     * TODO [TEST MODE]: Sau khi test xong, xóa field này.
+     * userId được thêm để test dễ hơn, thay vì lấy từ Authentication.
+     */
+    private UUID userId;
 }

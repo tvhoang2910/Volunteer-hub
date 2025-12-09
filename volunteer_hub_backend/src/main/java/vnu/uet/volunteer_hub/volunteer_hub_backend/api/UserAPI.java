@@ -19,9 +19,9 @@ import java.util.UUID;
  * API endpoints for user-related operations.
  * 
  * TODO (Future):
- * - Add GET /api/users/{userId} for user profile
- * - Add PUT /api/users/{userId} for updating user profile
- * - Add GET /api/users/{userId}/events for user's events
+ * - Add GET /api/users/ for user profile
+ * - Add PUT /api/users/ for updating user profile
+ * - Add GET /api/users/events for user's events
  * - Add authentication/authorization checks
  */
 @RestController
@@ -53,9 +53,6 @@ public class UserAPI {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         try {
-            // TODO (Future): Get viewer ID for visibility filtering
-            // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            // UUID viewerId = userService.getViewerIdFromAuthentication(auth);
 
             Page<ScoredPostDTO> postsPage = postService.getPostsByUserId(userId, page, size);
             return ResponseEntity.ok(ResponseDTO.<Page<ScoredPostDTO>>builder()

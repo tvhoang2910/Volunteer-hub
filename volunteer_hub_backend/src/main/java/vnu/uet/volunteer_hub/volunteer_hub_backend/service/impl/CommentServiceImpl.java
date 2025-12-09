@@ -28,13 +28,16 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
-    private final UserService userService;
 
+    /**
+     * TODO [TEST MODE]: Sau khi test xong, sửa lại thành:
+     * Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+     * UUID userId = userService.getViewerIdFromAuthentication(auth);
+     * Và bỏ userId khỏi CreateCommentRequest
+     */
     @Override
     @Transactional
-    public CommentResponse createComment(UUID postId, CreateCommentRequest request) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        UUID userId = userService.getViewerIdFromAuthentication(auth);
+    public CommentResponse createComment(UUID postId, CreateCommentRequest request, UUID userId) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -69,16 +72,14 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public CommentResponse updateComment(UUID commentId, UpdateCommentRequest request) {
-        // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        // UUID userId = userService.getViewerIdFromAuthentication(auth);
+    public CommentResponse updateComment(UUID commentId, UpdateCommentRequest request, UUID userId) {
 
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new RuntimeException("Comment not found"));
 
-        // if (!comment.getUser().getId().equals(userId)) {
-        // throw new RuntimeException("You are not authorized to update this comment");
-        // }
+        if (!comment.getUser().getId().equals(userId)) {
+            throw new RuntimeException("You are not authorized to update this comment");
+        }
 
         comment.setContent(request.getContent());
         Comment updatedComment = commentRepository.save(comment);

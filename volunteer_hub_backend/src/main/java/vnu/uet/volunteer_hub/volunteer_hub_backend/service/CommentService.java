@@ -9,9 +9,9 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.CommentResponse;
 import java.util.UUID;
 
 public interface CommentService {
-    CommentResponse createComment(UUID postId, CreateCommentRequest request);
+    CommentResponse createComment(UUID postId, CreateCommentRequest request, UUID userId);
 
     Page<CommentResponse> getCommentsByPostId(UUID postId, Pageable pageable);
 
-    CommentResponse updateComment(UUID commentId, UpdateCommentRequest request);
+    CommentResponse updateComment(UUID commentId, UpdateCommentRequest request, UUID userId);
 }

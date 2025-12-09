@@ -3,6 +3,9 @@ package vnu.uet.volunteer_hub.volunteer_hub_backend.service.impl;
 import java.util.Collection;
 import java.util.Map;
 
+import jakarta.persistence.EntityManager;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -16,14 +19,11 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.RoleRepository;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.UserRepository;
 
 @Service
+@RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-
-    public CustomOAuth2UserService(UserRepository userRepository, RoleRepository roleRepository) {
-        this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-    }
+    private final EntityManager entityManager;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -41,6 +41,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
             Role volunteerRole = roleRepository.findByRoleName("VOLUNTEER")
                     .orElseThrow(() -> new IllegalStateException("Default role VOLUNTEER not found"));
+            // Merge the role to ensure it's managed in the current session
+            volunteerRole = entityManager.merge(volunteerRole);
             user.getRoles().add(volunteerRole);
             userRepository.save(user);
 

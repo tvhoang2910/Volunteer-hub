@@ -280,7 +280,7 @@ public class PostServiceImpl implements PostService {
      * - Consider adding optimistic locking with @Version
      */
     @Override
-    public ScoredPostDTO updatePost(UUID postId, UpdatePostRequest request) {
+    public ScoredPostDTO updatePost(UUID postId, UpdatePostRequest request, UUID authorId) {
         // Find the post
         Post post = postRepository.findByIdWithAuthorAndEvent(postId);
         if (post == null) {
@@ -288,9 +288,9 @@ public class PostServiceImpl implements PostService {
         }
 
         // TODO (Future): Check authorization
-        // if (!post.getAuthor().getId().equals(requesterId) && !isAdmin(requesterId)) {
-        // throw new RuntimeException("Not authorized to update this post");
-        // }
+        if (!post.getAuthor().getId().equals(authorId)) {
+            throw new RuntimeException("Not authorized to update this post");
+        }
 
         // Update content
         post.setContent(request.getContent());
@@ -316,15 +316,15 @@ public class PostServiceImpl implements PostService {
      * - Add audit logging
      */
     @Override
-    public void deletePost(UUID postId) {
+    public void deletePost(UUID postId, UUID authorId) {
         // Check if post exists
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found with id: " + postId));
 
         // TODO (Future): Check authorization
-        // if (!post.getAuthor().getId().equals(requesterId) && !isAdmin(requesterId)) {
-        // throw new RuntimeException("Not authorized to delete this post");
-        // }
+        if (!post.getAuthor().getId().equals(authorId)) {
+            throw new RuntimeException("Not authorized to delete this post");
+        }
 
         // Remove from ranking (Redis ZSET)
         try {
