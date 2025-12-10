@@ -54,4 +54,15 @@ public interface PostService {
      * @return paginated posts
      */
     Page<ScoredPostDTO> getPostsByUserId(UUID userId, int page, int size);
+
+    /**
+     * Like a post by a viewer.
+     * 
+     * @param postId   the post id
+     * @param viewerId the viewer (user) id who likes the post
+     * @return updated PostDetailResponse
+     */
+    PostDetailResponse likePost(UUID postId, UUID viewerId,
+            vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.ReactionType reactionType);
+
 }

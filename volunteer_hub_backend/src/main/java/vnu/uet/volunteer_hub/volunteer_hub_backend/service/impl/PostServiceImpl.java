@@ -1,22 +1,12 @@
 package vnu.uet.volunteer_hub.volunteer_hub_backend.service.impl;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-
 import org.springframework.data.redis.core.ZSetOperations.TypedTuple;
-
+import org.springframework.stereotype.Service;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.CreatePostRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.UpdatePostRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.AuthorSummaryDTO;
@@ -25,18 +15,26 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.PostDetailRespon
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.ScoredPostDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Event;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Post;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.PostReaction;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.User;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.EventApprovalStatus;
-import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.EventRepository;
-import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.PostRepository;
-import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.PostReactionRepository;
-import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.RegistrationRepository;
-import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.UserRepository;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.ReactionType;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.*;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.PostRankingService;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.service.PostReactionService;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.PostService;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.ScoringService;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 @Service
+// @RequiredArgsConstructor
 public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
@@ -46,12 +44,16 @@ public class PostServiceImpl implements PostService {
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
     private final PostReactionRepository postReactionRepository;
+    private final PostReactionService postReactionService;
+    private final CommentRepository commentRepository;
     private final int candidateMultiplier;
 
     public PostServiceImpl(PostRepository postRepository, PostRankingService postRankingService,
             ScoringService scoringService, RegistrationRepository registrationRepository,
             UserRepository userRepository, EventRepository eventRepository,
             PostReactionRepository postReactionRepository,
+            PostReactionService postReactionService,
+            CommentRepository commentRepository,
             @Value("${posts.feed.candidate-multiplier:5}") int candidateMultiplier) {
         this.postRepository = postRepository;
         this.postRankingService = postRankingService;
@@ -60,6 +62,8 @@ public class PostServiceImpl implements PostService {
         this.userRepository = userRepository;
         this.eventRepository = eventRepository;
         this.postReactionRepository = postReactionRepository;
+        this.postReactionService = postReactionService;
+        this.commentRepository = commentRepository;
         this.candidateMultiplier = candidateMultiplier;
     }
 
@@ -91,10 +95,14 @@ public class PostServiceImpl implements PostService {
             List<UUID> uuids = ids.stream().map(UUID::fromString).collect(Collectors.toList());
             List<Post> posts = postRepository.findAllWithAuthorAndEventByIdIn(uuids);
             // preserve order
-            var byId = posts.stream().collect(Collectors.toMap(p -> p.getId().toString(), p -> p));
+            Map<String, Post> byId = posts.stream()
+                    .collect(Collectors.toMap(p -> p.getId().toString(), p -> p));
             List<ScoredPostDTO> dtos = new ArrayList<>();
             Map<String, Double> scoreMap = tuples.stream()
-                    .collect(Collectors.toMap(TypedTuple::getValue, TypedTuple::getScore));
+                    .collect(Collectors.toMap(TypedTuple::getValue, t -> {
+                        Double score = t.getScore();
+                        return score == null ? 0.0 : score;
+                    }));
             for (String id : ids) {
                 Post p = byId.get(id);
                 if (p != null) {
@@ -150,7 +158,7 @@ public class PostServiceImpl implements PostService {
     private boolean isVisibleToUser(Post p, UUID viewerId) {
         if (p.getEvent() == null)
             return true;
-        var ev = p.getEvent();
+        Event ev = p.getEvent();
         if (ev.getAdminApprovalStatus() != null
                 && ev.getAdminApprovalStatus().name().equalsIgnoreCase("APPROVED"))
             return true;
@@ -166,7 +174,8 @@ public class PostServiceImpl implements PostService {
         int commentCount = p.getCommentCount();
         int reactionCount = p.getReactionCount();
 
-        var dto = ScoredPostDTO.builder().postId(p.getId()).eventId(p.getEvent() == null ? null : p.getEvent().getId())
+        ScoredPostDTO dto = ScoredPostDTO.builder().postId(p.getId())
+                .eventId(p.getEvent() == null ? null : p.getEvent().getId())
                 .eventTitle(p.getEvent() == null ? "" : p.getEvent().getTitle())
                 .authorName(p.getAuthor() == null ? "" : p.getAuthor().getName()).content(p.getContent())
                 .createdAt(p.getCreatedAt()).commentCount(commentCount).reactionCount(reactionCount)
@@ -233,11 +242,18 @@ public class PostServiceImpl implements PostService {
         // Count reactions
         int reactionCount = postReactionRepository.countByPostId(postId);
 
-        // Check if liked by viewer
+        // Check if liked by viewer and get reaction type
         boolean isLikedByViewer = false;
+        ReactionType viewerReactionType = null;
         if (viewerId != null) {
-            isLikedByViewer = postReactionRepository.existsByPostIdAndUserId(postId, viewerId);
+            Optional<PostReaction> existingOpt = postReactionRepository.findByPostIdAndUserId(postId,
+                    viewerId);
+            isLikedByViewer = existingOpt.isPresent();
+            viewerReactionType = existingOpt.map(PostReaction::getReactionType).orElse(null);
         }
+
+        // Count comments
+        int commentCount = (int) commentRepository.countByPostId(postId);
 
         // Build response
         PostDetailResponse response = PostDetailResponse.builder()
@@ -247,8 +263,10 @@ public class PostServiceImpl implements PostService {
                 .content(post.getContent())
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
+                .commentCount(commentCount)
                 .reactionCount(reactionCount)
                 .isLikedByViewer(isLikedByViewer)
+                .viewerReactionType(viewerReactionType)
                 .build();
 
         // Add author info
@@ -271,9 +289,52 @@ public class PostServiceImpl implements PostService {
         return response;
     }
 
+    @Override
+    public PostDetailResponse likePost(UUID postId, UUID viewerId, ReactionType reactionType) {
+        // validate post
+        Post post = postRepository.findByIdWithAuthorAndEvent(postId);
+        if (post == null) {
+            throw new RuntimeException("Post not found");
+        }
+
+        // Check visibility: viewer must be able to see the post
+        if (viewerId != null && !isVisibleToUser(post, viewerId)) {
+            throw new RuntimeException("Post not visible to user");
+        }
+
+        // validate viewer
+        if (viewerId == null) {
+            throw new RuntimeException("User not found");
+        }
+        User viewer = userRepository.findById(viewerId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Optional<PostReaction> existingOpt = postReactionRepository.findByPostIdAndUserId(postId, viewerId);
+        if (existingOpt.isPresent()) {
+            PostReaction existing = existingOpt.get();
+            if (existing.getReactionType() == reactionType) {
+                // Toggle: Remove reaction if same type (ấn lại để unlike)
+                postReactionService.removeReaction(existing.getId());
+            } else {
+                // Update reaction type if different
+                existing.setReactionType(reactionType);
+                postReactionService.addReaction(existing);
+            }
+        } else {
+            // Add new reaction if not present
+            PostReaction reaction = new PostReaction();
+            reaction.setPost(post);
+            reaction.setUser(viewer);
+            reaction.setReactionType(reactionType);
+            postReactionService.addReaction(reaction);
+        }
+
+        return getPostDetail(postId, viewerId);
+    }
+
     /**
      * Update a post by ID.
-     * 
+     * <p>
      * TODO (Future):
      * - Add authorization check: verify requester is the author or admin
      * - Add audit logging for tracking changes
@@ -308,7 +369,7 @@ public class PostServiceImpl implements PostService {
 
     /**
      * Delete a post by ID.
-     * 
+     * <p>
      * TODO (Future):
      * - Add authorization check: verify requester is the author or admin
      * - Consider soft delete (add deletedAt field) instead of hard delete
@@ -340,7 +401,7 @@ public class PostServiceImpl implements PostService {
 
     /**
      * Get posts by a specific user.
-     * 
+     * <p>
      * TODO (Future):
      * - Add visibility filtering: only return posts that viewer can see
      * - Add sorting options (by date, by score)

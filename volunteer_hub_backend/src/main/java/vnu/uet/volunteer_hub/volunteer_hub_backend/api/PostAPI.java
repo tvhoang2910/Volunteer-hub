@@ -26,6 +26,7 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.PostDetailRespon
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.ResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.ScoredPostDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.CommentService;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.ReactionType;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.PostService;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.UserService;
 
@@ -47,8 +48,8 @@ public class PostAPI {
      * Response: ScoredPostDTO
      * <p>
      * TODO: Sau khi test xong, sửa lại thành:
-     * 
-     * @PostMapping
+     * <p>
+     * {@code @PostMapping}
      *              public ResponseEntity<?> createPost(@Valid @RequestBody
      *              CreatePostRequest request) {
      *              Authentication auth =
@@ -198,7 +199,7 @@ public class PostAPI {
      * Delete a post by ID.
      * DELETE /api/posts/{postId}
      * Response: MessageResponse
-     * 
+     * <p>
      * TODO (Future):
      * - Add @PreAuthorize("hasRole('USER')") or custom authorization
      * - Verify requester is the author or admin before allowing delete
@@ -280,6 +281,49 @@ public class PostAPI {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ResponseDTO.builder()
                             .message(e.getMessage())
+                            .build());
+        }
+    }
+
+    /**
+     * Toggle reaction on a post (add, update, or remove).
+     * POST /api/posts/{postId}/reactions/{viewerId}
+     * Query: type (optional, default LIKE)
+     * Response: PostDetailResponse
+     * <p>
+     * Logic:
+     * - Nếu chưa có react: Thêm mới.
+     * - Nếu đã có react cùng type: Xóa (toggle unlike).
+     * - Nếu đã có react khác type: Cập nhật.
+     */
+    @PostMapping("/{postId}/reactions/{viewerId}")
+    public ResponseEntity<?> toggleReaction(@PathVariable UUID postId, @PathVariable UUID viewerId,
+            @RequestParam(name = "type", required = false, defaultValue = "LIKE") ReactionType reactionType) {
+        try {
+            // [TEST MODE] viewerId passed from path param
+            // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            // UUID viewerId = userService.getViewerIdFromAuthentication(auth);
+
+            PostDetailResponse response = postService.likePost(postId, viewerId, reactionType);
+            return ResponseEntity.ok(ResponseDTO.<PostDetailResponse>builder()
+                    .message("Reaction toggled successfully")
+                    .data(response)
+                    .build());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ResponseDTO.builder()
+                            .message(e.getMessage())
+                            .build());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ResponseDTO.builder()
+                            .message(e.getMessage())
+                            .build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseDTO.builder()
+                            .message("Failed to toggle reaction")
+                            .detail(e.getMessage())
                             .build());
         }
     }

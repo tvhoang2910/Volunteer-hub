@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.ReactionType;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -25,4 +26,5 @@ public class PostDetailResponse {
     private AuthorSummaryDTO author;
     private EventSummaryDTO event;
     private boolean isLikedByViewer;
+    private ReactionType viewerReactionType;
 }

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.PostReaction;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.ReactionType;
 
 public interface PostReactionRepository extends JpaRepository<PostReaction, UUID> {
 
@@ -19,4 +20,12 @@ public interface PostReactionRepository extends JpaRepository<PostReaction, UUID
     int countByPostId(@Param("postId") UUID postId);
 
     boolean existsByPostIdAndUserId(UUID postId, UUID userId);
+
+    java.util.Optional<vnu.uet.volunteer_hub.volunteer_hub_backend.entity.PostReaction> findByPostIdAndUserId(
+            UUID postId, UUID userId);
+
+    java.util.Optional<vnu.uet.volunteer_hub.volunteer_hub_backend.entity.PostReaction> findByPostIdAndUserIdAndReactionType(
+            UUID postId, UUID userId, ReactionType reactionType);
+
+    void deleteByPostIdAndUserId(UUID postId, UUID userId);
 }

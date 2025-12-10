@@ -1,6 +1,9 @@
 package vnu.uet.volunteer_hub.volunteer_hub_backend.api;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -365,15 +368,15 @@ public class AuthAPI {
             }
 
             // Build user info từ JWT authentication
-            java.util.Map<String, Object> info = new java.util.HashMap<>();
+            Map<String, Object> info = new HashMap<>();
 
             // Principal là UUID (được set trong JwtAuthenticationFilter)
             Object principal = auth.getPrincipal();
-            if (principal instanceof java.util.UUID) {
+            if (principal instanceof UUID) {
                 info.put("id", principal.toString());
             } else {
                 // Fallback cho session-based auth hoặc OAuth
-                java.util.UUID id = userService.getViewerIdFromAuthentication(auth);
+                UUID id = userService.getViewerIdFromAuthentication(auth);
                 info.put("id", id != null ? id.toString() : null);
             }
 
@@ -384,7 +387,7 @@ public class AuthAPI {
             // Nếu cần thêm thông tin chi tiết, có thể load từ database
             // Nhưng để giảm database calls, chỉ trả về thông tin từ token
 
-            ResponseDTO<java.util.Map<String, Object>> resp = ResponseDTO.<java.util.Map<String, Object>>builder()
+            ResponseDTO<Map<String, Object>> resp = ResponseDTO.<Map<String, Object>>builder()
                     .message("Current user retrieved")
                     .data(info)
                     .build();
