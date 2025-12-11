@@ -1,3 +1,10 @@
+/**
+ * @file eventService.js
+ * @description Service for handling event-related operations.
+ * Includes methods for fetching events, registering, cancelling, and admin management.
+ * Supports both real API and mock data fallbacks.
+ */
+
 import { managerEvents } from "@/data/managerEvents";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';

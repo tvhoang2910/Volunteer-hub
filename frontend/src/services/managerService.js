@@ -1,3 +1,10 @@
+/**
+ * @file managerService.js
+ * @description Service for Manager Dashboard functionality.
+ * Includes methods for authentication, profile management, stats, notifications, and event approvals.
+ * currently uses frontend-only mocks simulating API calls.
+ */
+
 import {
   MOCK_PROFILE,
   MONTHLY_STATS,
@@ -130,4 +137,3 @@ export default {
   getWallData,
   getEvents,
 };
-

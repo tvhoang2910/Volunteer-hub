@@ -1,3 +1,7 @@
+/**
+ * @file historyService.js
+ * @description Service to fetch user activity history (events, interactions) with simulated latency.
+ */
 
 import { MOCK_EVENTS, MOCK_INTERACTIONS } from '@/data/history-mock';
 

@@ -1,3 +1,9 @@
+/**
+ * @file notificationService.js
+ * @description Service for handling general system notifications (not limited to manager).
+ * Includes fetching notifications and marking them as read.
+ */
+
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export const notificationService = {
