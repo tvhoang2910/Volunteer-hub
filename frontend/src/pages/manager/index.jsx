@@ -13,6 +13,8 @@ export default function ManagerLogin() {
     formData,
     handleInputChange,
     handleSubmit,
+    loading,
+    error
   } = useManagerLogin();
 
   return (
@@ -23,6 +25,13 @@ export default function ManagerLogin() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Error Message */}
+            {error && (
+              <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md border border-red-100">
+                {error}
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" name="email" type="email" placeholder="m@example.com" required value={formData.email} onChange={handleInputChange} />
@@ -36,7 +45,9 @@ export default function ManagerLogin() {
                 </button>
               </div>
             </div>
-            <Button type="submit" className="w-full bg-green-500 hover:bg-[#d55643] text-white">Đăng nhập</Button>
+            <Button type="submit" disabled={loading} className="w-full bg-green-500 hover:bg-[#d55643] text-white">
+              {loading ? "Đang xử lý..." : "Đăng nhập"}
+            </Button>
           </form>
         </CardContent>
       </Card>

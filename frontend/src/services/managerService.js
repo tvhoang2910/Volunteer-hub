@@ -13,6 +13,22 @@ import {
 
 // Mock manager service (frontend-only, returns Promises to simulate API)
 
+export function login(email, password) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      // Simple mock validation
+      if (email === "manager@example.com" || email === "m@example.com") {
+        resolve({
+          token: "mock-manager-token-123",
+          user: { ...MOCK_PROFILE }
+        });
+      } else {
+        reject(new Error("Email hoặc mật khẩu không đúng"));
+      }
+    }, 500);
+  });
+}
+
 export function getProfile() {
   return new Promise((resolve) => {
     setTimeout(() => resolve({ ...MOCK_PROFILE }), 250);
@@ -103,6 +119,7 @@ export function getEvents() {
 }
 
 export default {
+  login,
   getProfile,
   updateProfile,
   uploadAvatar,
