@@ -4,13 +4,13 @@ import ManagerLayout from '@/layouts/ManagerLayout';
 import EventForm from '@/components/manager/EventForm';
 import { eventService } from '@/services/eventService';
 import { ArrowLeft } from 'lucide-react';
-import { useAuth } from '@/hooks/auth/useAuth'; // Assuming auth hook exists
+import { useAuth } from "@/context/AuthContext";
 
 export default function CreateEventPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
-    // const { token } = useAuth(); // If auth is implemented
-    const token = "mock-token"; // Placeholder
+    const { isAuthenticated } = useAuth();
+    const token = isAuthenticated ? localStorage.getItem("token") : "mock-token"; // Placeholder
 
     const handleCreate = async (data) => {
         setLoading(true);

@@ -1,35 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import ManagerLayout from '@/layouts/ManagerLayout';
 import EventForm from '@/components/manager/EventForm';
 import { eventService } from '@/services/eventService';
 import { ArrowLeft } from 'lucide-react';
+import { useManagerEvent } from '@/hooks/useManagerEvent';
 
 export default function EditEventPage() {
     const router = useRouter();
-    const { id } = router.query;
-    const [event, setEvent] = useState(null);
+    const { event, eventId, isReady } = useManagerEvent();
     const [loading, setLoading] = useState(false);
-    const token = "mock-token";
-
-    useEffect(() => {
-        if (id) {
-            // Fetch event details
-            // Assuming getEventDetails works with ID
-            eventService.getEventDetails(id).then(data => {
-                // Transform data if necessary to match form structure
-                // Parse date string "YYYY-MM-DD HH:mm - YYYY-MM-DD HH:mm" if that's the format
-                // But existing mock return object structure might be different. 
-                // Let's assume data comes in a usable format or we parse it.
-                setEvent(data);
-            }).catch(err => console.error(err));
-        }
-    }, [id]);
 
     const handleUpdate = async (data) => {
         setLoading(true);
         try {
-            await eventService.updateEvent(id, data, token);
+            await eventService.updateEvent(eventId, data, "mock-token");
             router.push('/manager/events');
         } catch (error) {
             console.error("Failed to update event", error);
@@ -39,6 +24,7 @@ export default function EditEventPage() {
         }
     };
 
+    if (!isReady) return null;
     if (!event) return <div className="p-10 text-center">Đang tải...</div>;
 
     return (

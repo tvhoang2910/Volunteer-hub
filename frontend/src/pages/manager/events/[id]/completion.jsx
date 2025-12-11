@@ -1,54 +1,27 @@
-import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, ClipboardCheck, UserCheck, UserX, Save } from "lucide-react";
 import EventDetailLayout from "@/components/manager/event/EventDetailLayout";
 import EventNotFound from "@/components/manager/event/EventNotFound";
 import { useManagerEvent } from "@/hooks/useManagerEvent";
-
-const defaultEvaluations = (event) =>
-  event?.volunteers.reduce((acc, vol) => {
-    acc[vol.id] = "pending";
-    return acc;
-  }, {}) ?? {};
+import { useEventCompletion } from "@/hooks/useEventCompletion";
 
 export default function ManagerEventCompletion() {
   const { event, eventId, isReady } = useManagerEvent();
-  const [evaluations, setEvaluations] = useState(() =>
-    defaultEvaluations(event)
-  );
-  const [notes, setNotes] = useState({});
-  const [savedAt, setSavedAt] = useState(null);
-
-  useEffect(() => {
-    if (event) {
-      setEvaluations(defaultEvaluations(event));
-      setNotes({});
-      setSavedAt(null);
-    }
-  }, [event]);
-
-  const stats = useMemo(() => {
-    const values = Object.values(evaluations);
-    const completed = values.filter((value) => value === "completed").length;
-    const pending = values.filter((value) => value !== "completed").length;
-    return { completed, pending };
-  }, [evaluations]);
-
-  const handleEvaluate = (volId, value) => {
-    setEvaluations((prev) => ({ ...prev, [volId]: value }));
-  };
+  const {
+    evaluations,
+    notes,
+    savedAt,
+    stats,
+    evaluate,
+    updateNote,
+    saveEvaluations,
+  } = useEventCompletion(event, eventId);
 
   const handleSave = async () => {
-    try {
-      const updates = Object.entries(evaluations).map(([volId, status]) =>
-        eventService.updateVolunteerStatus(eventId, volId, status, "mock-token")
-      );
-      await Promise.all(updates);
-
-      setSavedAt(new Date().toLocaleTimeString("vi-VN"));
-      console.log("Đã lưu đánh giá:", evaluations, notes);
+    const result = await saveEvaluations();
+    if (result.success) {
+      console.log("Saved evaluations.");
       alert("Lưu đánh giá thành công!");
-    } catch (error) {
-      console.error("Save failed", error);
+    } else {
       alert("Lỗi khi lưu đánh giá");
     }
   };
@@ -110,7 +83,7 @@ export default function ManagerEventCompletion() {
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleEvaluate(vol.id, "completed")}
+                      onClick={() => evaluate(vol.id, "completed")}
                       className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition ${status === "completed"
                           ? "bg-emerald-600 border-emerald-600 text-white"
                           : "border-gray-200 text-gray-600 hover:border-emerald-300"
@@ -120,7 +93,7 @@ export default function ManagerEventCompletion() {
                       Hoàn thành
                     </button>
                     <button
-                      onClick={() => handleEvaluate(vol.id, "pending")}
+                      onClick={() => evaluate(vol.id, "pending")}
                       className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition ${status === "pending"
                           ? "bg-amber-100 border-amber-200 text-amber-700"
                           : "border-gray-200 text-gray-600 hover:border-amber-300"
@@ -132,9 +105,7 @@ export default function ManagerEventCompletion() {
                 </div>
                 <textarea
                   value={notes[vol.id] || ""}
-                  onChange={(e) =>
-                    setNotes((prev) => ({ ...prev, [vol.id]: e.target.value }))
-                  }
+                  onChange={(e) => updateNote(vol.id, e.target.value)}
                   placeholder="Ghi chú đánh giá, hành động tiếp theo..."
                   className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500"
                   rows={3}

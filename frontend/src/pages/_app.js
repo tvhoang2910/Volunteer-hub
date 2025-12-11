@@ -2,6 +2,7 @@ import '../styles/index.css';
 import MainLayout from "../layouts/MainLayout";
 import AdminLayout from "../layouts/AdminLayout";
 import UserLayout from "../layouts/UserLayout";
+import ManagerLayout from "../layouts/ManagerLayout";
 import { AuthProvider } from '../context/AuthContext';
 import { useRouter } from "next/router";
 import { useAppLogic } from '../hooks/useAppLogic';
@@ -13,6 +14,8 @@ function MyApp({ Component, pageProps }) {
 
   const isValidAdminPage = router.pathname.startsWith('/admin');
   const isAdminLoginPage = router.pathname === '/admin';
+  const isManagerPage = router.pathname.startsWith('/manager');
+  const isManagerLoginPage = router.pathname === '/manager';
   const isUserPage = router.pathname.startsWith('/user');
 
   return (
@@ -24,6 +27,14 @@ function MyApp({ Component, pageProps }) {
           <AdminLayout>
             <Component {...pageProps} />
           </AdminLayout>
+        )
+      ) : isManagerPage ? (
+        isManagerLoginPage ? (
+          <Component {...pageProps} />
+        ) : (
+          <ManagerLayout>
+            <Component {...pageProps} />
+          </ManagerLayout>
         )
       ) : isUserPage ? (
         <UserLayout>

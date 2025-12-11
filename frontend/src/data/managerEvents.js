@@ -9,6 +9,7 @@ export const managerEventSections = [
 
 export const managerEvents = [
   {
+    id: "0",
     title: "Trồng cây xanh vì cộng đồng",
     subtitle: "Chiến dịch mùa xuân 2026",
     location: "Hà Nội, Việt Nam",
@@ -126,6 +127,7 @@ export const managerEvents = [
     },
   },
   {
+    id: "1",
     title: "Schwarz Park Maintenance",
     subtitle: "Lake District 2026",
     location: "Dorena Lake, Oregon",

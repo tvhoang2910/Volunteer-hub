@@ -1,37 +1,37 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
-import { LayoutDashboard, Plane, Users, MessageSquare, BellRing, UserCircle, Menu, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, Calendar, Users, BellRing, UserCircle, Menu, X, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react'
 
 const navItems = [
   {
     name: 'Tổng quan',
-    href: '/user/dashboard',
+    href: '/manager/dashboard',
     icon: LayoutDashboard
   },
   {
-    name: 'Lịch sử hoạt động',
-    href: '/user/history',
+    name: 'Quản lý sự kiện',
+    href: '/manager/events',
+    icon: Calendar
+  },
+  {
+    name: 'Quản lý nhóm',
+    href: '/manager/group',
     icon: Users
   },
   {
-    name: 'Kênh trao đổi',
-    href: '/user/exchangeChannel',
-    icon: MessageSquare
-  },
-  {
     name: 'Thông báo',
-    href: '/user/notify',
+    href: '/manager/notifications',
     icon: BellRing
   },
   {
-    name: 'Cài đặt tài khoản',
-    href: '/user/profile',
+    name: 'Hồ sơ cá nhân',
+    href: '/manager/profile',
     icon: UserCircle
   }
 ]
 
-export default function Navbar() {
+export default function ManagerNavbar({ onCollapse }) {
   const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -45,7 +45,11 @@ export default function Navbar() {
   }
 
   const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed)
+    const newCollapsed = !isCollapsed
+    setIsCollapsed(newCollapsed)
+    if (onCollapse) {
+      onCollapse(newCollapsed)
+    }
   }
 
   return (
@@ -54,8 +58,10 @@ export default function Navbar() {
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-zinc-900 via-zinc-900 to-zinc-950 border-b border-zinc-800/50 shadow-xl">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-3">
+            {/* Logo/Icon */}
             <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg shadow-lg shadow-green-500/20">
-              <Plane className="w-5 h-5 text-white" />
+              {/* Replace Plane with something generic or keep it if it's the brand */}
+              <LayoutDashboard className="w-5 h-5 text-white" />
             </div>
             <h1 className="text-lg font-bold text-white tracking-tight">Volunteer Hub</h1>
           </div>
@@ -92,7 +98,7 @@ export default function Navbar() {
       >
         <nav className="p-4 space-y-1">
           {navItems.map((item) => {
-            const isActive = router.pathname === item.href
+            const isActive = router.pathname.startsWith(item.href)
             return (
               <Link
                 key={item.name}
@@ -152,12 +158,13 @@ export default function Navbar() {
 
       {/* Desktop Sidebar */}
       <div className={`hidden lg:block h-screen bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-950 text-zinc-400 shadow-2xl border-r border-zinc-800/50 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'
-        }`}>
+        } sticky top-0`}>
         <div className={`border-b border-zinc-800/50 backdrop-blur-sm transition-all duration-300 ${isCollapsed ? 'p-4' : 'p-6'
           }`}>
           <div className="flex items-center gap-3 group">
             <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg shadow-lg shadow-green-500/20 group-hover:shadow-green-500/40 transition-all duration-300 group-hover:scale-110 flex-shrink-0">
-              <Plane className="w-5 h-5 text-white" />
+              {/* Use generic icon or brand */}
+              <LayoutDashboard className="w-5 h-5 text-white" />
             </div>
             <h1 className={`text-lg font-bold text-white tracking-tight transition-all duration-300 whitespace-nowrap ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
               }`}>
@@ -180,7 +187,10 @@ export default function Navbar() {
         <nav className={`space-y-1 transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-4'
           }`}>
           {navItems.map((item) => {
-            const isActive = router.pathname === item.href
+            // Basic active check: if path starts with href. 
+            // Exception: Dashboard is usually exact or root of manager.
+            const isActive = router.pathname === item.href || (item.href !== '/manager/dashboard' && router.pathname.startsWith(item.href));
+
             return (
               <Link
                 key={item.name}

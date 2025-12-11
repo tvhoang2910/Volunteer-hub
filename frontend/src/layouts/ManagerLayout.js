@@ -5,7 +5,7 @@ const ManagerLayout = ({ children }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   return (
 
-    <div className="flex flex-row relative">
+    <div className="flex flex-row">
       <div>
         <ManagerNavbar onCollapse={(collapsed) => setIsCollapsed(collapsed)} />
       </div>
