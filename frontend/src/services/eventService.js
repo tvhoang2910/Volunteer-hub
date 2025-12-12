@@ -19,10 +19,15 @@ export const eventService = {
             console.error("Error fetching events:", error);
             // Fallback to mock data if API fails or for demo
             return {
-                data: managerEvents, // rudimentary array return
-                meta: { page, limit, total: managerEvents.length }
+                events: managerEvents,
+                totalPages: Math.ceil(managerEvents.length / limit),
+                total: managerEvents.length
             };
         }
+    },
+
+    getMockEvents: () => {
+        return managerEvents;
     },
 
     registerEvent: async (eventId) => {

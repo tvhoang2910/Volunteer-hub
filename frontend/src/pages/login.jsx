@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 import {
   Card,
   CardContent,
@@ -19,19 +19,60 @@ const ErrorMessage = ({ message }) => (
   <p className="text-red-600 text-center">{message}</p>
 );
 
+import { auth, googleProvider } from "@/configs/firebaseConfig";
+import { signInWithPopup } from "firebase/auth";
+import { useAuth } from "@/context/AuthContext";
+
 export default function LoginForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const { login } = useAuth();
 
-  const { formData, loading, errorMessage, handleInputChange, handleSubmit } =
-    useLogin(() => router.push("/"));
+  const { formData, loading, errorMessage, handleInputChange, handleSubmit, setFieldValue } =
+    useLogin((data, form) => {
+      const role = form?.role || "volunteer";
+      if (role === "admin") {
+        router.push("/admin/dashboard");
+      } else if (role === "manager") {
+        router.push("/manager/dashboard");
+      } else {
+        router.push("/user/dashboard");
+      }
+    });
+
+  useEffect(() => {
+    if (router.query.role) {
+      setFieldValue("role", router.query.role);
+    }
+  }, [router.query.role, setFieldValue]);
+
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      const token = await user.getIdToken();
+      login(token);
+
+      // Redirect based on selected role
+      const role = formData.role || "volunteer";
+      if (role === "admin") {
+        router.push("/admin/dashboard");
+      } else if (role === "manager") {
+        router.push("/manager/dashboard");
+      } else {
+        router.push("/user/dashboard");
+      }
+    } catch (error) {
+      console.error("Google sign-in error:", error);
+    }
+  };
 
   return (
     <div
-      className="flex items-center justify-center min-h-screen bg-cover bg-center"
+      className="flex items-center justify-center min-h-screen bg-cover bg-center pt-32 pb-24"
       style={{ backgroundImage: "url('/clouds-background.jpg')" }}
     >
-      <Card className="w-full max-w-md bg-white shadow-xl">
+      <Card className="w-full max-w-md bg-white shadow-xl" >
         <CardHeader className="space-y-1">
           <CardTitle className="text-3xl font-bold text-center text-green-500">
             Chào Mừng Trở Lại
@@ -85,9 +126,16 @@ export default function LoginForm() {
               <Label htmlFor="role" className="text-sm font-medium text-gray-700">
                 Lựa chọn vai trò đăng nhập
               </Label>
-              <select id="role" name="role" className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500">
+              <select
+                id="role"
+                name="role"
+                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500"
+                value={formData.role}
+                onChange={handleInputChange}
+              >
                 <option value="volunteer">Tình nguyện viên</option>
                 <option value="manager">Quản lý</option>
+                <option value="admin">Admin</option>
               </select>
             </div>
             <Button
@@ -110,9 +158,7 @@ export default function LoginForm() {
             variant="outline"
             type="button"
             className="w-full"
-            onClick={() => {
-              console.log("Google sign-in clicked");
-            }}
+            onClick={handleGoogleLogin}
           >
             <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
               <path

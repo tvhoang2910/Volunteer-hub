@@ -5,7 +5,7 @@ import { useForm } from "@/hooks/useForm";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 export const useLogin = (onSuccess) => {
   const { login } = useAuth(); // Lấy hàm login từ AuthContext
-  const { formData, handleInputChange } = useForm({ email: "", password: "" });
+  const { formData, handleInputChange, setFieldValue } = useForm({ email: "", password: "", role: "volunteer" });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -28,7 +28,7 @@ export const useLogin = (onSuccess) => {
           title: "Đăng nhập thành công!",
           description: "Chào mừng bạn trở lại.",
         });
-        if (onSuccess) onSuccess();
+        if (onSuccess) onSuccess(data, formData);
       } else {
         toast({
           title: "Lỗi đăng nhập",
@@ -53,5 +53,6 @@ export const useLogin = (onSuccess) => {
     loading,
     handleInputChange,
     handleSubmit,
+    setFieldValue, // Expose setFieldValue
   };
 };

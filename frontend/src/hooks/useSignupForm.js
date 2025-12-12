@@ -9,6 +9,7 @@ export const useSignup = (onSuccess) => {
     email: '',
     password: '',
     confirmPassword: '',
+    role: 'volunteer',
   });
   const [loading, setLoading] = useState(false);
 
@@ -35,6 +36,7 @@ export const useSignup = (onSuccess) => {
           last_name: formData.lastName,
           email: formData.email,
           password: formData.password,
+          role: formData.role,
         }),
       });
 
