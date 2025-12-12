@@ -159,4 +159,30 @@ public class EventServiceImpl implements EventService {
                 .message("Successfully cancelled event registration.")
                 .build();
     }
+
+    @Override
+    public vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.EventResponseDTO getEventById(UUID eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+
+        String createdByName = null;
+        if (event.getCreatedBy() != null) {
+            // may trigger a lazy load
+            createdByName = event.getCreatedBy().getName();
+        }
+
+        return vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.EventResponseDTO.builder()
+                .eventId(event.getId())
+                .title(event.getTitle())
+                .description(event.getDescription())
+                .location(event.getLocation())
+                .startTime(event.getStartTime())
+                .endTime(event.getEndTime())
+                .maxVolunteers(event.getMaxVolunteers())
+                .createdByName(createdByName)
+                .adminApprovalStatus(
+                        event.getAdminApprovalStatus() == null ? null : event.getAdminApprovalStatus().toString())
+                .createdAt(event.getCreatedAt())
+                .build();
+    }
 }

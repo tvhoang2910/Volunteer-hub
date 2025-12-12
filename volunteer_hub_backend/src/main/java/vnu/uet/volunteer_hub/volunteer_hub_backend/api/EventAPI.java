@@ -154,4 +154,34 @@ public class EventAPI {
      */
     public record EventSimpleDTO(String id, String title, String location, String description) {
     }
+
+    /**
+     * Get event detail by id.
+     * GET /api/events/{eventId}
+     * Response: EventResponseDTO
+     */
+    @GetMapping("/{eventId}")
+    public ResponseEntity<?> getEventDetail(@PathVariable UUID eventId) {
+        try {
+            vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.EventResponseDTO response = eventService
+                    .getEventById(eventId);
+            return ResponseEntity
+                    .ok(ResponseDTO.<vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.EventResponseDTO>builder()
+                            .message("Event retrieved successfully")
+                            .data(response)
+                            .build());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ResponseDTO.builder()
+                            .message("Event not found")
+                            .detail(e.getMessage())
+                            .build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseDTO.builder()
+                            .message("Failed to retrieve event")
+                            .detail(e.getMessage())
+                            .build());
+        }
+    }
 }

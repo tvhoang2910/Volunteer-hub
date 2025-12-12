@@ -25,4 +25,12 @@ public interface EventService {
      * Leave an event (user cancels registration)
      */
     JoinEventResponse leaveEvent(UUID eventId, UUID userId);
+
+    /**
+     * Get event detail by id.
+     *
+     * @param eventId the event id
+     * @return EventResponseDTO containing event details
+     */
+    vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.EventResponseDTO getEventById(UUID eventId);
 }
