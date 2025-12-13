@@ -16,9 +16,9 @@ const GroupCard = ({ group }) => {
                 <CardContent className="p-4 pt-4">
                     <div className="flex items-center space-x-2 mb-2">
                         <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-bold">
-                            {group.name.charAt(0)}
+                            {group.name.charAt(0) || group.created_by_user_id.charAt(0)}
                         </div>
-                        <span className="text-sm text-gray-600 font-medium">Instructor Name</span>
+                        <span className="text-sm text-gray-600 font-medium">{group.created_by_user_id}</span>
                     </div>
                     <p className="text-xs text-gray-400 mt-4 border-t pt-2">
                         Click to enter class

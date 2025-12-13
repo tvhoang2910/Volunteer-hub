@@ -17,8 +17,8 @@ const Post = ({ post, onPostUpdated, onPostDeleted }) => {
     const { deletePost } = useDeletePost(onPostDeleted);
     const { toggleReaction } = useToggleReaction();
 
-    // Assume current user ID is 999 for demo purposes
-    const currentUserId = 999;
+    // Lấy userId từ localStorage (userId được lưu khi đăng nhập , có thể cần api /login khi thành công sẽ lưu vào localStorage)
+    const currentUserId = localStorage.getItem('userId');
     const isOwner = localPost.user.id === currentUserId;
 
     const handleDelete = async () => {
