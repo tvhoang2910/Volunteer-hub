@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.hibernate.annotations.Comment;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.AttributeOverride;
@@ -22,40 +24,53 @@ import lombok.Getter;
 import lombok.Setter;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.EventApprovalStatus;
 
+/**
+ * Entity đại diện cho sự kiện tình nguyện
+ */
 @Getter
 @Setter
 @Entity
 @Table(name = "events")
 @AttributeOverride(name = "id", column = @Column(name = "event_id", nullable = false, updatable = false))
+@Comment("Bảng quản lý các sự kiện tình nguyện")
 public class Event extends BaseEntity {
 
+    @Comment("ID của user tạo sự kiện")
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "created_by_user_id", nullable = false)
     private User createdBy;
 
+    @Comment("Tiêu đề sự kiện")
     @Column(name = "title", nullable = false)
     private String title;
 
+    @Comment("Mô tả chi tiết về sự kiện")
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @Comment("Địa điểm tổ chức sự kiện")
     @Column(name = "location", columnDefinition = "TEXT")
     private String location;
 
+    @Comment("Thời gian bắt đầu sự kiện")
     @Column(name = "start_time", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private LocalDateTime startTime;
 
+    @Comment("Thời gian kết thúc sự kiện")
     @Column(name = "end_time", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private LocalDateTime endTime;
 
+    @Comment("Số lượng tình nguyện viên tối đa (null = không giới hạn)")
     @Column(name = "max_volunteers")
     private Integer maxVolunteers;
 
+    @Comment("Trạng thái duyệt của admin: PENDING (chờ duyệt), APPROVED (đã duyệt), REJECTED (từ chối)")
     @Enumerated(EnumType.STRING)
     @Column(name = "admin_approval_status", length = 50, nullable = false)
     private EventApprovalStatus adminApprovalStatus = EventApprovalStatus.PENDING;
 
+    @Comment("Cờ đánh dấu sự kiện đã được lưu trữ (ẩn khỏi danh sách công khai)")
     @Column(name = "is_archived", nullable = false)
     private Boolean isArchived = Boolean.FALSE;
 

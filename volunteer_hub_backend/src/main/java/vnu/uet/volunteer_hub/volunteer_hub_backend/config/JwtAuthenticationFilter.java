@@ -115,11 +115,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         String path = request.getServletPath();
-        // Có thể skip filter cho các public endpoints để tăng performance
-        // Nhưng vẫn cần để SecurityConfig handle authorization
-        return path.startsWith("/api/auth/login") ||
-                path.startsWith("/api/auth/register") ||
-                path.startsWith("/api/auth/forgot-password") ||
-                path.startsWith("/api/auth/reset-password");
+        // Skip JWT validation for public endpoints
+        return path.startsWith("/api/auth/") ||
+                path.startsWith("/api/dashboard/") ||
+                path.startsWith("/api/events/") ||
+                path.startsWith("/api/registrations/") ||
+                path.startsWith("/api/posts") ||
+                path.startsWith("/api/comments/") ||
+                path.startsWith("/api/users/") ||
+                path.startsWith("/api/search/autocomplete/") ||
+                path.startsWith("/api/notifications/") ||
+                path.startsWith("/ui/") ||
+                path.startsWith("/oauth2/") ||
+                path.startsWith("/login/oauth2/");
     }
 }

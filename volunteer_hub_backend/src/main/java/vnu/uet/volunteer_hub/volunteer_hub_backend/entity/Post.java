@@ -3,6 +3,8 @@ package vnu.uet.volunteer_hub.volunteer_hub_backend.entity;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.hibernate.annotations.Comment;
+
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -15,21 +17,28 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Entity đại diện cho bài viết (post) trong sự kiện
+ */
 @Getter
 @Setter
 @Entity
 @Table(name = "posts")
 @AttributeOverride(name = "id", column = @Column(name = "post_id", nullable = false, updatable = false))
+@Comment("Bảng quản lý bài viết của user trong các sự kiện")
 public class Post extends BaseEntity {
 
+    @Comment("ID của sự kiện chứa bài viết")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "event_id", nullable = false)
     private Event event;
 
+    @Comment("ID của user viết bài")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User author;
 
+    @Comment("Nội dung bài viết")
     @Column(name = "content", columnDefinition = "TEXT", nullable = false)
     private String content;
 

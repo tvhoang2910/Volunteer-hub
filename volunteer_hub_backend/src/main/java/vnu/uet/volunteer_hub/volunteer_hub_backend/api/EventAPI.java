@@ -1,26 +1,20 @@
 package vnu.uet.volunteer_hub.volunteer_hub_backend.api;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.CheckInResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.JoinEventResponse;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.ParticipantResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.ResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Event;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.EventService;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.UserService;
+
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/events")
@@ -68,8 +62,9 @@ public class EventAPI {
      * Response: JoinEventResponse
      * <p>
      * TODO: Sau khi test xong, sửa lại thành:
-     * @PostMapping("/{eventId}/join")
-     * public ResponseEntity<?> joinEvent(@PathVariable UUID eventId) {
+     *
+     * @PostMapping("/{eventId}/join") public ResponseEntity<?>
+     * joinEvent(@PathVariable UUID eventId) {
      * Authentication auth = SecurityContextHolder.getContext().getAuthentication();
      * UUID userId = userService.getViewerIdFromAuthentication(auth);
      */
@@ -180,6 +175,76 @@ public class EventAPI {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ResponseDTO.builder()
                             .message("Failed to retrieve event")
+                            .detail(e.getMessage())
+                            .build());
+        }
+    }
+
+    /**
+     * Get list of participants for an event.
+     * GET /api/events/{eventId}/participants
+     * Response: List of ParticipantResponseDTO
+     */
+    @GetMapping("/{eventId}/participants")
+    public ResponseEntity<?> getParticipants(@PathVariable UUID eventId) {
+        try {
+            List<ParticipantResponseDTO> participants = eventService
+                    .getParticipants(eventId);
+            return ResponseEntity.ok(
+                    ResponseDTO.<List<ParticipantResponseDTO>>builder()
+                            .message("Participants retrieved successfully")
+                            .data(participants)
+                            .build());
+        } catch (jakarta.persistence.EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ResponseDTO.builder()
+                            .message("Event not found")
+                            .detail(e.getMessage())
+                            .build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseDTO.builder()
+                            .message("Failed to retrieve participants")
+                            .detail(e.getMessage())
+                            .build());
+        }
+    }
+
+    /**
+     * Check-in a volunteer to an event.
+     * POST /api/events/{eventId}/check-in
+     * Request: userId (query parameter for testing)
+     * Response: CheckInResponseDTO
+     */
+    @PostMapping("/{eventId}/check-in/{userId}")
+    public ResponseEntity<?> checkInVolunteer(@PathVariable UUID eventId, @PathVariable UUID userId) {
+        try {
+            // [TEST MODE] userId được truyền từ query parameter
+            // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            // UUID userId = userService.getViewerIdFromAuthentication(auth);
+            CheckInResponseDTO response = eventService
+                    .checkInVolunteer(eventId, userId);
+            return ResponseEntity.ok(
+                    ResponseDTO.<CheckInResponseDTO>builder()
+                            .message(response.getMessage())
+                            .data(response)
+                            .build());
+        } catch (jakarta.persistence.EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ResponseDTO.builder()
+                            .message("Event or user not found")
+                            .detail(e.getMessage())
+                            .build());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ResponseDTO.builder()
+                            .message("Check-in failed")
+                            .detail(e.getMessage())
+                            .build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseDTO.builder()
+                            .message("Failed to check-in")
                             .detail(e.getMessage())
                             .build());
         }

@@ -19,6 +19,7 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.PostReaction;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.User;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.EventApprovalStatus;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.ReactionType;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.RegistrationStatus;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.*;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.PostRankingService;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.PostReactionService;
@@ -164,7 +165,11 @@ public class PostServiceImpl implements PostService {
             return true;
         if (p.getAuthor() != null && p.getAuthor().getId() != null && p.getAuthor().getId().equals(viewerId))
             return true;
-        return registrationRepository.existsByEventIdAndVolunteerId(p.getEvent().getId(), viewerId);
+        return registrationRepository.findByEventIdAndVolunteerId(p.getEvent().getId(), viewerId)
+                .filter(reg -> reg.getRegistrationStatus().equals(RegistrationStatus.APPROVED)
+                        || reg.getRegistrationStatus().equals(RegistrationStatus.CHECKED_IN)
+                        || reg.getRegistrationStatus().equals(RegistrationStatus.COMPLETED))
+                .isPresent();
     }
 
     private ScoredPostDTO mapToDTO(Post p, Double totalScoreOverride, Optional<User> viewer) {

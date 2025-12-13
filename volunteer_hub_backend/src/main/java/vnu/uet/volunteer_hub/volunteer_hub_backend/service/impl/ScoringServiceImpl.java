@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Post;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.User;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.RegistrationStatus;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.CommentRepository;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.PostReactionRepository;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.RegistrationRepository;
@@ -114,8 +115,12 @@ public class ScoringServiceImpl implements ScoringService {
             long comments = commentRepository.countByPostIdAndUserId(post.getId(), viewerId);
 
             double boost = (recentReactions * 10.0) + (comments * 20.0);
-            if (post.getEvent() != null
-                    && registrationRepository.existsByEventIdAndVolunteerId(post.getEvent().getId(), viewerId)) {
+            if (post.getEvent() != null && registrationRepository
+                    .findByEventIdAndVolunteerId(post.getEvent().getId(), viewerId)
+                    .filter(reg -> reg.getRegistrationStatus().equals(RegistrationStatus.APPROVED)
+                            || reg.getRegistrationStatus().equals(RegistrationStatus.CHECKED_IN)
+                            || reg.getRegistrationStatus().equals(RegistrationStatus.COMPLETED))
+                    .isPresent()) {
                 boost += 50.0; // registered for the event
             }
             if (post.getAuthor() != null && post.getAuthor().getId() != null

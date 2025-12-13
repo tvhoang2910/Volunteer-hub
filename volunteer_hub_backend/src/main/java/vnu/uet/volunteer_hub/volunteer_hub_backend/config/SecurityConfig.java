@@ -60,6 +60,7 @@ public class SecurityConfig {
                                 "/api/auth/**",
                                 "/api/dashboard/**",
                                 "/api/events/**",
+                                "/api/registrations/**",
                                 "/api/posts/visible",
                                 "/api/posts/{postId}",
                                 "/api/posts",
@@ -76,6 +77,8 @@ public class SecurityConfig {
                         // authenticated
                         .requestMatchers(HttpMethod.GET, "/api/posts")
                         .permitAll()
+                        // Allow check-in endpoint for events without authentication
+                        .requestMatchers(HttpMethod.POST, "/api/events/*/check-in").permitAll()
                         // Admin endpoints - yêu cầu role ADMIN
                         .requestMatchers("/api/admin/**").permitAll()
                         // .hasRole("ADMIN")
@@ -94,7 +97,7 @@ public class SecurityConfig {
                             response.getWriter().write(
                                     "{\"data\":null,\"message\":\"Forbidden\",\"detail\":\"You don't have permission to access this resource.\"}");
                         }))
-                // Thêm JWT filter trước UsernamePasswordAuthenticationFilter
+                // Thêm JWT filter chỉ cho những endpoint cần authentication
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(oAuth2AuthenticationSuccessHandler));

@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.hibernate.annotations.Comment;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -29,24 +30,32 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+/**
+ * Entity đại diện cho người dùng hệ thống
+ */
 @Getter
 @Setter
 @Entity
 @Table(name = "users")
 @ToString(exclude = { "roles", "createdEvents", "registrations", "posts", "postReactions", "notifications" })
 @AttributeOverride(name = "id", column = @Column(name = "user_id", nullable = false, updatable = false))
+@Comment("Bảng quản lý người dùng hệ thống (tình nguyện viên, admin, organizer)")
 public class User extends BaseEntity implements UserDetails {
 
+    @Comment("Tên hiển thị của user")
     @Column(name = "name", length = 100, nullable = false)
     private String name;
 
+    @Comment("Email đăng nhập (duy nhất)")
     @Column(name = "email", nullable = false, unique = true)
     private String email;
 
+    @Comment("Mật khẩu đã mã hóa (BCrypt)")
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(name = "password", columnDefinition = "TEXT", nullable = false)
     private String password;
 
+    @Comment("Trạng thái kích hoạt tài khoản (true = active, false = locked)")
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = Boolean.TRUE;
 
