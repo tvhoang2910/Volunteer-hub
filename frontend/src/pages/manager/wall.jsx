@@ -10,20 +10,20 @@ export default function ManagerWallPage() {
     () => [
       {
         id: "g1",
-        name: "Trồng cây ven sông",
+        name: "Trong cay ven song",
         cover:
           "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=600&q=80",
         avatar: "https://randomuser.me/api/portraits/women/26.jpg",
-        status: "đang diễn ra",
+        status: "Dang dien ra",
         activityCount: 12,
       },
       {
         id: "g2",
-        name: "Phiên chợ 0 đồng",
+        name: "Phien cho 0 dong",
         cover:
           "https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=600&q=80",
         avatar: "https://randomuser.me/api/portraits/men/29.jpg",
-        status: "đã kết thúc",
+        status: "Da ket thuc",
         activityCount: 8,
       },
     ],
@@ -36,13 +36,13 @@ export default function ManagerWallPage() {
     () => [
       {
         id: "p1",
-        group: { id: "g1", name: "Trồng cây ven sông", avatar: groups[0].avatar },
-        author: "Nguyễn Hoài An",
-        time: "15 phút trước",
+        group: { id: "g1", name: "Trong cay ven song", avatar: groups[0].avatar },
+        author: "Nguyen Hoai An",
+        time: "15 phut truoc",
         createdAt: "2025-11-12T00:50:00.000Z",
         lastCommentAt: "2025-11-12T01:05:00.000Z",
         content:
-          "Admin đã duyệt bổ sung kinh phí, nhóm có thể đặt thêm 40 cây sao đen 🌱. Cần 6 TNV phụ trách vận chuyển vào sáng thứ 7!",
+          "Admin vua duyet bo sung kinh phi de trong them 40 cay sao den. Can 6 TNV phu trach van chuyen vao sang thu 7!",
         media:
           "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=900&q=80",
         tags: ["moitruong", "volunteer"],
@@ -50,13 +50,13 @@ export default function ManagerWallPage() {
       },
       {
         id: "p2",
-        group: { id: "g2", name: "Phiên chợ 0 đồng", avatar: groups[1].avatar },
-        author: "Lưu Gia Khánh",
-        time: "1 giờ trước",
+        group: { id: "g2", name: "Phien cho 0 dong", avatar: groups[1].avatar },
+        author: "Lieu Gia Khanh",
+        time: "1 gio truoc",
         createdAt: "2025-11-11T23:55:00.000Z",
         lastCommentAt: "2025-11-12T00:10:00.000Z",
         content:
-          "Checklist mới cho phiên chợ đã cập nhật lên drive. Mọi người kiểm tra lại bàn giao vật phẩm, nhóm quần áo trẻ em lưu ý!",
+          "Checklist moi cho phien cho da cap nhat len drive. Moi nguoi kiem tra lai ban giao vat pham, nho quan ao tre em luu y!",
         tags: ["phiencho", "checklist"],
         stats: { likes: 35, comments: 9 },
       },
@@ -66,28 +66,41 @@ export default function ManagerWallPage() {
 
   const notifications = useMemo(
     () => [
-      { title: "Nhóm Trồng cây ven sông có 5 bài mới", subtitle: "5 bài đăng chưa đọc từ thành viên" },
-      { title: "Sự kiện Dạy STEM sắp diễn ra", subtitle: "16/11 • 14:00 — 2 ngày nữa" },
+      { title: "Nhom Trong cay ven song co 5 bai moi", subtitle: "5 bai dang cho duyet tu thanh vien" },
+      { title: "Su kien Day STEM sap dien ra", subtitle: "16/11 luc 14:00 - con 2 ngay" },
     ],
     []
   );
 
-  const topGroups = useMemo(() => groups.map((g) => ({ ...g, activityCount: g.activityCount })), [groups]);
+  const topGroups = useMemo(
+    () => groups.map((g) => ({ ...g, activityCount: g.activityCount })),
+    [groups]
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 px-2 py-6 lg:px-8">
       <div className="mx-auto max-w-[1300px] grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)_320px]">
         <aside className="sticky top-6 space-y-5 h-fit">
-          <LeftSidebarGroups groups={groups} selectedGroupId={selectedGroupId} onSelect={setSelectedGroupId} />
+          <LeftSidebarGroups
+            groups={groups}
+            selectedGroupId={selectedGroupId}
+            onSelect={setSelectedGroupId}
+          />
         </aside>
 
         <section className="min-h-full overflow-y-auto pr-2 space-y-5 pb-0">
-          {/* Composer area could be re-used; simplified here */}
           <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="text-sm text-slate-600">Bạn đang xem dưới tư cách: <span className="font-medium">Quản trị viên</span></div>
+            <div className="text-sm text-slate-600">
+              Ban dang xem duoi tu cach: <span className="font-medium">Quan tri vien</span>
+            </div>
           </div>
 
-          <Feed posts={posts} filterGroupId={selectedGroupId} />
+          <Feed
+            posts={posts}
+            filterGroupId={selectedGroupId}
+            groups={groups}
+            canPost
+          />
         </section>
 
         <aside className="sticky top-6 space-y-5 h-fit">
