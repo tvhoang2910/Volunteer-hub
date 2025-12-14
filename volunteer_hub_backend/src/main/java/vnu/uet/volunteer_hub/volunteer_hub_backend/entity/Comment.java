@@ -5,6 +5,7 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
@@ -20,7 +21,10 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "comments")
+@Table(name = "comments", indexes = {
+        @Index(name = "idx_comments_post_id", columnList = "post_id"),
+        @Index(name = "idx_comments_user_id", columnList = "user_id")
+})
 @AttributeOverride(name = "id", column = @Column(name = "comment_id", nullable = false, updatable = false))
 @org.hibernate.annotations.Comment("Bảng quản lý bình luận trên bài viết")
 public class Comment extends BaseEntity {

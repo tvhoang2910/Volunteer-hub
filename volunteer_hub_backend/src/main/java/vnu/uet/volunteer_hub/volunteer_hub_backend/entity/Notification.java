@@ -8,6 +8,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
@@ -22,7 +23,12 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.NotificationType;
 @Getter
 @Setter
 @Entity
-@Table(name = "notifications")
+@Table(name = "notifications", indexes = {
+        @Index(name = "idx_notifications_user_id", columnList = "user_id"),
+        @Index(name = "idx_notifications_user_isread", columnList = "user_id,is_read"),
+        @Index(name = "idx_notifications_created_at", columnList = "created_at DESC"),
+        @Index(name = "idx_notifications_event_id", columnList = "event_id")
+})
 @AttributeOverride(name = "id", column = @Column(name = "notification_id", nullable = false, updatable = false))
 @Comment("Bảng quản lý thông báo gửi đến user")
 public class Notification extends BaseEntity {

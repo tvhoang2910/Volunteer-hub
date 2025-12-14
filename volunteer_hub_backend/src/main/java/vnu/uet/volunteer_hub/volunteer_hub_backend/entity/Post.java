@@ -9,6 +9,7 @@ import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
@@ -23,7 +24,10 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "posts")
+@Table(name = "posts", indexes = {
+        @Index(name = "idx_posts_author_id", columnList = "user_id"),
+        @Index(name = "idx_posts_event_id", columnList = "event_id")
+})
 @AttributeOverride(name = "id", column = @Column(name = "post_id", nullable = false, updatable = false))
 @Comment("Bảng quản lý bài viết của user trong các sự kiện")
 public class Post extends BaseEntity {

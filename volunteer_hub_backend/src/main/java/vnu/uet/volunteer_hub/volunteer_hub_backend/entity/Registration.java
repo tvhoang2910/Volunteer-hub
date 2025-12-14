@@ -12,6 +12,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
@@ -26,7 +27,11 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.RegistrationStatu
 @Getter
 @Setter
 @Entity
-@Table(name = "registrations")
+@Table(name = "registrations", indexes = {
+        @Index(name = "idx_registrations_event_user", columnList = "event_id,user_id"),
+        @Index(name = "idx_registrations_user_id", columnList = "user_id"),
+        @Index(name = "idx_registrations_user_status", columnList = "user_id,registration_status")
+})
 @AttributeOverrides({
         @AttributeOverride(name = "id", column = @Column(name = "registration_id", nullable = false, updatable = false)),
         @AttributeOverride(name = "createdAt", column = @Column(name = "registered_at", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE"))

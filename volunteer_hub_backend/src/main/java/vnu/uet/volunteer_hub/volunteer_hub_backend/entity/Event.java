@@ -14,6 +14,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
@@ -30,7 +31,9 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.EventApprovalStat
 @Getter
 @Setter
 @Entity
-@Table(name = "events")
+@Table(name = "events", indexes = {
+        @Index(name = "idx_events_created_by_user", columnList = "created_by_user_id")
+})
 @AttributeOverride(name = "id", column = @Column(name = "event_id", nullable = false, updatable = false))
 @Comment("Bảng quản lý các sự kiện tình nguyện")
 public class Event extends BaseEntity {

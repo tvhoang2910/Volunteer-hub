@@ -19,6 +19,7 @@ import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.JoinTable;
@@ -36,7 +37,9 @@ import lombok.ToString;
 @Getter
 @Setter
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+        @Index(name = "idx_users_is_active", columnList = "is_active")
+})
 @ToString(exclude = { "roles", "createdEvents", "registrations", "posts", "postReactions", "notifications" })
 @AttributeOverride(name = "id", column = @Column(name = "user_id", nullable = false, updatable = false))
 @Comment("Bảng quản lý người dùng hệ thống (tình nguyện viên, admin, organizer)")
