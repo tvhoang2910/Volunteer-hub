@@ -13,7 +13,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 // Import `Carousel` với dynamic import để tắt SSR
-const Carousel = dynamic(() => import("react-multi-carousel"), { ssr: false });
+
 
 const responsive = {
   superLargeDesktop: {

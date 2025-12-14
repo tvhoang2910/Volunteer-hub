@@ -8,6 +8,9 @@ import Benefit from "../components/landing/benefit";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { useEffect } from "react";
+import LogoCloud from "../components/landing/logoCloud";
+import Feature17 from "../components/landing/Feature";
+import Stat from "../components/landing/Stat";
 
 function Home() {
   useEffect(() => {
@@ -47,7 +50,7 @@ function Home() {
       <div className="relative bg-gradient-to-b from-white via-teal-50/30 to-cyan-50/40 py-8">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-green-400/10 via-transparent to-transparent"></div>
         <div className="relative">
-          <About />
+          <LogoCloud />
         </div>
       </div>
 
@@ -55,7 +58,7 @@ function Home() {
       <div className="relative bg-gradient-to-b from-cyan-50/40 via-white to-emerald-50/50 py-8">
         <div className="absolute inset-0 bg-gradient-to-l from-purple-500/5 via-transparent to-green-500/5"></div>
         <div className="relative">
-          <Review />
+          <Stat />
         </div>
       </div>
 
@@ -63,13 +66,14 @@ function Home() {
       <div className="relative bg-gradient-to-br from-emerald-50/50 via-white to-green-50 py-8">
         <div className="absolute inset-0 bg-[linear-gradient(135deg,_rgba(16,185,129,0.05)_0%,_rgba(5,150,105,0.05)_50%,_rgba(6,182,212,0.05)_100%)]"></div>
         <div className="relative">
-          <Benefit />
+          <Feature17 />
         </div>
         {/* Gradient fade to bottom */}
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent via-white to-white pointer-events-none"></div>
       </div>
-
     </div>
+
+
   );
 }
 

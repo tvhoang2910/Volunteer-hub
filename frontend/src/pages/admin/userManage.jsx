@@ -21,8 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import {
     Search,
-    User,
-    Users,
+    Eye,
     Lock,
     Unlock,
     ShieldAlert,
@@ -32,15 +31,197 @@ import { useToast } from "@/hooks/use-toast";
 
 const getRoleBadge = (role) => {
     return role === 'EVENT_MANAGER'
-        ? <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200 border-none">Event Manager</Badge>
-        : <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 border-none">Volunteer</Badge>;
+        ? <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200 border-none whitespace-nowrap">Event Manager</Badge>
+        : <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 border-none whitespace-nowrap">Volunteer</Badge>;
 };
 
 const getStatusBadge = (status) => {
     return status === 'ACTIVE'
-        ? <Badge className="bg-green-100 text-green-800 hover:bg-green-200 border-none">Hoạt động</Badge>
-        : <Badge className="bg-red-100 text-red-800 hover:bg-red-200 border-none">Bị khóa</Badge>;
+        ? <Badge className="bg-green-100 text-green-800 hover:bg-green-200 border-none whitespace-nowrap">Hoạt động</Badge>
+        : <Badge className="bg-red-100 text-red-800 hover:bg-red-200 border-none whitespace-nowrap">Bị khóa</Badge>;
 };
+
+// --- Sub-components for Responsive Views ---
+
+const UserCardMobile = ({ user, onLock, onUnlock, onView }) => (
+    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-3">
+        <div className="flex justify-between items-start">
+            <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-lg">
+                    {user.fullName.charAt(0)}
+                </div>
+                <div className="overflow-hidden">
+                    <p className="font-semibold text-gray-900 truncate">{user.fullName}</p>
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                </div>
+            </div>
+            <div>{getStatusBadge(user.status)}</div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 py-2 border-t border-b border-gray-50">
+            <div>
+                <span className="text-gray-400 text-xs block">Vai trò</span>
+                {getRoleBadge(user.role)}
+            </div>
+            <div>
+                <span className="text-gray-400 text-xs block">Sự kiện</span>
+                <span className="font-medium">{user.totalEvents}</span>
+            </div>
+        </div>
+
+        <div className="flex gap-2 mt-1">
+            {user.status === 'ACTIVE' ? (
+                <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
+                    onClick={() => onLock(user)}
+                >
+                    <Lock className="h-4 w-4 mr-2" /> Khóa
+                </Button>
+            ) : (
+                <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 text-green-600 border-green-200 hover:bg-green-50"
+                    onClick={() => onUnlock(user)}
+                >
+                    <Unlock className="h-4 w-4 mr-2" /> Mở khóa
+                </Button>
+            )}
+            <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 text-blue-600 border-blue-200 hover:bg-blue-50"
+                onClick={() => onView(user)}
+            >
+                <Eye className="h-4 w-4 mr-2" /> Xem
+            </Button>
+        </div>
+    </div>
+);
+
+const UserTableTablet = ({ users, onLock, onUnlock, onView }) => (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <Table>
+            <TableHeader>
+                <TableRow className="bg-gray-50/50">
+                    <TableHead>User</TableHead>
+                    <TableHead>Vai trò</TableHead>
+                    <TableHead>Trạng thái</TableHead>
+                    <TableHead className="text-right">Hành động</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {users.length > 0 ? (
+                    users.map(user => (
+                        <TableRow key={user.id} className="hover:bg-gray-50/50">
+                            <TableCell>
+                                <div className="flex items-center gap-2">
+                                    <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-sm">
+                                        {user.fullName.charAt(0)}
+                                    </div>
+                                    <div className="max-w-[120px]">
+                                        <p className="font-medium text-gray-900 truncate text-sm">{user.fullName}</p>
+                                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                                    </div>
+                                </div>
+                            </TableCell>
+                            <TableCell>{getRoleBadge(user.role)}</TableCell>
+                            <TableCell>{getStatusBadge(user.status)}</TableCell>
+                            <TableCell className="text-right">
+                                <div className="flex justify-end gap-1">
+                                    {user.status === 'ACTIVE' ? (
+                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => onLock(user)}>
+                                            <Lock className="h-4 w-4" />
+                                        </Button>
+                                    ) : (
+                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-green-500 hover:text-green-700 hover:bg-green-50" onClick={() => onUnlock(user)}>
+                                            <Unlock className="h-4 w-4" />
+                                        </Button>
+                                    )}
+                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-blue-500 hover:text-blue-700 hover:bg-blue-50" onClick={() => onView(user)}>
+                                        <Eye className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </TableCell>
+                        </TableRow>
+                    ))
+                ) : (
+                    <TableRow>
+                        <TableCell colSpan={4} className="h-24 text-center text-gray-500">
+                            Không tìm thấy thành viên.
+                        </TableCell>
+                    </TableRow>
+                )}
+            </TableBody>
+        </Table>
+    </div>
+);
+
+const UserTableDesktop = ({ users, onLock, onUnlock, onView }) => (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <Table>
+            <TableHeader>
+                <TableRow className="bg-gray-50/50">
+                    <TableHead>User Profile</TableHead>
+                    <TableHead>Vai trò</TableHead>
+                    <TableHead>Trạng thái</TableHead>
+                    <TableHead>Ngày tham gia</TableHead>
+                    <TableHead className="text-center">Sự kiện</TableHead>
+                    <TableHead className="text-right">Hành động</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {users.length > 0 ? (
+                    users.map(user => (
+                        <TableRow key={user.id} className="hover:bg-gray-50/50">
+                            <TableCell>
+                                <div className="flex items-center gap-3">
+                                    <div className="h-9 w-9 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold">
+                                        {user.fullName.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-gray-900 cursor-pointer hover:underline" onClick={() => onView(user)}>
+                                            {user.fullName}
+                                        </p>
+                                        <p className="text-xs text-gray-500">{user.email}</p>
+                                    </div>
+                                </div>
+                            </TableCell>
+                            <TableCell>{getRoleBadge(user.role)}</TableCell>
+                            <TableCell>{getStatusBadge(user.status)}</TableCell>
+                            <TableCell className="text-sm text-gray-500">{user.joinedAt}</TableCell>
+                            <TableCell className="text-center font-medium">{user.totalEvents}</TableCell>
+                            <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                    {user.status === 'ACTIVE' ? (
+                                        <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => onLock(user)} title="Khóa">
+                                            <Lock className="h-4 w-4" />
+                                        </Button>
+                                    ) : (
+                                        <Button size="sm" variant="ghost" className="text-green-500 hover:text-green-700 hover:bg-green-50" onClick={() => onUnlock(user)} title="Mở khóa">
+                                            <Unlock className="h-4 w-4" />
+                                        </Button>
+                                    )}
+                                    <Button size="sm" variant="ghost" className="text-gray-500 hover:text-blue-600" onClick={() => onView(user)} title="Xem chi tiết">
+                                        <Eye className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </TableCell>
+                        </TableRow>
+                    ))
+                ) : (
+                    <TableRow>
+                        <TableCell colSpan={6} className="h-24 text-center text-gray-500">
+                            Không tìm thấy thành viên nào.
+                        </TableCell>
+                    </TableRow>
+                )}
+            </TableBody>
+        </Table>
+    </div>
+);
 
 const UserManagement = () => {
     const { toast } = useToast();
@@ -65,6 +246,16 @@ const UserManagement = () => {
     });
 
     // Actions
+    const handleLockTrigger = (user) => {
+        setSelectedUser(user);
+        setIsLockOpen(true);
+    };
+
+    const handleUnlockTrigger = (user) => {
+        setSelectedUser(user);
+        setIsUnlockOpen(true);
+    };
+
     const handleLock = () => {
         if (!selectedUser) return;
         setUsers(users.map(u =>
@@ -102,132 +293,89 @@ const UserManagement = () => {
     };
 
     return (
-
-        <div className="p-6 space-y-6 bg-gray-50/50 min-h-screen">
+        <div className="p-4 md:p-6 space-y-6 bg-gray-50/50 min-h-screen">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Quản lý người dùng</h1>
-                    <p className="text-gray-500">Quản lý tài khoản tình nguyện viên và nhà tổ chức</p>
+                    <h1 className="text-xl md:text-2xl font-bold text-gray-900">Quản lý người dùng</h1>
+                    <p className="text-sm md:text-base text-gray-500">Quản lý tài khoản tình nguyện viên và nhà tổ chức</p>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                    <div className="relative">
+                <div className="w-full md:w-auto flex flex-col sm:flex-row gap-2">
+                    <div className="relative flex-1 sm:flex-initial">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                         <Input
                             placeholder="Tìm tên, email..."
-                            className="pl-9 w-[200px] bg-white"
+                            className="pl-9 w-full sm:w-[200px] bg-white h-10"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <select
-                        className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
-                        value={roleFilter}
-                        onChange={(e) => setRoleFilter(e.target.value)}
-                    >
-                        <option value="ALL">Tất cả vai trò</option>
-                        <option value="VOLUNTEER">Tình nguyện viên</option>
-                        <option value="EVENT_MANAGER">Quản lý sự kiện</option>
-                    </select>
-                    <select
-                        className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                    >
-                        <option value="ALL">Tất cả trạng thái</option>
-                        <option value="ACTIVE">Hoạt động</option>
-                        <option value="LOCKED">Bị khóa</option>
-                    </select>
+                    <div className="flex gap-2">
+                        <select
+                            className="flex-1 sm:flex-initial h-10 rounded-md border border-input bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                            value={roleFilter}
+                            onChange={(e) => setRoleFilter(e.target.value)}
+                        >
+                            <option value="ALL">Tất cả vai trò</option>
+                            <option value="VOLUNTEER">Tình nguyện viên</option>
+                            <option value="EVENT_MANAGER">Quản lý</option>
+                        </select>
+                        <select
+                            className="flex-1 sm:flex-initial h-10 rounded-md border border-input bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                        >
+                            <option value="ALL">Tất cả trạng thái</option>
+                            <option value="ACTIVE">Hoạt động</option>
+                            <option value="LOCKED">Bị khóa</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            {/* User Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <Table>
-                    <TableHeader>
-                        <TableRow className="bg-gray-50/50">
-                            <TableHead>User Profile</TableHead>
-                            <TableHead>Vai trò</TableHead>
-                            <TableHead>Trạng thái</TableHead>
-                            <TableHead>Ngày tham gia</TableHead>
-                            <TableHead className="text-center">Sự kiện</TableHead>
-                            <TableHead className="text-right">Hành động</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {filteredUsers.length > 0 ? (
-                            filteredUsers.map(user => (
-                                <TableRow key={user.id} className="hover:bg-gray-50/50">
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-9 w-9 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold">
-                                                {user.fullName.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <p
-                                                    className="font-medium text-gray-900 cursor-pointer hover:underline"
-                                                    onClick={() => openDetail(user)}
-                                                >
-                                                    {user.fullName}
-                                                </p>
-                                                <p className="text-xs text-gray-500">{user.email}</p>
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{getRoleBadge(user.role)}</TableCell>
-                                    <TableCell>{getStatusBadge(user.status)}</TableCell>
-                                    <TableCell className="text-sm text-gray-500">{user.joinedAt}</TableCell>
-                                    <TableCell className="text-center font-medium">{user.totalEvents}</TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex justify-end gap-2">
-                                            {user.status === 'ACTIVE' ? (
-                                                <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                                    onClick={() => { setSelectedUser(user); setIsLockOpen(true); }}
-                                                    title="Khóa tài khoản"
-                                                >
-                                                    <Lock className="h-4 w-4" />
-                                                </Button>
-                                            ) : (
-                                                <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    className="text-green-500 hover:text-green-700 hover:bg-green-50"
-                                                    onClick={() => { setSelectedUser(user); setIsUnlockOpen(true); }}
-                                                    title="Mở khóa tài khoản"
-                                                >
-                                                    <Unlock className="h-4 w-4" />
-                                                </Button>
-                                            )}
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                className="text-gray-500 hover:text-blue-600"
-                                                onClick={() => openDetail(user)}
-                                                title="Xem chi tiết"
-                                            >
-                                                <Users className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center text-gray-500">
-                                    Không tìm thấy thành viên nào.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+            {/* Content Views */}
+
+            {/* Mobile View (< 768px) */}
+            <div className="block md:hidden space-y-4">
+                {filteredUsers.length > 0 ? (
+                    filteredUsers.map(user => (
+                        <UserCardMobile
+                            key={user.id}
+                            user={user}
+                            onLock={handleLockTrigger}
+                            onUnlock={handleUnlockTrigger}
+                            onView={openDetail}
+                        />
+                    ))
+                ) : (
+                    <div className="text-center text-gray-500 py-10">Không tìm thấy thành viên nào.</div>
+                )}
             </div>
+
+            {/* Tablet View (768px - 1024px) */}
+            <div className="hidden md:block lg:hidden">
+                <UserTableTablet
+                    users={filteredUsers}
+                    onLock={handleLockTrigger}
+                    onUnlock={handleUnlockTrigger}
+                    onView={openDetail}
+                />
+            </div>
+
+            {/* Desktop View (>= 1024px) */}
+            <div className="hidden lg:block">
+                <UserTableDesktop
+                    users={filteredUsers}
+                    onLock={handleLockTrigger}
+                    onUnlock={handleUnlockTrigger}
+                    onView={openDetail}
+                />
+            </div>
+
 
             {/* Lock Modal */}
             <Dialog open={isLockOpen} onOpenChange={setIsLockOpen}>
-                <DialogContent>
+                <DialogContent className="sm:max-w-md w-[95vw]">
                     <DialogHeader>
                         <DialogTitle className="text-red-600 flex items-center gap-2">
                             <ShieldAlert className="h-5 w-5" />
@@ -245,7 +393,7 @@ const UserManagement = () => {
                             onChange={(e) => setLockReason(e.target.value)}
                         />
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="gap-2 sm:gap-0">
                         <Button variant="outline" onClick={() => setIsLockOpen(false)}>Hủy</Button>
                         <Button variant="destructive" onClick={handleLock} disabled={!lockReason.trim()}>
                             Xác nhận Khóa
@@ -256,14 +404,14 @@ const UserManagement = () => {
 
             {/* Unlock Modal */}
             <Dialog open={isUnlockOpen} onOpenChange={setIsUnlockOpen}>
-                <DialogContent>
+                <DialogContent className="sm:max-w-md w-[95vw]">
                     <DialogHeader>
                         <DialogTitle>Mở khóa tài khoản</DialogTitle>
                         <DialogDescription>
                             Khôi phục quyền truy cập cho người dùng này?
                         </DialogDescription>
                     </DialogHeader>
-                    <DialogFooter>
+                    <DialogFooter className="gap-2 sm:gap-0">
                         <Button variant="outline" onClick={() => setIsUnlockOpen(false)}>Hủy</Button>
                         <Button className="bg-green-600 text-white hover:bg-green-700" onClick={handleUnlock}>
                             Mở khóa
@@ -274,7 +422,7 @@ const UserManagement = () => {
 
             {/* Detail Modal */}
             <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Hồ sơ người dùng</DialogTitle>
                     </DialogHeader>
@@ -284,9 +432,9 @@ const UserManagement = () => {
                                 <div className="h-20 w-20 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-2xl font-bold mb-3">
                                     {selectedUser.fullName.charAt(0)}
                                 </div>
-                                <h3 className="font-bold text-lg">{selectedUser.fullName}</h3>
-                                <p className="text-gray-500 text-sm mb-2">{selectedUser.email}</p>
-                                <div className="flex gap-2 mb-4">
+                                <h3 className="font-bold text-lg text-center">{selectedUser.fullName}</h3>
+                                <p className="text-gray-500 text-sm mb-2 text-center break-all">{selectedUser.email}</p>
+                                <div className="flex flex-wrap justify-center gap-2 mb-4">
                                     {getRoleBadge(selectedUser.role)}
                                     {getStatusBadge(selectedUser.status)}
                                 </div>
@@ -343,7 +491,6 @@ const UserManagement = () => {
             </Dialog>
 
         </div>
-
     );
 };
 

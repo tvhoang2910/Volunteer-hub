@@ -1,21 +1,15 @@
-import { useState } from 'react';
+import { useAsyncFn } from './useAsync';
 import { postService } from '../services/postService';
 
 export const useToggleReaction = () => {
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const { execute, loading, error } = useAsyncFn(postService.toggleReaction);
 
     const toggleReaction = async (id) => {
-        setLoading(true);
-        setError(null);
         try {
-            await postService.toggleReaction(id);
+            await execute(id);
             return true;
         } catch (err) {
-            setError(err.message || 'Failed to toggle reaction');
             return false;
-        } finally {
-            setLoading(false);
         }
     };
 

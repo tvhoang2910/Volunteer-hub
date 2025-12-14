@@ -3,6 +3,7 @@ import SlideUpDetail from '../ui/slide-up';
 import CommentList from './CommentList';
 import { PostProvider } from '../../context/PostContext';
 import mockComments from '../../data/Comment_data.json';
+import CommentForm from './CommentForm';
 
 const CommentDetailSlideUp = ({ isOpen, onClose, post, comments }) => {
     // Use mock data if comments prop is empty or for testing purposes as requested
@@ -21,6 +22,9 @@ const CommentDetailSlideUp = ({ isOpen, onClose, post, comments }) => {
             >
                 <div className="flex flex-col h-full">
                     <CommentList comments={rootComments} />
+                </div>
+                <div className="border-t border-gray-200 p-4 bg-white pt-12">
+                    <CommentForm onSubmit={() => { }} />
                 </div>
             </SlideUpDetail>
         </PostProvider>

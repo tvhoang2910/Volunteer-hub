@@ -18,9 +18,8 @@ import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-
 const NavLink = ({ href, children, isActive, isScrolled }) => {
   return (
     <Link href={href} className="relative group block">
-      <span className={`relative z-10 transition-colors duration-300 font-medium ${
-        isActive ? 'text-green-500' : 'text-gray-700 group-hover:text-green-500'
-      } ${isScrolled ? 'text-sm' : 'text-base'}`}>
+      <span className={`relative z-10 transition-colors duration-300 font-medium ${isActive ? 'text-green-500' : 'text-gray-700 group-hover:text-green-500'
+        } ${isScrolled ? 'text-sm' : 'text-base'}`}>
         {children}
       </span>
       {/* Sliding underline animation */}
@@ -136,7 +135,7 @@ export default function Navbar() {
           <motion.div
             className="flex items-center"
             animate={{
-              scale: isScrolled ? 0.85 : 1,
+              scale: isScrolled ? 0.9 : 1,
             }}
             transition={{
               duration: 0.4,
@@ -148,17 +147,16 @@ export default function Navbar() {
                 src="/logo.png"
                 alt="Logo"
                 className="transition-all duration-300"
-                width={isScrolled ? 96 : 144}
-                height={isScrolled ? 96 : 144}
+                width={isScrolled ? 64 : 81}
+                height={isScrolled ? 64 : 81}
                 priority
               />
             </Link>
           </motion.div>
 
           {/* Desktop Menu */}
-          <ul className={`flex items-center flex-1 justify-center max-lg:hidden ${
-            isScrolled ? 'gap-x-8' : 'gap-x-12'
-          }`}>
+          <ul className={`flex items-center flex-1 justify-center max-lg:hidden ${isScrolled ? 'gap-x-8' : 'gap-x-12'
+            }`}>
             <li>
               <NavLink
                 href="/"
@@ -197,9 +195,8 @@ export default function Navbar() {
                   <motion.button
                     whileHover={{ scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
-                    className={`rounded-full bg-gradient-to-br from-green-50 to-emerald-50 text-gray-700 flex items-center justify-center p-0 transition-all duration-300 shadow-sm hover:shadow-md hover:shadow-green-200 ${
-                      isScrolled ? 'w-9 h-9' : 'w-11 h-11'
-                    }`}
+                    className={`rounded-full bg-gradient-to-br from-green-50 to-emerald-50 text-gray-700 flex items-center justify-center p-0 transition-all duration-300 shadow-sm hover:shadow-md hover:shadow-green-200 ${isScrolled ? 'w-9 h-9' : 'w-11 h-11'
+                      }`}
                   >
                     <BsPersonCircle size={isScrolled ? 18 : 22} />
                   </motion.button>
@@ -322,11 +319,10 @@ export default function Navbar() {
                     <Link
                       href="/"
                       onClick={handleLinkClick}
-                      className={`block px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 ${
-                        router.pathname === '/'
-                          ? 'text-green-500 bg-green-50'
-                          : 'text-gray-700 hover:text-green-500 hover:bg-green-50'
-                      }`}
+                      className={`block px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 ${router.pathname === '/'
+                        ? 'text-green-500 bg-green-50'
+                        : 'text-gray-700 hover:text-green-500 hover:bg-green-50'
+                        }`}
                     >
                       Trang chủ
                     </Link>
@@ -335,11 +331,10 @@ export default function Navbar() {
                     <Link
                       href="/contact"
                       onClick={handleLinkClick}
-                      className={`block px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 ${
-                        router.pathname === '/contact'
-                          ? 'text-green-500 bg-green-50'
-                          : 'text-gray-700 hover:text-green-500 hover:bg-green-50'
-                      }`}
+                      className={`block px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 ${router.pathname === '/contact'
+                        ? 'text-green-500 bg-green-50'
+                        : 'text-gray-700 hover:text-green-500 hover:bg-green-50'
+                        }`}
                     >
                       Liên hệ
                     </Link>

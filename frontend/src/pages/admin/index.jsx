@@ -34,88 +34,73 @@ const AdminLogin = () => {
   return (
     <div
       className="flex items-center justify-center min-h-screen bg-cover bg-center"
-      style={{
-        backgroundImage: "url('/clouds-background.jpg')",
-      }}
+      style={{ backgroundImage: "url('/clouds-background.jpg')" }}
     >
       <Card className="w-full max-w-md bg-white shadow-xl">
-        <CardHeader className="space-y-1">
+        <CardHeader>
           <CardTitle className="text-3xl font-bold text-center text-green-500">
-            Dang nhap Admin
+            Đăng nhập Admin
           </CardTitle>
         </CardHeader>
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {errorMessage ? (
+            {errorMessage && (
               <p className="text-red-600 text-center">{errorMessage}</p>
-            ) : null}
+            )}
+
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                Email
-              </Label>
+              <Label>Email</Label>
               <Input
-                id="email"
                 name="email"
                 type="email"
-                placeholder="m@example.com"
                 required
-                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500"
                 value={formData.email}
                 onChange={handleInputChange}
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="role" className="text-sm font-medium text-gray-700">
-                Vai tro
-              </Label>
+              <Label>Vai trò</Label>
               <Select
                 value={formData.role}
                 onValueChange={(value) =>
                   handleInputChange({ target: { name: "role", value } })
                 }
               >
-                <SelectTrigger id="role">
-                  <SelectValue placeholder="Chon vai tro" />
+                <SelectTrigger>
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ADMIN">Admin</SelectItem>
                   <SelectItem value="MANAGER">Manager</SelectItem>
-                  <SelectItem value="VOLUNTEER">User (Volunteer)</SelectItem>
+                  <SelectItem value="VOLUNTEER">Volunteer</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-2">
-              <Label
-                htmlFor="password"
-                className="text-sm font-medium text-gray-700"
-              >
-                Mat khau
-              </Label>
+              <Label>Mật khẩu</Label>
               <div className="relative">
                 <Input
-                  id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
                   required
-                  className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500"
                   value={formData.password}
                   onChange={handleInputChange}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-2.5 text-gray-400"
                 >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showPassword ? <EyeOff /> : <Eye />}
                 </button>
               </div>
             </div>
-            <Button
-              type="submit"
-              className="w-full bg-green-500 hover:bg-[#d55643] text-white"
-              disabled={loading}
-            >
-              {loading ? "Dang dang nhap..." : "Dang nhap"}
+
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Đang đăng nhập..." : "Đăng nhập"}
             </Button>
           </form>
         </CardContent>

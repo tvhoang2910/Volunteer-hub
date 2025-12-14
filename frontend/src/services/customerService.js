@@ -1,3 +1,9 @@
+/**
+ * @file customerService.js
+ * @description Service for managing customer (user) profile information.
+ * Handles fetching and updating user details.
+ */
+
 import axios from "axios";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;

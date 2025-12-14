@@ -85,10 +85,11 @@ export default function Hero() {
       {/* <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/80 z-10"></div> */}
       {/* Background image on the right half */}
       <div
-        className="absolute inset-y-0 right-0 w-1/2 bg-no-repeat bg-contain bg-right z-0"
+        className="hidden lg:block absolute inset-y-0 right-0 w-1/2 bg-no-repeat bg-contain bg-right z-0"
         style={{
           backgroundImage: "url('/thumbnail.jpg')",
-          backgroundSize: "70%"
+          backgroundSize: "70%",
+          backdropFilter: "blur(10px)"
         }}
       ></div>
       {/* Additional subtle gradient for depth */}
@@ -109,7 +110,7 @@ export default function Hero() {
             variants={containerVariants}
             initial="hidden"
             animate={isLoaded ? "visible" : "hidden"}
-            className="flex flex-col"
+            className="flex flex-col items-center lg:items-start text-center lg:text-left order-2 lg:order-1"
           >
             {/* Subtitle - "Hãy cùng chung tay" */}
             <motion.p
@@ -140,7 +141,7 @@ export default function Hero() {
             {/* CTA Buttons */}
             <motion.div
               variants={itemVariants}
-              className="flex flex-col sm:flex-row items-start gap-4 lg:gap-6"
+              className="flex flex-col sm:flex-row items-center lg:items-start gap-4 lg:gap-6 w-full sm:w-auto"
             >
               {/* Primary Button - Gradient with Glow */}
               <Link href={isAuthenticated ? "/user/dashboard" : "/login"}>
@@ -203,8 +204,15 @@ export default function Hero() {
             variants={itemVariants}
             initial="hidden"
             animate={isLoaded ? "visible" : "hidden"}
-            className="hidden lg:flex justify-center items-center"
+            className="flex justify-center items-center order-1 lg:order-2 lg:hidden w-full mb-8"
           >
+            <div className="relative w-full max-w-sm">
+              <img
+                src="/thumbnail.jpg"
+                alt="Volunteer Help"
+                className="w-full h-auto object-contain drop-shadow-xl rounded-lg"
+              />
+            </div>
 
           </motion.div>
         </div>

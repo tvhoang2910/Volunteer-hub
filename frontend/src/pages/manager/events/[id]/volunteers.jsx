@@ -1,42 +1,27 @@
-import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import EventDetailLayout from "@/components/manager/event/EventDetailLayout";
 import EventNotFound from "@/components/manager/event/EventNotFound";
 import { useManagerEvent } from "@/hooks/useManagerEvent";
+import { useEventVolunteers } from "@/hooks/useEventVolunteers";
 
 export default function ManagerEventVolunteers() {
   const { event, eventId, isReady } = useManagerEvent();
-  const [volunteers, setVolunteers] = useState(event?.volunteers ?? []);
-  const [search, setSearch] = useState("");
+  const {
+    volunteers,
+    filteredVolunteers,
+    search,
+    setSearch,
+    changeStatus,
+    saveVolunteers,
+  } = useEventVolunteers(event, eventId);
 
-  useEffect(() => {
-    if (event) {
-      setVolunteers(event.volunteers);
+  const handleSave = async () => {
+    const result = await saveVolunteers();
+    if (result.success) {
+      alert("Danh sách tình nguyện viên đã được lưu!");
+    } else {
+      alert("Có lỗi xảy ra khi lưu danh sách.");
     }
-  }, [event]);
-
-  const filtered = useMemo(() => {
-    if (!search) return volunteers;
-    const keyword = search.toLowerCase();
-    return volunteers.filter(
-      (vol) =>
-        vol.name.toLowerCase().includes(keyword) ||
-        vol.role.toLowerCase().includes(keyword)
-    );
-  }, [volunteers, search]);
-
-  const handleStatusChange = (id, newStatus) => {
-    setVolunteers((prev) =>
-      prev.map((v) =>
-        v.id === id ? { ...v, status: newStatus } : v
-      )
-    );
-  };
-
-  const handleSave = () => {
-    // Ở đây bạn có thể gọi API lưu dữ liệu thực tế
-    console.log("Lưu danh sách:", volunteers);
-    alert("Danh sách tình nguyện viên đã được lưu!");
   };
 
   if (!isReady) return null;
@@ -77,26 +62,39 @@ export default function ManagerEventVolunteers() {
           <table className="min-w-full border-collapse text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">STT</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">Họ và tên</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">Ngày tham gia</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">Liên lạc</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">Trạng thái</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-700">
+                  STT
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-700">
+                  Họ và tên
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-700">
+                  Ngày tham gia
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-700">
+                  Liên lạc
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-700">
+                  Trạng thái
+                </th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((vol, index) => (
-                <tr key={vol.id} className="border-t hover:bg-gray-50 transition">
+              {filteredVolunteers.map((vol, index) => (
+                <tr
+                  key={vol.id}
+                  className="border-t hover:bg-gray-50 transition"
+                >
                   <td className="px-4 py-3">{index + 1}</td>
-                  <td className="px-4 py-3 font-medium text-gray-900">{vol.name}</td>
+                  <td className="px-4 py-3 font-medium text-gray-900">
+                    {vol.name}
+                  </td>
                   <td className="px-4 py-3 text-gray-700">{vol.joinedAt}</td>
                   <td className="px-4 py-3 text-gray-700">{vol.phone}</td>
                   <td className="px-4 py-3">
                     <select
                       value={vol.status}
-                      onChange={(e) =>
-                        handleStatusChange(vol.id, e.target.value)
-                      }
+                      onChange={(e) => changeStatus(vol.id, e.target.value)}
                       className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:border-emerald-500 focus:outline-none"
                     >
                       <option value="Thành viên">Thành viên</option>
@@ -105,7 +103,7 @@ export default function ManagerEventVolunteers() {
                   </td>
                 </tr>
               ))}
-              {!filtered.length && (
+              {!filteredVolunteers.length && (
                 <tr>
                   <td
                     colSpan={5}

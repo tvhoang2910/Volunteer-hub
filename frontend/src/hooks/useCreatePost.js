@@ -1,25 +1,15 @@
-import { useState } from 'react';
+import { useAsyncFn } from './useAsync';
 import { postService } from '../services/postService';
 
 export const useCreatePost = (onSuccess) => {
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const { execute, loading, error } = useAsyncFn(postService.createPost);
 
     const createPost = async (formData) => {
-        setLoading(true);
-        setError(null);
-        try {
-            const newPost = await postService.createPost(formData);
-            if (onSuccess) {
-                onSuccess(newPost);
-            }
-            return newPost;
-        } catch (err) {
-            setError(err.message || 'Failed to create post');
-            throw err;
-        } finally {
-            setLoading(false);
+        const result = await execute(formData);
+        if (onSuccess) {
+            onSuccess(result);
         }
+        return result;
     };
 
     return {

@@ -57,14 +57,6 @@ const EventCard = ({ event, onRegister, onCancel, onClick }) => {
         <div
             className="relative max-w-md rounded-xl bg-gradient-to-r from-indigo-200 to-sky-300 pt-0 shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-shadow"
             onClick={handleCardClick}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleCardClick();
-                }
-            }}
         >
             {/* Header image */}
             <div

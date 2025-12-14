@@ -37,51 +37,52 @@ const ManagerLogin = () => {
       style={{ backgroundImage: "url('/clouds-background.jpg')" }}
     >
       <Card className="w-full max-w-md bg-white shadow-xl">
-        <CardHeader className="space-y-1">
+        <CardHeader>
           <CardTitle className="text-3xl font-bold text-center text-green-500">
-            Dang nhap Manager
+            Đăng nhập Manager
           </CardTitle>
         </CardHeader>
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {errorMessage ? (
+            {errorMessage && (
               <p className="text-red-600 text-center">{errorMessage}</p>
-            ) : null}
+            )}
+
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label>Email</Label>
               <Input
-                id="email"
                 name="email"
                 type="email"
-                placeholder="m@example.com"
                 required
                 value={formData.email}
                 onChange={handleInputChange}
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="role">Vai tro</Label>
+              <Label>Vai trò</Label>
               <Select
                 value={formData.role}
                 onValueChange={(value) =>
                   handleInputChange({ target: { name: "role", value } })
                 }
               >
-                <SelectTrigger id="role">
-                  <SelectValue placeholder="Chon vai tro" />
+                <SelectTrigger>
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="MANAGER">Manager</SelectItem>
-                  <SelectItem value="VOLUNTEER">User (Volunteer)</SelectItem>
+                  <SelectItem value="VOLUNTEER">Volunteer</SelectItem>
                   <SelectItem value="ADMIN">Admin</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="password">Mat khau</Label>
+              <Label>Mật khẩu</Label>
               <div className="relative">
                 <Input
-                  id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
                   required
@@ -91,18 +92,15 @@ const ManagerLogin = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400"
+                  className="absolute right-3 top-2.5 text-gray-400"
                 >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showPassword ? <EyeOff /> : <Eye />}
                 </button>
               </div>
             </div>
-            <Button
-              type="submit"
-              className="w-full bg-green-500 hover:bg-[#d55643] text-white"
-              disabled={loading}
-            >
-              {loading ? "Dang dang nhap..." : "Dang nhap"}
+
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Đang đăng nhập..." : "Đăng nhập"}
             </Button>
           </form>
         </CardContent>

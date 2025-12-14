@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import ProfileHeader from '@/components/manager/profile/ProfileHeader'
 import ProfileDetails from '@/components/manager/profile/ProfileDetails'
 import EditProfileModal from '@/components/manager/profile/EditProfileModal'
 import SimpleAlert from '@/components/ui/SimpleAlert'
 import Tabs from '@/components/common/Tabs'
-import managerService from '@/services/managerService'
+import { useManagerProfile } from '@/hooks/useManagerProfile'
 
 const tabs = [
   { key: 'info', label: 'Thông tin' },
@@ -14,33 +14,9 @@ const tabs = [
 ]
 
 export default function ManagerProfilePage() {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const { user, loading, alert, handleSave, closeAlert } = useManagerProfile();
   const [showEdit, setShowEdit] = useState(false)
-  const [alert, setAlert] = useState(null)
   const [activeTab, setActiveTab] = useState('info')
-
-  useEffect(() => {
-    let mounted = true
-    managerService.getProfile().then((u) => {
-      if (!mounted) return
-      setUser(u)
-      setLoading(false)
-    })
-    return () => (mounted = false)
-  }, [])
-
-  const handleSave = async (data) => {
-    try {
-      setAlert({ type: 'success', message: 'Đang lưu...' })
-      const updated = await managerService.updateProfile(data)
-      setUser(updated)
-      setAlert({ type: 'success', message: 'Cập nhật hồ sơ thành công.' })
-    } catch (err) {
-      setAlert({ type: 'error', message: err.message || 'Lỗi khi lưu.' })
-      throw err
-    }
-  }
 
   return (
     <div className="bg-gray-50 min-h-screen pt-24">
@@ -51,7 +27,7 @@ export default function ManagerProfilePage() {
         </div>
 
         {alert && (
-          <SimpleAlert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
+          <SimpleAlert type={alert.type} message={alert.message} onClose={closeAlert} />
         )}
 
         {loading ? (
@@ -98,6 +74,7 @@ export default function ManagerProfilePage() {
             onSave={handleSave}
           />
         )}
+
       </div>
     </div>
   )

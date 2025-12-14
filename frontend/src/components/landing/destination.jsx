@@ -1,270 +1,122 @@
 // components/Destination.js
-import dynamic from "next/dynamic";
-import { useEffect, useState } from 'react';
-import "react-multi-carousel/lib/styles.css";
+import { useState } from 'react';
 import Image from 'next/image';
-import { CiHeart, CiCamera } from "react-icons/ci";
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import Link from "next/link";
-
 import flights from "@/data/featuredFlights.json";
+import { MdLocationOn, MdAccessTime, MdArrowForward } from "react-icons/md";
 
-import {
-  MdStar,
-  MdCheck,
-  MdPeopleOutline,
-  MdLocationPin,
-  MdArrowRightAlt,
-} from "react-icons/md";
-import { IoVideocamOutline } from "react-icons/io5";
-import { WiTime3 } from "react-icons/wi";
-
-// Import `Carousel` với dynamic import để tắt SSR
-const Carousel = dynamic(() => import("react-multi-carousel"), { ssr: false });
-
-const responsive = {
-  superLargeDesktop: {
-    breakpoint: { max: 4000, min: 3000 },
-    items: 4,
-  },
-  desktop: {
-    breakpoint: { max: 3000, min: 1024 },
-    items: 4,
-  },
-  tablet: {
-    breakpoint: { max: 1024, min: 464 },
-    items: 2,
-  },
-  mobile: {
-    breakpoint: { max: 464, min: 0 },
-    items: 1,
-  },
-};
-
-const FlightCard = ({ flight }) => (
-  <Card key={flight.id} className="relative overflow-hidden group cursor-pointer h-[400px] text-left">
-    {/* Flight Image */}
-    <Image
-      src={flight.image}
-      alt={`${flight.from} đến ${flight.to}`}
-      width={600}
-      height={400}
-      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-    />
-
-    {/* Flight Position */}
-    <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-sm">
-      {flight.position}
+const EventCard = ({ event, index }) => (
+  <div
+    className="group relative h-[420px] w-full overflow-hidden rounded-2xl shadow-lg transition-all duration-500 hover:shadow-2xl"
+    data-aos="fade-up"
+    data-aos-delay={index * 100}
+  >
+    {/* Image Background */}
+    <div className="absolute inset-0 h-full w-full">
+      <Image
+        src={event.image}
+        alt={`${event.from} to ${event.to}`}
+        fill
+        className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+      />
+      {/* Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-80 transition-opacity duration-300 group-hover:opacity-90"></div>
     </div>
 
-    {/* Card Content */}
-    <div className="absolute bottom-0 w-full h-1/2 bg-green-500/70  p-4">
-      {/* Flight Info (Top Left) */}
-      <div className="text-white">
-        <h4 className="text-lg font-semibold">
-          {flight.from} đến {flight.to}
-        </h4>
-        <p className="text-sm">{flight.date}</p>
-      </div>
-
-      {/* Flight Details (Bottom Right) */}
-      <div className="absolute bottom-4 right-4 text-white text-right">
-        <div className="text-sm">Từ</div>
-        <div className="text-xl font-bold">{flight.price} VND*</div>
-        <div className="text-sm">{flight.views}</div>
-        <div className="text-sm">Một chiều / Phổ thông</div>
-      </div>
+    {/* Badge */}
+    <div className="absolute top-4 right-4 z-10">
+      <span className="inline-flex items-center rounded-full bg-white/20 backdrop-blur-md px-3 py-1 text-xs font-medium text-white ring-1 ring-inset ring-white/30">
+        {event.position || "Featured"}
+      </span>
     </div>
-  </Card>
-);
 
-const Places = ({ image, country, tours, column }) => (
-  <div className={`relative overflow-hidden h-[270px] lg:col-span-${column}`}>
-    <Image 
-      src={image} 
-      alt="" 
-      className="h-full w-full rounded-lg object-cover hoverImg" 
-      layout="responsive" 
-      width={500} 
-      height={500} 
-    />
-    <p className="text-3xl text-white font-semibold absolute left-6 bottom-6">{country}</p>
-    <button className="bg-green-500 text-white rounded-lg px-4 py-2 text-xs font-semibold absolute top-4 right-4">
-      {tours} TOURS
-    </button>
-  </div>
-);
+    {/* Content */}
+    <div className="absolute bottom-0 left-0 w-full p-6 text-white transform transition-transform duration-300 translate-y-2 group-hover:translate-y-0">
+      {/* Date & Location */}
+      <div className="flex items-center gap-4 text-sm text-gray-300 mb-2 opacity-0 transform translate-y-4 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 delay-100">
+        <span className="flex items-center gap-1">
+          <MdAccessTime className="text-emerald-400" />
+          {event.date}
+        </span>
+        <span className="flex items-center gap-1">
+          <MdLocationOn className="text-emerald-400" />
+          {event.from}
+        </span>
+      </div>
 
-const Tours = ({ image, name }) => (
-  <div>
-    <div className="relative overflow-hidden rounded-t-lg">
-    <Image 
-      src={image} 
-      alt="" 
-      className="rounded-t-lg hoverImg" 
-      layout="intrinsic" 
-      width={500} 
-      height={300} 
-    />
-      <div className="absolute flex justify-between top-4 left-4 right-4">
-        <p className="bg-[#14B0C3] rounded-md px-4 py-1 text-white text-sm">FEATURED</p>
-        <button className="bg-[#00000066] p-1 rounded-md">
-          <CiHeart className="text-white text-xl" />
+      <h3 className="text-2xl font-bold leading-tight mb-2 text-white group-hover:text-emerald-300 transition-colors">
+        {event.to}
+      </h3>
+
+      <p className="text-sm text-gray-300 line-clamp-2 mb-4 opacity-90">
+        Discover meaningful volunteer opportunities in {event.to}. Join us to make a difference.
+      </p>
+
+      {/* Action Row */}
+      <div className="flex items-center justify-between pt-4 border-t border-white/20">
+        <div className="flex flex-col">
+          <span className="text-xs text-gray-400">Target Goal</span>
+          <span className="text-lg font-bold text-emerald-400">{event.price} VND</span>
+        </div>
+
+        <button className="flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-500/30 group-hover:gap-3">
+          Join Now <MdArrowForward />
         </button>
-      </div>
-    </div>
-    <div className="border border-[#ebe6de] rounded-b-lg relative">
-      <div className="absolute w-full h-5 -top-5 bg-white rounded-t-[20px]"></div>
-      <div className="p-6 pt-0">
-        <div className="flex items-center gap-4 justify-between">
-          <span className="flex justify-center">
-            {[...Array(5)].map((_, index) => (
-              <MdStar key={index} className="text-[#ffa801] text-xl" />
-            ))}
-            <p className="text-[#757783] pl-2">4.6</p>
-          </span>
-          <span className="flex gap-2">
-            <div className="relative">
-              <CiCamera />
-              <button className="bg-green-500 text-xs rounded-full text-white w-4 h-4 flex items-center justify-center absolute top-0 right-0">
-                5
-              </button>
-            </div>
-            <IoVideocamOutline size={30} />
-          </span>
-        </div>
-        <h4 className="text-xl font-semibold py-2 hover:text-green-500">{name}</h4>
-        <span className="flex items-center gap-2">
-          <MdLocationPin className="text-green-500 text-xl" />
-          <p className="text-[#757783] text-sm">Ha Noi, Viet Nam</p>
-        </span>
-        <span className="text-[#757783] flex py-4">
-          From <p className="text-green-500">$59.00</p>
-        </span>
-        <div className="bg-[#FAF8F4] flex justify-between py-4 px-4">
-          <span className="flex items-center gap-2">
-            <WiTime3 className="text-green-500" /> 10 days
-          </span>
-          <span className="flex items-center gap-2">
-            <MdPeopleOutline className="text-green-500" /> 50
-          </span>
-          <a href="#" className="flex items-center gap-2 text-green-500 text-sm font-bold mt-2">
-            explore <MdArrowRightAlt />
-          </a>
-        </div>
       </div>
     </div>
   </div>
 );
 
 export default function Destination() {
-
   const [visibleCount, setVisibleCount] = useState(4);
 
-  // Xử lý khi bấm nút "Xem thêm"
   const handleShowMore = () => {
     setVisibleCount((prevCount) => prevCount + 4);
   };
 
-  // Kiểm tra nếu đã hiển thị hết thẻ
   const isShowMoreVisible = visibleCount < flights.length;
 
   return (
-    <div className="lg:mt-60 mt-10" data-aos="fade-down">
-      
-      <div className="max-w-[1200px] px-6 mx-auto text-center">
-      {/* <p className="text-green-500 text-xl">Featured Flights</p> */}
-      <h4 className="font-bold lg:text-[50px] text-[30px] py-4">Các sự kiện nổi bật</h4>
+    <div className="py-20 lg:py-28 relative">
+      {/* Decorative Elements */}
+      <div className="absolute top-0 right-0 -z-10 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
 
-      {/* Flights List */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {flights.slice(0, visibleCount).map((flight) => (
-            <FlightCard key={flight.id} flight={flight} />
+      <div className="max-w-7xl px-6 mx-auto">
+
+        {/* Header Section */}
+        <div className="text-center mb-16 space-y-4" data-aos="fade-down">
+          <h2 className="text-sm font-bold tracking-widest text-emerald-600 uppercase font-pj">
+            Explore Opportunities
+          </h2>
+          <h3 className="text-4xl md:text-5xl font-extrabold text-gray-900">
+            Upcoming <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">Events</span>
+          </h3>
+          <p className="max-w-2xl mx-auto text-gray-600 text-lg">
+            Find and participate in events that matter. Connect, contribute, and grow with our community.
+          </p>
+        </div>
+
+        {/* Events Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {flights.slice(0, visibleCount).map((flight, index) => (
+            <EventCard key={flight.id} event={flight} index={index} />
           ))}
         </div>
 
-        {/* Nút "Xem thêm" */}
+        {/* Show More Button */}
         {isShowMoreVisible && (
-          <div className="text-center mt-8">
-            <Button onClick={handleShowMore} className="bg-green-500 text-white px-6 py-2 rounded-md">
-              Xem thêm
+          <div className="text-center mt-12" data-aos="fade-up">
+            <Button
+              onClick={handleShowMore}
+              variant="outline"
+              className="group border-emerald-600 text-emerald-600 hover:bg-emerald-50 px-8 py-6 text-lg rounded-full transition-all duration-300"
+            >
+              See More Events
+              <MdArrowForward className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Button>
           </div>
         )}
-    
-    </div>
-      
-      
-      <div className="bg-[url(/bg-line-bird.png)] bg-no-repeat py-16">
-        <div className="lg:flex max-w-[1200px] px-6 mx-auto gap-8">
-          <div className="relative lg:w-1/2" data-aos="fade-down">
-          <Image 
-            src="/image-6.jpg" 
-            alt="Descriptive text" 
-            width={500} 
-            height={500} 
-            priority 
-          />
-            <div className="absolute top-4 right-4">
-              <p className="text-green-500 font-semibold text-[80px]">10%</p>
-              <p className="text-[50px] font-semibold -mt-8">Giảm giá</p>
-            </div>
-            <button className="bg-white shadow-md px-12 py-4 absolute left-4 top-1/2 rounded-xl">
-              <p className="text-gray text-xs font-medium">Đặt chuyến bay ngay</p>
-              <p className="font-semibold text-lg">66888000</p>
-            </button>
-          </div>
-          <div className="lg:w-1/2" data-aos="fade-up">
-            <p className="text-green-500 text-xl">Hãy đến với chúng tôi</p>
-            <h4 className="font-bold lg:text-[50px] text-[30px] py-4">Quản lý hoạt động tình nguyện của bạn dễ dàng hơn với VolunteerHub </h4>
-            <p className="text-[#757783] leading-8 mb-8">
-            Bạn có biết? Một hoạt động tình nguyện thành công không chỉ đến từ tấm lòng, mà còn từ cách tổ chức chuyên nghiệp.
-            </p>
-            <span className="flex items-center gap-4 py-2 font-medium">
-              <MdCheck className="bg-green-500 text-white rounded-xl" /> Tạo và quản lý các chương trình tình nguyện của bạn
-            </span>
-            <span className="flex items-center gap-4 py-2 font-medium">
-              <MdCheck className="bg-green-500 text-white rounded-xl" /> Theo dõi số lượng tình nguyện viên, lịch trình, và tiến độ công việc
-            </span>
-            <span className="flex items-center gap-4 py-2 font-medium">
-              <MdCheck className="bg-green-500 text-white rounded-xl" /> Kết nối cộng đồng, lan tỏa tinh thần sẻ chia 💫
-            </span>
-            <div className="mt-8">
-              <Link href="/">
-                <button className="bg-green-500 text-white text-xs font-bold rounded-md px-8 h-12 hoverBtn">
-                  TẠO SỰ KIỆN NGAY
-                </button>
-              </Link>
-            </div>
-          </div>
-        </div>
       </div>
-
-      {/* <div className="text-center my-10 px-6" data-aos="fade-down">
-        <p className="text-green-500 text-xl pb-2">Featured news</p>
-        <h4 className="lg:text-[50px] text-[30px] font-bold">Highlighted Information</h4>
-        <div className="pt-8">
-          <Carousel
-            partialVisible={false}
-            swipeable
-            draggable={false}
-            responsive={responsive}
-            ssr={false}
-            infinite
-            autoPlay
-            arrows
-            keyBoardControl
-            itemClass="carouselItem"
-          >
-            <Tours image="/tour-1.jpg" name="Ha Noi to Ho Chi Minh city" />
-            <Tours image="/tour-2.jpg" name="Ha Noi to Da Nang city" />
-            <Tours image="/tour-3.jpg" name="Ha Noi to Da Lat" />
-            <Tours image="/tour-4.jpg" name="Ha Noi to Hue" />
-            <Tours image="/tour-5.jpg" name="Ha Noi to Bangkok" />
-          </Carousel>
-        </div>
-      </div> */}
     </div>
   );
 }

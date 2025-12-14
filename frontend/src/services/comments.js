@@ -1,3 +1,9 @@
+/**
+ * @file comments.js
+ * @description Service for handling CRUD operations on comments directly via API.
+ * This service expects authentication tokens and connects to the backend API.
+ */
+
 import axios from "axios";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;

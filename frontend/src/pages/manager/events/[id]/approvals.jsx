@@ -1,28 +1,30 @@
-import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import EventDetailLayout from "@/components/manager/event/EventDetailLayout";
 import EventNotFound from "@/components/manager/event/EventNotFound";
 import { useManagerEvent } from "@/hooks/useManagerEvent";
+import { useEventApprovals } from "@/hooks/useEventApprovals";
 
 export default function ManagerEventApprovals() {
   const { event, eventId, isReady } = useManagerEvent();
-  const [pending, setPending] = useState(event?.pendingVolunteers ?? []);
-  const [approved, setApproved] = useState([]);
+  const { pending, approved, approve, reject } = useEventApprovals(event, eventId);
 
-  useEffect(() => {
-    if (event) {
-      setPending(event.pendingVolunteers);
-      setApproved([]);
+  const handleApproveClick = async (vol) => {
+    const result = await approve(vol);
+    if (result.success) {
+      console.log(`[Web Push] Notification sent to ${vol.name}: Your registration has been approved!`);
+      alert(`Đã duyệt ${vol.name} thành công!`);
+    } else {
+      alert("Có lỗi xảy ra khi duyệt.");
     }
-  }, [event]);
-
-  const handleApprove = (vol) => {
-    setPending((prev) => prev.filter((item) => item.id !== vol.id));
-    setApproved((prev) => [vol, ...prev]);
   };
 
-  const handleReject = (volId) => {
-    setPending((prev) => prev.filter((item) => item.id !== volId));
+  const handleRejectClick = async (volId) => {
+    const result = await reject(volId);
+    if (result.success) {
+      alert("Đã từ chối tình nguyện viên.");
+    } else {
+      alert("Lỗi khi từ chối.");
+    }
   };
 
   if (!isReady) return null;
@@ -54,20 +56,20 @@ export default function ManagerEventApprovals() {
                   <p className="font-semibold text-gray-900">{vol.name}</p>
                 </div>
                 <p className="text-sm text-gray-500">
-                  Nop ngay {vol.submittedAt}
+                  Nộp ngày {vol.submittedAt}
                 </p>
               </div>
               <p className="text-gray-700 mt-3">{vol.motivation}</p>
               <div className="flex flex-wrap gap-3 mt-4">
                 <button
-                  onClick={() => handleApprove(vol)}
+                  onClick={() => handleApproveClick(vol)}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  Duyet
+                  Duyệt
                 </button>
                 <button
-                  onClick={() => handleReject(vol.id)}
+                  onClick={() => handleRejectClick(vol.id)}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-300 text-sm font-medium hover:border-gray-600"
                 >
                   <AlertTriangle className="w-4 h-4 text-amber-700" />
@@ -79,7 +81,7 @@ export default function ManagerEventApprovals() {
 
           {!pending.length && (
             <div className="text-center text-gray-500 py-10 border border-dashed border-gray-200 rounded-2xl">
-              Tat ca ho so da duoc xu ly.
+              Tất cả hồ sơ đã được xử lý.
             </div>
           )}
         </div>
@@ -87,7 +89,7 @@ export default function ManagerEventApprovals() {
         {!!approved.length && (
           <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-5">
             <p className="text-sm font-semibold text-emerald-700 mb-3">
-              Da chuyen vao danh sach dang xac nhan
+              Đã chuyển vào danh sách đang xác nhận
             </p>
             <div className="flex flex-wrap gap-3">
               {approved.map((vol) => (

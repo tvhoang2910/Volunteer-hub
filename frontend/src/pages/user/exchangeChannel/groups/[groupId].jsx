@@ -17,7 +17,7 @@ export default function GroupDetail() {
         <div className="relative z-10">
           <h1 className="text-3xl font-bold mb-2">Group: {groupId}</h1>
           <p className="text-blue-100 opacity-90">
-            Welcome to the exchange channel for {groupId}. Share posts, discuss topics, and collaborate.
+            Chào mừng bạn đến với nhóm {groupId}. Hãy chia sẻ thông tin, thảo luận về các chủ đề và hợp tác.
           </p>
         </div>
         {/* Decorative circle */}
@@ -30,11 +30,10 @@ export default function GroupDetail() {
           <div className="bg-white rounded-lg shadow p-4 border">
             <h3 className="font-semibold text-gray-700 mb-3">About</h3>
             <p className="text-sm text-gray-500 mb-4">
-              This is the official group for {groupId}. Please follow the community guidelines.
+              Dây là nhóm {groupId}. Hãy chia sẻ thông tin, thảo luận về các chủ đề và hợp tác.
             </p>
             <div className="flex items-center text-sm text-gray-500">
-              <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-              Active now
+              {/* <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span> */}
             </div>
           </div>
         </div>

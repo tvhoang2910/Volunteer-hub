@@ -3,7 +3,10 @@ import Image from "next/image";
 import "react-multi-carousel/lib/styles.css";
 import { MdStar } from "react-icons/md";
 
-const Carousel = dynamic(() => import("react-multi-carousel"), { ssr: false });
+const Carousel = dynamic(() => import("react-multi-carousel"), {
+  ssr: false,
+  loading: () => <div className="h-64 bg-gray-100 animate-pulse rounded-lg">Loading carousel...</div>
+});
 
 const responsive = {
   superLargeDesktop: {

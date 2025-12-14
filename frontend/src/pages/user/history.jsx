@@ -109,7 +109,7 @@ const HistoryPage = () => {
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <StatCard title="Tổng sự kiện" value={stats.totalEvents} icon={CalendarIcon} />
                     <StatCard title="Hoàn thành" value={stats.completed} icon={Award} trend="+12% tháng này" />
                     <StatCard title="Tương tác" value={stats.interactions} icon={MessageSquare} />
@@ -177,11 +177,13 @@ const HistoryPage = () => {
 
                     <TabsContent value="events" className="space-y-4 min-h-[400px]">
                         {filteredEvents.length > 0 ? (
-                            <AnimatePresence mode="popLayout">
-                                {filteredEvents.map(event => (
-                                    <EventCard key={event.id} event={event} />
-                                ))}
-                            </AnimatePresence>
+                            <div className="grid grid-cols-1 gap-6">
+                                <AnimatePresence mode="popLayout">
+                                    {filteredEvents.map(event => (
+                                        <EventCard key={event.id} event={event} />
+                                    ))}
+                                </AnimatePresence>
+                            </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center py-20 text-center">
                                 <div className="w-20 h-20 bg-zinc-50 rounded-full flex items-center justify-center mb-4">
@@ -195,7 +197,7 @@ const HistoryPage = () => {
 
                     <TabsContent value="interactions" className="space-y-4 min-h-[400px]">
                         {filteredInteractions.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 gap-6">
                                 <AnimatePresence mode="popLayout">
                                     {filteredInteractions.map(item => (
                                         <InteractionCard key={item.id} item={item} />
