@@ -32,3 +32,11 @@ build/
 ### VS Code ###
 .vscode/
 .mvn/
+
+### Environment & Secrets ###
+.env
+.env.local
+.env.*.local
+*.env
+application-local.properties
+application-secrets.properties

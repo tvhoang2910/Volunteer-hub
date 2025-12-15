@@ -111,10 +111,23 @@ public class AuthAPI {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, BindingResult bindingResult) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request,
+            BindingResult bindingResult, HttpServletRequest httpRequest) {
         ResponseEntity<?> errorResponse = getErrorResponse(bindingResult);
         if (errorResponse != null)
             return errorResponse;
+
+        String clientIP = getClientIP(httpRequest);
+        String rateLimitKey = clientIP + ":" + request.getEmail();
+
+        // Check rate limit (chống brute-force)
+        if (!rateLimitService.checkLoginRateLimit(rateLimitKey)) {
+            logger.warn("🔒 Login rate limit exceeded for IP: {}, email: {}", clientIP, request.getEmail());
+            ResponseDTO<Void> rateLimitResponse = ResponseDTO.<Void>builder()
+                    .message("Quá nhiều lần đăng nhập thất bại. Vui lòng thử lại sau.")
+                    .build();
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(rateLimitResponse);
+        }
 
         try {
             // Authenticate user với Spring Security
@@ -139,7 +152,10 @@ public class AuthAPI {
                     user.getEmail(),
                     role);
 
-            logger.info("✅ User logged in successfully: {}", user.getEmail());
+            // Reset rate limit sau khi login thành công
+            rateLimitService.resetLoginRateLimit(rateLimitKey);
+
+            logger.info("✅ User logged in successfully: {} from IP: {}", user.getEmail(), clientIP);
 
             // Build response với token
             LoginResponse loginResponse = LoginResponse.builder()
@@ -160,12 +176,27 @@ public class AuthAPI {
             return ResponseEntity.ok(successResponse);
 
         } catch (Exception e) {
-            logger.warn("❌ Login failed for email: {}", request.getEmail());
+            logger.warn("❌ Login failed for email: {} from IP: {}", request.getEmail(), clientIP);
             ResponseDTO<Void> errorResponse1 = ResponseDTO.<Void>builder()
                     .message("Invalid email or password")
                     .build();
             return ResponseEntity.status(401).body(errorResponse1);
         }
+    }
+
+    /**
+     * Lấy client IP - hỗ trợ proxy/load balancer
+     */
+    private String getClientIP(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+        String xRealIP = request.getHeader("X-Real-IP");
+        if (xRealIP != null && !xRealIP.isEmpty()) {
+            return xRealIP;
+        }
+        return request.getRemoteAddr();
     }
 
     private ResponseEntity<?> getErrorResponse(BindingResult bindingResult) {

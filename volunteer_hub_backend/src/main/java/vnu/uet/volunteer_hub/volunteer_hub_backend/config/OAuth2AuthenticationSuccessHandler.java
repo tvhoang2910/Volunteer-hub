@@ -83,12 +83,18 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
             logger.info("✅ OAuth2 login successful for user: {}", email);
 
-            // Set JWT token in HttpOnly cookie for Thymeleaf UI
+            // Set JWT token in HttpOnly, Secure cookie (SameSite via header)
             jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie("jwt_token", token);
             cookie.setHttpOnly(true);
+            cookie.setSecure(true); // Chỉ gửi qua HTTPS
             cookie.setPath("/");
             cookie.setMaxAge(24 * 60 * 60); // 24 hours
             response.addCookie(cookie);
+
+            // Thêm SameSite=Lax qua header (Servlet API không hỗ trợ SameSite trực tiếp)
+            response.setHeader("Set-Cookie",
+                    String.format("jwt_token=%s; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=%d",
+                            token, 24 * 60 * 60));
 
             // Redirect to UI posts page
             getRedirectStrategy().sendRedirect(request, response, "/ui/posts");

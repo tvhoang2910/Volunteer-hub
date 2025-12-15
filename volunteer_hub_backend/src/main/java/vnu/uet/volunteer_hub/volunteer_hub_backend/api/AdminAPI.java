@@ -43,7 +43,7 @@ public class AdminAPI {
     private final PostRankingService postRankingService;
 
     @PutMapping("/events/{eventId}/approve")
-    // @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> approveEventStatus(@PathVariable UUID eventId) {
         eventService.approveEventStatus(eventId);
         return ResponseEntity.ok(ResponseDTO.<Void>builder()
@@ -52,7 +52,7 @@ public class AdminAPI {
     }
 
     @PutMapping("/events/{eventId}/reject")
-    // @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> rejectEventStatus(@PathVariable UUID eventId) {
         eventService.rejectEventStatus(eventId);
         return ResponseEntity.ok(ResponseDTO.<Void>builder()
@@ -61,7 +61,7 @@ public class AdminAPI {
     }
 
     @DeleteMapping("/events/{eventId}")
-    // @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteEvent(@PathVariable UUID eventId) {
         eventService.deleteEvent(eventId);
         return ResponseEntity.ok(ResponseDTO.<Void>builder()
@@ -70,21 +70,21 @@ public class AdminAPI {
     }
 
     @PutMapping("/users/{userId}/lock")
-    // @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> lockUser(@PathVariable UUID userId) {
         userService.lockUserById(userId);
         return ResponseEntity.ok(ResponseDTO.<Void>builder().message("User locked").build());
     }
 
     @PutMapping("/users/{userId}/unlock")
-    // @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> unlockUser(@PathVariable UUID userId) {
         userService.unlockUserById(userId);
         return ResponseEntity.ok(ResponseDTO.<Void>builder().message("User unlocked").build());
     }
 
     @GetMapping("/events/export")
-    // @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> exportEvents(@RequestParam(defaultValue = "json") String format) {
         List<Map<String, Object>> rows = eventRepository.findAll().stream().map(e -> {
             java.util.Map<String, Object> m = new java.util.HashMap<>();
@@ -112,7 +112,7 @@ public class AdminAPI {
     }
 
     @GetMapping("/volunteers/export")
-    // @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> exportVolunteers(@RequestParam(defaultValue = "json") String format) {
         List<Map<String, Object>> rows = userRepository.findAll().stream().map(u -> {
             java.util.Map<String, Object> m = new java.util.HashMap<>();
@@ -137,7 +137,7 @@ public class AdminAPI {
     }
 
     @GetMapping("/dashboard")
-    // @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getDashboard() {
         long totalEvents = eventRepository.count();
         long approvedEvents = eventRepository.findAll().stream()
@@ -170,7 +170,7 @@ public class AdminAPI {
      *         indicating that the top posts cache has been refreshed.
      */
     @PutMapping("/cache/top-posts/refresh")
-    // @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> refreshTopPostsCache() {
         topPostsCacheService.refreshTopPostsCache(5);
         return ResponseEntity.ok(ResponseDTO.<Void>builder().message("Top posts cache refreshed").build());
@@ -188,7 +188,7 @@ public class AdminAPI {
      *         invalidated" is being returned.
      */
     @PutMapping("/cache/top-posts/invalidate")
-    // @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> invalidateTopPostsCache() {
         topPostsCacheService.invalidateTopPostsCache(5);
         return ResponseEntity.ok(ResponseDTO.<Void>builder().message("Top posts cache invalidated").build());
@@ -207,7 +207,7 @@ public class AdminAPI {
      *         with the exception message.
      */
     @PutMapping("/cache/top-posts/rebuild-ranking")
-    // @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> rebuildPostRanking() {
         // rebuild the Redis ZSET ranking from the DB
         topPostsCacheService.invalidateTopPostsCache(5);
@@ -235,7 +235,7 @@ public class AdminAPI {
      *         posts" and an empty list
      */
     @GetMapping("/cache/top-posts")
-    // @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getCachedTopPosts() {
         try {
             return ResponseEntity.ok(ResponseDTO.builder().message("Cached top posts")
@@ -271,7 +271,7 @@ public class AdminAPI {
     }
 
     @GetMapping("/events")
-    // @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getAllEvents() {
         try {
             List<Event> events = eventService.getAllEvents();

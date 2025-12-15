@@ -50,6 +50,28 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                // Security Headers
+                .headers(headers -> headers
+                        // X-Frame-Options: chống clickjacking
+                        .frameOptions(frame -> frame.sameOrigin())
+                        // X-Content-Type-Options: chống MIME sniffing
+                        .contentTypeOptions(content -> {
+                        })
+                        // X-XSS-Protection: chống XSS (legacy browsers)
+                        .xssProtection(xss -> xss.headerValue(
+                                org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                        // Referrer-Policy
+                        .referrerPolicy(referrer -> referrer.policy(
+                                org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                        // Content-Security-Policy
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(
+                                "default-src 'self'; " +
+                                        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; " +
+                                        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+                                        +
+                                        "font-src 'self' https://fonts.gstatic.com; " +
+                                        "img-src 'self' data: https:; " +
+                                        "connect-src 'self' " + frontendUrl + ";")))
                 // Stateless session - không lưu session trên server
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -80,8 +102,7 @@ public class SecurityConfig {
                         // Allow check-in endpoint for events without authentication
                         .requestMatchers(HttpMethod.POST, "/api/events/*/check-in").permitAll()
                         // Admin endpoints - yêu cầu role ADMIN
-                        .requestMatchers("/api/admin/**").permitAll()
-                        // .hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // Tất cả các request khác cần authenticated (bao gồm POST /api/posts)
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex

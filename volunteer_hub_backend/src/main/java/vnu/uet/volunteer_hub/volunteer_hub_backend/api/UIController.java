@@ -72,12 +72,18 @@ public class UIController {
             // Generate JWT token (pass userId as String)
             String jwtToken = jwtUtil.generateToken(user.getId().toString(), email, userRole);
 
-            // Store token in cookie
+            // Store token in secure cookie
             Cookie cookie = new Cookie("jwt_token", jwtToken);
             cookie.setHttpOnly(true);
+            cookie.setSecure(true); // Chỉ gửi qua HTTPS
             cookie.setPath("/");
             cookie.setMaxAge(24 * 60 * 60); // 24 hours
             response.addCookie(cookie);
+
+            // Thêm SameSite=Lax qua header
+            response.setHeader("Set-Cookie",
+                    String.format("jwt_token=%s; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=%d",
+                            jwtToken, 24 * 60 * 60));
 
             // Redirect to posts page
             return "redirect:/ui/posts";

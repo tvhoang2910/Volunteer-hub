@@ -43,6 +43,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public void registerUser(RegistrationRequest registrationRequest) {
         if (userRepository.existsByEmailIgnoreCase(registrationRequest.getEmail())) {
             throw new IllegalArgumentException("Email already exists!");
