@@ -5,9 +5,15 @@ import { Button } from "@/components/ui/button"
 
 export default function Custom404() {
   return (
-    <div className="min-h-screen w-full bg-zinc-950 flex flex-col items-center justify-center relative overflow-hidden">
+    <div
+      className="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: "url('/404_background.jpg')" }}
+    >
+      {/* Dark Overlay for readability */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] z-0" />
+
       {/* Background Effects */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-green-500/10 rounded-full blur-[100px]" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-500/10 rounded-full blur-[100px]" />
       </div>

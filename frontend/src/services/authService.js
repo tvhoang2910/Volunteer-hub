@@ -70,5 +70,17 @@ export const authService = {
     resetPassword: async (data) => {
         const response = await axios.post(`${API_BASE_URL}/api/auth/reset-password`, data);
         return response.data;
+    },
+    /**
+     * Verify user role
+     * @returns {Object} - { role }
+     */
+    verifyRole: async () => {
+        const token = localStorage.getItem('token');
+        const response = await axios.post(`${API_BASE_URL}/api/auth/verify-role`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        localStorage.setItem('role', response.data.role);
+        return response.data;
     }
 };

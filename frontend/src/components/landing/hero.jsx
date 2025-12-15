@@ -38,10 +38,30 @@ const FloatingIcon = ({ icon: Icon, delay, position }) => {
 export default function Hero() {
   const { isAuthenticated } = useAuth();
   const [isLoaded, setIsLoaded] = useState(false);
+  const [dashboardLink, setDashboardLink] = useState("/login");
 
   useEffect(() => {
     setIsLoaded(true);
-  }, []);
+
+    if (isAuthenticated) {
+      // Get role from localStorage to determine the dashboard link
+      // Default to user dashboard if role is missing or unknown
+      const role = localStorage.getItem("role");
+
+      switch (role) {
+        case "admin":
+          setDashboardLink("/admin/dashboard");
+          break;
+        case "manager":
+          setDashboardLink("/manager/dashboard");
+          break;
+        default:
+          setDashboardLink("/user/dashboard");
+      }
+    } else {
+      setDashboardLink("/login");
+    }
+  }, [isAuthenticated]);
 
   // Animation variants
   const containerVariants = {
@@ -144,7 +164,7 @@ export default function Hero() {
               className="flex flex-col sm:flex-row items-center lg:items-start gap-4 lg:gap-6 w-full sm:w-auto"
             >
               {/* Primary Button - Gradient with Glow */}
-              <Link href={isAuthenticated ? "/user/dashboard" : "/login"}>
+              <Link href={dashboardLink}>
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
