@@ -61,7 +61,7 @@ export default function Navbar({ onCollapse }) {
             <div className="p-1.5 bg-green-500 rounded">
               <handHeart className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-lg font-semibold text-white">Volunteer Hub</h1>
+            <h1 className="text-lg font-semibold text-white">V-connect</h1>
           </div>
           <button
             onClick={toggleMobileMenu}
@@ -122,7 +122,7 @@ export default function Navbar({ onCollapse }) {
             </div>
             <h1 className={`text-lg font-bold text-white tracking-tight transition-all duration-300 whitespace-nowrap ${isCollapsed ? 'opacity-0 w-0 overflow-hidden' : 'opacity-100'
               }`}>
-              Volunteer Hub
+              V-connect
             </h1>
           </div>
           {/* Toggle Button */}

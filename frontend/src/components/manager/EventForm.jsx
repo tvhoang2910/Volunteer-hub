@@ -3,13 +3,28 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { Upload, Calendar, MapPin, Users, FileText, ListChecks } from 'lucide-react';
-import DateTimeInput from '@/components/common/DateTimeInput'; // Assuming this exists/compatible
+import DateTimeInput from '@/components/common/DateTimeInput';
 import { useRouter } from 'next/router';
+
+const VIETNAM_PROVINCES = [
+    "An Giang", "Bà Rịa - Vũng Tàu", "Bắc Giang", "Bắc Kạn", "Bạc Liêu", "Bắc Ninh",
+    "Bến Tre", "Bình Định", "Bình Dương", "Bình Phước", "Bình Thuận", "Cà Mau",
+    "Cao Bằng", "Đắk Lắk", "Đắk Nông", "Điện Biên", "Đồng Nai", "Đồng Tháp",
+    "Gia Lai", "Hà Giang", "Hà Nam", "Hà Tĩnh", "Hải Dương", "Hậu Giang",
+    "Hòa Bình", "Hưng Yên", "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu",
+    "Lâm Đồng", "Lạng Sơn", "Lào Cai", "Long An", "Nam Định", "Nghệ An",
+    "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên", "Quảng Bình", "Quảng Nam",
+    "Quảng Ngãi", "Quảng Ninh", "Quảng Trị", "Sóc Trăng", "Sơn La", "Tây Ninh",
+    "Thái Bình", "Thái Nguyên", "Thanh Hóa", "Thừa Thiên Huế", "Tiền Giang",
+    "Trà Vinh", "Tuyên Quang", "Vĩnh Long", "Vĩnh Phúc", "Yên Bái",
+    "Hà Nội", "Hồ Chí Minh", "Đà Nẵng", "Hải Phòng", "Cần Thơ"
+].sort();
 
 // Schema Validation
 const schema = yup.object().shape({
     title: yup.string().required('Tên sự kiện là bắt buộc'),
-    location: yup.string().required('Địa điểm là bắt buộc'),
+    city: yup.string().required('Vui lòng chọn Tỉnh/Thành phố'),
+    specificAddress: yup.string().required('Địa chỉ chi tiết là bắt buộc'),
     startDate: yup.string().required('Ngày bắt đầu là bắt buộc'),
     startTime: yup.string().required('Giờ bắt đầu là bắt buộc'),
     endDate: yup.string().required('Ngày kết thúc là bắt buộc'),
@@ -25,7 +40,8 @@ export default function EventForm({ initialData, onSubmit, loading }) {
         resolver: yupResolver(schema),
         defaultValues: {
             title: '',
-            location: '',
+            city: '',
+            specificAddress: '',
             startDate: '',
             startTime: '',
             endDate: '',
@@ -41,19 +57,32 @@ export default function EventForm({ initialData, onSubmit, loading }) {
 
     useEffect(() => {
         if (initialData) {
-            // Map initialData to form fields
-            // Assuming initialData has similar keys or we map them here
             setValue('title', initialData.title || '');
-            setValue('location', initialData.location || '');
-            setValue('description', initialData.description || '');
-            // Date splitting logic if needed
-            if (initialData.timeline) {
-                // Assuming timeline object structure or string
-                // This depends on how data is passed. 
-                // For now, let's assume basic fields mapping
-                setValue('startDate', initialData.startDate || '');
-                // ...
+
+            // Handle location split
+            if (initialData.location) {
+                const parts = initialData.location.split(', ');
+                const potentialCity = parts[parts.length - 1];
+                if (VIETNAM_PROVINCES.includes(potentialCity)) {
+                    setValue('city', potentialCity);
+                    setValue('specificAddress', parts.slice(0, -1).join(', '));
+                } else {
+                    setValue('specificAddress', initialData.location);
+                }
             }
+
+            setValue('description', initialData.description || '');
+            if (initialData.timeline) {
+                // Determine how timeline is stored. If string, leave as logic before if any.
+                // Re-using existing logic assumption:
+                setValue('startDate', initialData.startDate || '');
+            }
+            // Explicit check for date fields if pass separately
+            if (initialData.startDate) setValue('startDate', initialData.startDate);
+            if (initialData.startTime) setValue('startTime', initialData.startTime);
+            if (initialData.endDate) setValue('endDate', initialData.endDate);
+            if (initialData.endTime) setValue('endTime', initialData.endTime);
+
             if (initialData.capacity) setValue('capacity', initialData.capacity);
             if (initialData.requirements) setValue('requirements', Array.isArray(initialData.requirements) ? initialData.requirements.join('\n') : initialData.requirements);
         }
@@ -68,13 +97,19 @@ export default function EventForm({ initialData, onSubmit, loading }) {
     };
 
     const onSubmitForm = (data) => {
-        // Process data to match API expectation
-        // requirements from string to array if needed
+        const formattedLocation = `${data.specificAddress}, ${data.city}`;
+
         const formattedData = {
             ...data,
+            location: formattedLocation,
             requirements: data.requirements.split('\n').filter(r => r.trim()),
-            date: `${data.startDate} ${data.startTime} - ${data.endDate} ${data.endTime}` // Format for existing logic if any
+            date: `${data.startDate} ${data.startTime} - ${data.endDate} ${data.endTime}`
         };
+
+        // Remove temporary fields
+        delete formattedData.city;
+        delete formattedData.specificAddress;
+
         onSubmit(formattedData);
     };
 
@@ -97,20 +132,41 @@ export default function EventForm({ initialData, onSubmit, loading }) {
                 <p className="text-red-500 text-xs mt-1">{errors.title?.message}</p>
             </div>
 
-            {/* Location */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Địa điểm</label>
-                <Controller
-                    name="location"
-                    control={control}
-                    render={({ field }) => (
-                        <div className="relative">
-                            <MapPin className="absolute left-3 top-2.5 text-gray-400 w-5 h-5" />
-                            <input {...field} className={`w-full pl-10 pr-4 py-2 border rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition ${errors.location ? 'border-red-500' : 'border-gray-200'}`} placeholder="Địa điểm tổ chức..." />
-                        </div>
-                    )}
-                />
-                <p className="text-red-500 text-xs mt-1">{errors.location?.message}</p>
+            {/* Location Split: City & Address */}
+            <div className="grid md:grid-cols-3 gap-6">
+                <div className="md:col-span-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tỉnh / Thành phố</label>
+                    <Controller
+                        name="city"
+                        control={control}
+                        render={({ field }) => (
+                            <div className="relative">
+                                <MapPin className="absolute left-3 top-2.5 text-gray-400 w-5 h-5" />
+                                <select
+                                    {...field}
+                                    className={`w-full pl-10 pr-4 py-2 border rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition appearance-none bg-white ${errors.city ? 'border-red-500' : 'border-gray-200'}`}
+                                >
+                                    <option value="">Chọn Tỉnh/Thành</option>
+                                    {VIETNAM_PROVINCES.map((prov) => (
+                                        <option key={prov} value={prov}>{prov}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                    />
+                    <p className="text-red-500 text-xs mt-1">{errors.city?.message}</p>
+                </div>
+                <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Địa chỉ cụ thể</label>
+                    <Controller
+                        name="specificAddress"
+                        control={control}
+                        render={({ field }) => (
+                            <input {...field} className={`w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition ${errors.specificAddress ? 'border-red-500' : 'border-gray-200'}`} placeholder="Số nhà, tên đường, phường/xã..." />
+                        )}
+                    />
+                    <p className="text-red-500 text-xs mt-1">{errors.specificAddress?.message}</p>
+                </div>
             </div>
 
             {/* Time */}
