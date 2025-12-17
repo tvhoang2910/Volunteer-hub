@@ -1,13 +1,18 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
-import { LayoutDashboard, HandHeart, CalendarDays, User, Users, UserPen, FileText, TicketCheck, Menu, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, HandHeart, CalendarDays, User, Users, UserPen, FileText, TicketCheck, Menu, X, ChevronLeft, ChevronRight, CalendarRange } from 'lucide-react'
 
 const navItems = [
   {
     name: 'Tổng quan',
     href: '/admin/dashboard',
     icon: LayoutDashboard
+  },
+  {
+    name: 'Sự kiện',
+    href: '/admin/events',
+    icon: CalendarRange
   },
   {
     name: 'Quản lý sự kiện',

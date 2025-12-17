@@ -5,7 +5,7 @@
  */
 
 import axios from 'axios';
-
+import { mockEvents } from '../data/mockEvents';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 
 const getAuthHeader = () => {
@@ -110,5 +110,10 @@ export const eventService = {
             headers: getAuthHeader()
         });
         return response.data;
+    },
+
+    getMockEvents: () => {
+        // Mock data for fallback
+        return mockEvents;
     }
 };

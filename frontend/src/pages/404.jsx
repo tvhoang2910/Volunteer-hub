@@ -39,7 +39,7 @@ export default function Custom404() {
         </p>
 
         {/* Action Button */}
-        <Link href="/" passHref>
+        <Link href="http://localhost:3000" >
           <Button
             className="group relative px-8 py-6 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white rounded-xl shadow-lg shadow-green-500/25 transition-all duration-300 hover:scale-105 hover:shadow-green-500/40 border-0"
           >

@@ -296,7 +296,7 @@ const EventManagement = () => {
       toast({
         title: "Thành công",
         description: "Duyệt sự kiện thành công",
-        className: "bg-green-500 text-white border-none"
+        className: "!bg-green-500 text-white border-none"
       });
       setIsConfirmApproveOpen(false);
       setSelectedEvent(null);

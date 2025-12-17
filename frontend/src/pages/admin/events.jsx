@@ -79,15 +79,16 @@ export default function EventShowcase() {
     };
 
     return (
-        <div className="container mx-auto py-8 px-0 md:px-10 space-y-8">
+        <div className="container py-4 sm:py-6 md:py-8 px-4 sm:px-6 md:px-10 space-y-6 sm:space-y-8">
             {/* Analytics Section */}
             <section>
-                <h1 className="text-3xl font-bold mb-6 text-zinc-900 dark:text-zinc-100">Event Dashboard</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-zinc-900 dark:text-zinc-100">Event Dashboard</h1>
                 <AnalyticsCard events={allEvents} />
             </section>
 
             {/* Featured Events Slider */}
             <section>
+                <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-zinc-900 dark:text-zinc-100">Featured Events</h2>
                 <FeaturedSlider
                     events={featuredEvents}
                     onRegister={handleRegister}
@@ -102,14 +103,14 @@ export default function EventShowcase() {
                 {/* Background gradient + subtle 3D */}
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-zinc-50/40 dark:via-zinc-900/20 to-transparent pointer-events-none" />
 
-                <div className="flex items-center justify-between mb-8">
-                    <h2 className="text-3xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight drop-shadow-md">
-                         Khám phá sự kiện
+                <div className="flex items-center justify-between mb-4 sm:mb-6 md:mb-8">
+                    <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight drop-shadow-md">
+                        Khám phá sự kiện
                     </h2>
                 </div>
 
                 {/* Filter Bar */}
-                <div className="mb-6 backdrop-blur-xl bg-white/40 dark:bg-zinc-900/30 rounded-2xl shadow-xl border border-white/30 dark:border-zinc-800/40 p-4">
+                <div className="mb-4 sm:mb-6 backdrop-blur-xl bg-white/40 dark:bg-zinc-900/30 rounded-xl sm:rounded-2xl shadow-xl border border-white/30 dark:border-zinc-800/40 p-3 sm:p-4">
                     <FilterBar
                         filters={filters}
                         setFilters={setFilters}
@@ -118,10 +119,10 @@ export default function EventShowcase() {
                 </div>
 
                 {/* Events List */}
-                <div className="min-h-[400px]">
+                <div className="min-h-[300px] sm:min-h-[400px]">
                     {isLoading ? (
                         /* Loading Skeleton */
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             {[1, 2, 3, 4, 5, 6].map((n) => (
                                 <div
                                     key={n}
@@ -143,7 +144,7 @@ export default function EventShowcase() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.4, ease: "easeOut" }}
-                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
                         >
                             {filteredEvents.map((event) => (
                                 <motion.div
@@ -179,7 +180,7 @@ export default function EventShowcase() {
 
             {/* Pagination */}
             {!isLoading && filteredEvents.length > 0 && (
-                <div className="flex justify-center mt-8">
+                <div className="flex justify-center mt-6 sm:mt-8">
                     <BasicPagination
                         currentPage={currentPage}
                         totalPages={totalPages}

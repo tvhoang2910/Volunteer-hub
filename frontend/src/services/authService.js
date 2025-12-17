@@ -21,6 +21,29 @@ export const authService = {
      * @param {Object} credentials - { email, password }
      */
     login: async (credentials) => {
+        // Mock Accounts
+        const mockUsers = {
+            'admin@test.com': { role: 'admin', token: 'mock-token-admin' },
+            'manager@test.com': { role: 'manager', token: 'mock-token-manager' },
+            'user@test.com': { role: 'volunteer', token: 'mock-token-volunteer' }
+        };
+
+        if (mockUsers[credentials.email] && credentials.password === '123456') {
+            const user = mockUsers[credentials.email];
+            // If role is provided in credentials, verify it matches or just override?
+            // Since the UI passes role, we should probably check it or just trust the specific email.
+            // For simplify, we enforce the role based on email.
+
+            // Simulate delay
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            return {
+                token: user.token,
+                role: user.role,
+                user: { email: credentials.email, name: 'Mock ' + user.role }
+            };
+        }
+
         const response = await axios.post(`${API_BASE_URL}/api/auth/login`, credentials);
         return response.data;
     },
@@ -30,6 +53,12 @@ export const authService = {
      */
     logout: async () => {
         const token = localStorage.getItem('token');
+        if (token && token.startsWith('mock-token-')) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            return { message: 'Logged out successfully' };
+        }
+
         const response = await axios.post(`${API_BASE_URL}/api/auth/logout`, {}, {
             headers: { Authorization: `Bearer ${token}` }
         });
@@ -77,6 +106,14 @@ export const authService = {
      */
     verifyRole: async () => {
         const token = localStorage.getItem('token');
+
+        if (token && token.startsWith('mock-token-')) {
+            const role = token.replace('mock-token-', '');
+            const responseData = { role: role };
+            localStorage.setItem('role', responseData.role);
+            return responseData;
+        }
+
         const response = await axios.post(`${API_BASE_URL}/api/auth/verify-role`, {}, {
             headers: { Authorization: `Bearer ${token}` }
         });
