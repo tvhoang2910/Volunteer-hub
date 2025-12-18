@@ -1,96 +1,58 @@
 /**
  * @file postService.js
  * @description Service for handling social posts in the application.
- * Features CRUD operations, reactions, and mock data simulation.
  */
 
 import axios from 'axios';
-import { MOCK_POSTS } from '@/data/postData';
 
-// Simulate API delay
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 
-// Axios instance (configured for real API usage later)
-const api = axios.create({
-    baseURL: 'https://api.example.com', // Replace with real API
-    headers: {
-        'Content-Type': 'application/json',
-    },
-});
+const getAuthHeader = () => {
+    const token = localStorage.getItem('token');
+    return { Authorization: `Bearer ${token}` };
+};
 
 export const postService = {
-    getPosts: async (page = 1, limit = 10) => {
-        // REAL CALL: return api.get(`/posts?page=${page}&limit=${limit}`);
-
-        // MOCK CALL:
-        await delay(800);
-        // Simulate infinite scroll by returning same data but with different IDs if page > 1
-        const newPosts = MOCK_POSTS.map(p => ({
-            ...p,
-            id: p.id + (page - 1) * 10
-        }));
-        return {
-            data: newPosts,
-            hasMore: page < 5 // Limit to 5 pages for demo
-        };
+    getPosts: async (eventId, page = 1, limit = 10) => {
+        const response = await axios.get(`${API_BASE_URL}/api/events/${eventId}/posts`, {
+            params: { page, limit },
+            headers: getAuthHeader()
+        });
+        return response.data;
     },
 
-    getPost: async (id) => {
-        // REAL CALL: return api.get(`/posts/${id}`);
-        await delay(500);
-        return MOCK_POSTS.find(p => p.id === id) || MOCK_POSTS[0];
+    getPost: async (postId) => {
+        const response = await axios.get(`${API_BASE_URL}/api/posts/${postId}`, {
+            headers: getAuthHeader()
+        });
+        return response.data;
     },
 
-    createPost: async (formData) => {
-        // REAL CALL: return api.post('/posts', formData);
-        await delay(1000);
-        const newPost = {
-            id: Date.now(),
-            user: {
-                id: 999,
-                name: 'Current User',
-                avatar: 'https://i.pravatar.cc/150?u=999',
-            },
-            content: formData.get('content'),
-            media: [], // Handle media upload mock
-            likes: 0,
-            comments: 0,
-            isLiked: false,
-            createdAt: new Date().toISOString(),
-        };
-
-        // Mock media handling
-        const files = formData.getAll('media');
-        if (files && files.length > 0) {
-            // In a real app, these would be URLs from S3/Cloudinary
-            newPost.media = files.map((file, index) => ({
-                type: file.type.startsWith('video') ? 'video' : 'image',
-                url: URL.createObjectURL(file)
-            }));
-        }
-
-        return newPost;
+    createPost: async (eventId, formData) => {
+        const response = await axios.post(`${API_BASE_URL}/api/events/${eventId}/posts`, formData, {
+            headers: getAuthHeader()
+        }); // Content-Type multipart/form-data is usually automatic with FormData, but axios handles it.
+        return response.data;
     },
 
-    updatePost: async (id, formData) => {
-        // REAL CALL: return api.put(`/posts/${id}`, formData);
-        await delay(800);
-        return {
-            id,
-            content: formData.get('content'),
-            // ... other updated fields
-        };
+    updatePost: async (postId, formData) => {
+        const response = await axios.put(`${API_BASE_URL}/api/posts/${postId}`, formData, {
+            headers: getAuthHeader()
+        });
+        return response.data;
     },
 
-    deletePost: async (id) => {
-        // REAL CALL: return api.delete(`/posts/${id}`);
-        await delay(500);
-        return { success: true };
+    deletePost: async (postId) => {
+        const response = await axios.delete(`${API_BASE_URL}/api/posts/${postId}`, {
+            headers: getAuthHeader()
+        });
+        return response.data;
     },
 
-    toggleReaction: async (id) => {
-        // REAL CALL: return api.post(`/posts/${id}/reactions`);
-        await delay(300);
-        return { success: true };
+    toggleReaction: async (postId) => {
+        const response = await axios.post(`${API_BASE_URL}/api/posts/${postId}/reactions`, {}, {
+            headers: getAuthHeader()
+        });
+        return response.data;
     }
 };
