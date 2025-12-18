@@ -18,6 +18,7 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.BaseEntity;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Role;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Registration;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.User;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.RegistrationStatus;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.RegistrationRepository;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.RoleRepository;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.UserRepository;
@@ -166,6 +167,12 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(user);
     }
 
+    public void updateUserAvatar(UUID userId, String avatarUrl) {
+        User user = findUserById(userId);
+        user.setAvatarUrl(avatarUrl);
+        userRepository.save(user);
+    }
+
     @Override
     public UserProfileResponse getUserProfile(UUID userId) {
         User user = findUserById(userId);
@@ -173,6 +180,7 @@ public class UserServiceImpl implements UserService {
                 .userId(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
+                .avatarUrl(user.getAvatarUrl())
                 .isActive(user.getIsActive())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
@@ -182,10 +190,15 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserProfileResponse updateUserProfile(UUID userId, UpdateProfileRequest request) {
         User updated = this.updateUserProfile(userId, request.getName(), request.getEmail());
+        if (request.getAvatarUrl() != null) {
+            updated.setAvatarUrl(request.getAvatarUrl());
+            updated = userRepository.save(updated);
+        }
         return UserProfileResponse.builder()
                 .userId(updated.getId())
                 .name(updated.getName())
                 .email(updated.getEmail())
+                .avatarUrl(updated.getAvatarUrl())
                 .isActive(updated.getIsActive())
                 .createdAt(updated.getCreatedAt())
                 .updatedAt(updated.getUpdatedAt())
@@ -207,10 +220,11 @@ public class UserServiceImpl implements UserService {
                     .startTime(event.getStartTime())
                     .endTime(event.getEndTime())
                     .maxVolunteers(event.getMaxVolunteers())
+                    .thumbnailUrl(event.getThumbnailUrl())
                     .createdByName(event.getCreatedBy() == null ? null : event.getCreatedBy().getName())
                     .registrationStatus(registration.getRegistrationStatus().toString())
                     .registeredAt(registration.getCreatedAt())
-                    .isCompleted(registration.getIsCompleted())
+                    .isCompleted(registration.getRegistrationStatus() == RegistrationStatus.COMPLETED)
                     .completionNotes(registration.getCompletionNotes())
                     .adminApprovalStatus(event.getAdminApprovalStatus().toString())
                     .createdAt(event.getCreatedAt())

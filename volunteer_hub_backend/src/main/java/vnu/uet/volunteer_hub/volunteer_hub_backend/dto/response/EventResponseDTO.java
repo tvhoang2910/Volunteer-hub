@@ -32,6 +32,8 @@ public class EventResponseDTO {
 
     private Integer maxVolunteers;
 
+    private String thumbnailUrl;
+
     /**
      * Tên người tạo sự kiện
      */

@@ -23,6 +23,8 @@ public class UserProfileResponse {
 
     private String email;
 
+    private String avatarUrl;
+
     private Boolean isActive;
 
     private LocalDateTime createdAt;

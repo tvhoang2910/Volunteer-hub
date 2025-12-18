@@ -42,4 +42,6 @@ public class CreateEventRequest {
 
     @Positive(message = "Số lượng tình nguyện viên phải là số dương")
     private Integer maxVolunteers;
+
+    private String thumbnailUrl;
 }

@@ -1,6 +1,7 @@
 package vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response;
 
 import java.util.UUID;
+import java.util.List;
 import java.time.LocalDateTime;
 
 import lombok.AllArgsConstructor;
@@ -18,6 +19,7 @@ public class ScoredPostDTO {
     private String eventTitle;
     private String authorName;
     private String content;
+    private List<String> imageUrls;
     private LocalDateTime createdAt;
     private int commentCount;
     private int reactionCount;

@@ -104,6 +104,7 @@ public class EventServiceImpl implements EventService {
         event.setStartTime(request.getStartTime());
         event.setEndTime(request.getEndTime());
         event.setMaxVolunteers(request.getMaxVolunteers());
+        event.setThumbnailUrl(request.getThumbnailUrl());
         event.setAdminApprovalStatus(EventApprovalStatus.PENDING);
         event.setIsArchived(false);
 
@@ -117,6 +118,7 @@ public class EventServiceImpl implements EventService {
                 .startTime(savedEvent.getStartTime())
                 .endTime(savedEvent.getEndTime())
                 .maxVolunteers(savedEvent.getMaxVolunteers())
+                .thumbnailUrl(savedEvent.getThumbnailUrl())
                 .createdByName(creator.getName())
                 .adminApprovalStatus(savedEvent.getAdminApprovalStatus().toString())
                 .createdAt(savedEvent.getCreatedAt())
@@ -163,6 +165,9 @@ public class EventServiceImpl implements EventService {
         if (request.getMaxVolunteers() != null) {
             event.setMaxVolunteers(request.getMaxVolunteers());
         }
+        if (request.getThumbnailUrl() != null) {
+            event.setThumbnailUrl(request.getThumbnailUrl());
+        }
 
         // Validate startTime < endTime after updates
         if (event.getStartTime() != null && event.getEndTime() != null
@@ -180,6 +185,7 @@ public class EventServiceImpl implements EventService {
                 .startTime(savedEvent.getStartTime())
                 .endTime(savedEvent.getEndTime())
                 .maxVolunteers(savedEvent.getMaxVolunteers())
+                .thumbnailUrl(savedEvent.getThumbnailUrl())
                 .createdByName(savedEvent.getCreatedBy().getName())
                 .adminApprovalStatus(savedEvent.getAdminApprovalStatus().toString())
                 .createdAt(savedEvent.getCreatedAt())
@@ -327,6 +333,7 @@ public class EventServiceImpl implements EventService {
                 .startTime(event.getStartTime())
                 .endTime(event.getEndTime())
                 .maxVolunteers(event.getMaxVolunteers())
+                .thumbnailUrl(event.getThumbnailUrl())
                 .createdByName(createdByName)
                 .adminApprovalStatus(
                         event.getAdminApprovalStatus() == null ? null : event.getAdminApprovalStatus().toString())

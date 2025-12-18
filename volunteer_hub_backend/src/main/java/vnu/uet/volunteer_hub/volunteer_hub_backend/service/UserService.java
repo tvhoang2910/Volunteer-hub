@@ -41,6 +41,11 @@ public interface UserService {
      */
     User updateUserProfile(UUID userId, String name, String email);
 
+    /**
+     * Cập nhật avatar URL của user.
+     */
+    void updateUserAvatar(UUID userId, String avatarUrl);
+
     // --- Service methods that return DTOs (mapping happens in service layer) ---
     UserProfileResponse getUserProfile(UUID userId);
 

@@ -92,6 +92,7 @@ public class SecurityConfig {
                                 "/api/search/autocomplete/**",
                                 "/api/users/profile/**",
                                 "/api/notifications/**",
+                                "/api/upload/**",
                                 "/oauth2/**",
                                 "/login/oauth2/**")
                         .permitAll()

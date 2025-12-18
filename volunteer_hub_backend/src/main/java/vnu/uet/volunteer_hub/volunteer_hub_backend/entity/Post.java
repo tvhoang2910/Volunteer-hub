@@ -49,6 +49,10 @@ public class Post extends BaseEntity {
     @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<PostReaction> reactions = new HashSet<>();
 
+    @Comment("Ảnh/Album đính kèm cho bài viết")
+    @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<PostImage> images = new HashSet<>();
+
     @org.hibernate.annotations.Formula("(SELECT COUNT(*) FROM post_reactions r WHERE r.post_id = post_id)")
     private int reactionCount;
 

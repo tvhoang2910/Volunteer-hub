@@ -1,12 +1,12 @@
 package vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request;
 
+import java.util.List;
+
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.UUID;
 
 /**
  * DTO for updating a post.
@@ -25,6 +25,9 @@ public class UpdatePostRequest {
     @NotBlank(message = "Content cannot be blank")
     private String content;
 
-    // TODO (Future): Thêm eventId nếu cho phép đổi event của post
-    // private UUID eventId;
+    /**
+     * Danh sách URL ảnh đính kèm (optional)
+     */
+    private List<String> imageUrls;
+
 }

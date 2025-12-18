@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -20,4 +21,9 @@ public class CreatePostRequest {
 
     @NotBlank(message = "Content cannot be blank")
     private String content;
+
+    /**
+     * Danh sách URL ảnh đính kèm (optional)
+     */
+    private List<String> imageUrls;
 }

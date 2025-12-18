@@ -26,4 +26,9 @@ public class UpdateProfileRequest {
      * Lưu ý: Email phải unique trong hệ thống
      */
     private String email;
+
+    /**
+     * Avatar URL (optional)
+     */
+    private String avatarUrl;
 }

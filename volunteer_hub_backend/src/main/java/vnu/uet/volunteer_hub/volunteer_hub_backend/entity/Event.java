@@ -77,6 +77,10 @@ public class Event extends BaseEntity {
     @Column(name = "is_archived", nullable = false)
     private Boolean isArchived = Boolean.FALSE;
 
+    @Comment("Ảnh bìa/Thumbnail đại diện cho sự kiện")
+    @Column(name = "thumbnail_url", columnDefinition = "TEXT")
+    private String thumbnailUrl;
+
     @JsonIgnore
     @OneToMany(mappedBy = "event", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Registration> registrations = new HashSet<>();

@@ -15,6 +15,7 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.PostDetailRespon
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.ScoredPostDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Event;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Post;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.PostImage;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.PostReaction;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.User;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.EventApprovalStatus;
@@ -48,6 +49,7 @@ public class PostServiceImpl implements PostService {
     private final PostReactionRepository postReactionRepository;
     private final PostReactionService postReactionService;
     private final CommentRepository commentRepository;
+    private final PostImageRepository postImageRepository;
     private final int candidateMultiplier;
 
     public PostServiceImpl(PostRepository postRepository, PostRankingService postRankingService,
@@ -56,6 +58,7 @@ public class PostServiceImpl implements PostService {
             PostReactionRepository postReactionRepository,
             PostReactionService postReactionService,
             CommentRepository commentRepository,
+            PostImageRepository postImageRepository,
             @Value("${posts.feed.candidate-multiplier:5}") int candidateMultiplier) {
         this.postRepository = postRepository;
         this.postRankingService = postRankingService;
@@ -66,6 +69,7 @@ public class PostServiceImpl implements PostService {
         this.postReactionRepository = postReactionRepository;
         this.postReactionService = postReactionService;
         this.commentRepository = commentRepository;
+        this.postImageRepository = postImageRepository;
         this.candidateMultiplier = candidateMultiplier;
     }
 
@@ -231,10 +235,17 @@ public class PostServiceImpl implements PostService {
         int commentCount = p.getCommentCount();
         int reactionCount = p.getReactionCount();
 
+        List<String> imageUrls = p.getImages() == null ? List.of()
+                : p.getImages().stream()
+                        .sorted(Comparator.comparing(img -> img.getSortOrder() == null ? 0 : img.getSortOrder()))
+                        .map(img -> img.getImageUrl())
+                        .collect(Collectors.toList());
+
         ScoredPostDTO dto = ScoredPostDTO.builder().postId(p.getId())
                 .eventId(p.getEvent() == null ? null : p.getEvent().getId())
                 .eventTitle(p.getEvent() == null ? "" : p.getEvent().getTitle())
                 .authorName(p.getAuthor() == null ? "" : p.getAuthor().getName()).content(p.getContent())
+                .imageUrls(imageUrls)
                 .createdAt(p.getCreatedAt()).commentCount(commentCount).reactionCount(reactionCount)
                 .affinityScore(scoringService.computeAffinityScore(p))
                 .recencyFactor(scoringService.computeRecencyFactor(p))
@@ -274,6 +285,20 @@ public class PostServiceImpl implements PostService {
 
         // Save to database
         Post savedPost = postRepository.save(post);
+
+        // Handle images if provided
+        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
+            int order = 0;
+            for (String imageUrl : request.getImageUrls()) {
+                PostImage postImage = new PostImage();
+                postImage.setPost(savedPost);
+                postImage.setImageUrl(imageUrl);
+                postImage.setSortOrder(order++);
+                postImageRepository.save(postImage);
+            }
+            // Refresh to load images
+            savedPost = postRepository.findById(savedPost.getId()).orElse(savedPost);
+        }
 
         // Add to ranking
         postRankingService.addOrUpdatePostRanking(savedPost.getId().toString(),
@@ -412,6 +437,25 @@ public class PostServiceImpl implements PostService {
 
         // Update content
         post.setContent(request.getContent());
+
+        // Handle images update if provided
+        if (request.getImageUrls() != null) {
+            // Delete existing images
+            post.getImages().clear();
+            postRepository.save(post);
+
+            // Add new images
+            int order = 0;
+            for (String imageUrl : request.getImageUrls()) {
+                vnu.uet.volunteer_hub.volunteer_hub_backend.entity.PostImage postImage = new vnu.uet.volunteer_hub.volunteer_hub_backend.entity.PostImage();
+                postImage.setPost(post);
+                postImage.setImageUrl(imageUrl);
+                postImage.setSortOrder(order++);
+                postImageRepository.save(postImage);
+            }
+            // Refresh to load updated images
+            post = postRepository.findById(postId).orElse(post);
+        }
 
         // Save to database
         Post updatedPost = postRepository.save(post);
