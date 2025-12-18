@@ -27,7 +27,9 @@ public class RegistrationRequest {
     @NotBlank(message = "Ho va ten khong duoc de trong")
     private String name;
 
-    @NotBlank(message = "Vai tro khong duoc de trong")
-    @Pattern(regexp = "VOLUNTEER|MANAGER", message = "Chi duoc dang ky vai tro VOLUNTEER hoac MANAGER")
+    @Pattern(
+            regexp = "^(volunteer|manager)$",
+            flags = Pattern.Flag.CASE_INSENSITIVE,
+            message = "Chi duoc dang ky vai tro VOLUNTEER hoac MANAGER")
     private String role = UserRoleType.VOLUNTEER.name();
 }

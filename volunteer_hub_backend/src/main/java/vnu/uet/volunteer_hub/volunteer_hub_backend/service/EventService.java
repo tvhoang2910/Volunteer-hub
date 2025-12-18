@@ -216,7 +216,7 @@ public interface EventService {
      * @param userId  ID của user
      * @return kết quả check-in
      */
-    CheckInResponseDTO checkInVolunteer(UUID eventId, UUID userId);
+    CheckInResponseDTO checkInVolunteer(UUID eventId, UUID userId, UUID checkerId);
 
     /* ============================================================
      * REGISTRATION MANAGEMENT
@@ -237,7 +237,7 @@ public interface EventService {
      * @param registrationId ID của bản ghi đăng ký
      * @return kết quả từ chối
      */
-    RegistrationRejectionResponseDTO rejectRegistration(UUID registrationId);
+    RegistrationRejectionResponseDTO rejectRegistration(UUID registrationId, UUID actorId);
 
     /**
      * Đánh dấu hoàn thành đăng ký (sau khi sự kiện kết thúc).
@@ -248,6 +248,7 @@ public interface EventService {
      */
     RegistrationCompletionResponseDTO completeRegistration(
             UUID registrationId,
-            RegistrationCompletionRequest request
+            RegistrationCompletionRequest request,
+            UUID actorId
     );
 }

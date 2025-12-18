@@ -16,17 +16,22 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.RegistrationAppr
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.RegistrationCompletionResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.RegistrationRejectionResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Event;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Notification;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Registration;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.User;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.EventApprovalStatus;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.NotificationType;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.RegistrationStatus;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.UserRoleType;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.EventRepository;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.NotificationRepository;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.RegistrationRepository;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.UserRepository;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.EventService;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.PostRankingService;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -46,6 +51,7 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final RegistrationRepository registrationRepository;
     private final UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
     private final PostRankingService postRankingService;
 
     /* ============================================================
@@ -136,6 +142,11 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() ->
                         new EntityNotFoundException("User not found with id: " + creatorId));
 
+        // Only manager or admin can create events
+        if (!isManagerOrAdmin(creator)) {
+            throw new IllegalStateException("Only manager or admin can create events");
+        }
+
         if (!request.getStartTime().isBefore(request.getEndTime())) {
             throw new IllegalArgumentException("Start time must be before end time");
         }
@@ -153,6 +164,8 @@ public class EventServiceImpl implements EventService {
 
         Event savedEvent = eventRepository.save(event);
 
+        notifyAdminsPendingEvent(savedEvent, creator);
+
         return mapToEventResponse(savedEvent);
     }
 
@@ -166,13 +179,11 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() ->
                         new EntityNotFoundException("Event not found with id: " + eventId));
 
-        userRepository.findById(updaterId)
+        User updater = userRepository.findById(updaterId)
                 .orElseThrow(() ->
                         new EntityNotFoundException("User not found with id: " + updaterId));
 
-        if (!event.getCreatedBy().getId().equals(updaterId)) {
-            throw new IllegalStateException("Only the event creator can update this event");
-        }
+        ensureEventManagerOrAdmin(event, updater);
 
         if (event.getStartTime().isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("Cannot update event that has already started");
@@ -354,12 +365,17 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    public CheckInResponseDTO checkInVolunteer(UUID eventId, UUID userId) {
+    public CheckInResponseDTO checkInVolunteer(UUID eventId, UUID userId, UUID checkerId) {
+
+        User checker = userRepository.findById(checkerId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + checkerId));
 
         Registration registration =
                 registrationRepository.findByEventIdAndVolunteerId(eventId, userId)
                         .orElseThrow(() ->
                                 new EntityNotFoundException("User is not registered"));
+
+        ensureEventManagerOrAdmin(registration.getEvent(), checker);
 
         if (!registration.getRegistrationStatus().equals(RegistrationStatus.APPROVED)) {
             throw new IllegalStateException("Only approved registrations can check-in");
@@ -401,6 +417,8 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() ->
                         new EntityNotFoundException("User not found"));
 
+        ensureEventManagerOrAdmin(registration.getEvent(), approvedBy);
+
         registration.setRegistrationStatus(RegistrationStatus.APPROVED);
         registration.setApprovedBy(approvedBy);
 
@@ -418,11 +436,16 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    public RegistrationRejectionResponseDTO rejectRegistration(UUID registrationId) {
+    public RegistrationRejectionResponseDTO rejectRegistration(UUID registrationId, UUID actorId) {
 
         Registration registration = registrationRepository.findById(registrationId)
                 .orElseThrow(() ->
                         new EntityNotFoundException("Registration not found"));
+
+        User actor = userRepository.findById(actorId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        ensureEventManagerOrAdmin(registration.getEvent(), actor);
 
         registration.setRegistrationStatus(RegistrationStatus.REJECTED);
         registrationRepository.save(registration);
@@ -440,11 +463,17 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public RegistrationCompletionResponseDTO completeRegistration(UUID registrationId,
-                                                                  RegistrationCompletionRequest request) {
+                                                                  RegistrationCompletionRequest request,
+                                                                  UUID actorId) {
 
         Registration registration = registrationRepository.findById(registrationId)
                 .orElseThrow(() ->
                         new EntityNotFoundException("Registration not found"));
+
+        User actor = userRepository.findById(actorId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        ensureEventManagerOrAdmin(registration.getEvent(), actor);
 
         if (!registration.getRegistrationStatus().equals(RegistrationStatus.CHECKED_IN)
                 && !registration.getRegistrationStatus().equals(RegistrationStatus.COMPLETED)) {
@@ -501,5 +530,58 @@ public class EventServiceImpl implements EventService {
                                 : null)
                 .createdAt(event.getCreatedAt())
                 .build();
+    }
+
+    private boolean hasRole(User user, String roleName) {
+        if (user == null || user.getRoles() == null) return false;
+        return user.getRoles().stream()
+                .anyMatch(r -> r != null && roleName.equalsIgnoreCase(r.getRoleName()));
+    }
+
+    private boolean isManagerOrAdmin(User user) {
+        return hasRole(user, UserRoleType.MANAGER.name()) || hasRole(user, UserRoleType.ADMIN.name());
+    }
+
+    private void ensureEventManagerOrAdmin(Event event, User actor) {
+        boolean isCreator = event.getCreatedBy() != null
+                && actor != null
+                && event.getCreatedBy().getId().equals(actor.getId());
+        boolean isAdmin = hasRole(actor, UserRoleType.ADMIN.name());
+        boolean isManager = hasRole(actor, UserRoleType.MANAGER.name());
+        if (!(isAdmin || (isManager && isCreator))) {
+            throw new IllegalStateException("Not authorized to manage this event");
+        }
+    }
+
+    private void notifyAdminsPendingEvent(Event event, User creator) {
+        // Fetch active admins
+        List<User> admins = userRepository.findByIsActive(true).stream()
+                .filter(this::isAdmin)
+                .toList();
+        if (admins.isEmpty()) {
+            return;
+        }
+
+        String title = "Sự kiện mới chờ duyệt";
+        String body = String.format("Sự kiện \"%s\" do %s vừa tạo đang chờ duyệt.",
+                event.getTitle(),
+                creator != null ? creator.getName() : "manager");
+
+        List<Notification> notifications = new ArrayList<>();
+        for (User admin : admins) {
+            Notification n = new Notification();
+            n.setRecipient(admin);
+            n.setEvent(event);
+            n.setTitle(title);
+            n.setBody(body);
+            n.setNotificationType(NotificationType.EVENT_CREATED_PENDING);
+            n.setIsRead(false);
+            notifications.add(n);
+        }
+        notificationRepository.saveAll(notifications);
+    }
+
+    private boolean isAdmin(User user) {
+        return hasRole(user, UserRoleType.ADMIN.name());
     }
 }

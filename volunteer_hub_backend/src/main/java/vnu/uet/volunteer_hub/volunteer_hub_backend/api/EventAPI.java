@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.CreateEventRequest;
@@ -106,10 +108,16 @@ public class EventAPI {
 
     /* ================= PARTICIPATION ================= */
 
-    @PostMapping("/{eventId}/participants/{userId}")
-    public ResponseEntity<?> joinEvent(
-            @PathVariable UUID eventId,
-            @PathVariable UUID userId) {
+    @PostMapping("/{eventId}/participants")
+    public ResponseEntity<?> joinEvent(@PathVariable UUID eventId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UUID userId = userService.getViewerIdFromAuthentication(auth);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ResponseDTO.builder()
+                            .message("Not authenticated")
+                            .build());
+        }
 
         JoinEventResponse response = eventService.joinEvent(eventId, userId);
         return ResponseEntity.ok(
@@ -119,10 +127,16 @@ public class EventAPI {
                         .build());
     }
 
-    @DeleteMapping("/{eventId}/participants/{userId}")
-    public ResponseEntity<?> leaveEvent(
-            @PathVariable UUID eventId,
-            @PathVariable UUID userId) {
+    @DeleteMapping("/{eventId}/participants")
+    public ResponseEntity<?> leaveEvent(@PathVariable UUID eventId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UUID userId = userService.getViewerIdFromAuthentication(auth);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ResponseDTO.builder()
+                            .message("Not authenticated")
+                            .build());
+        }
 
         JoinEventResponse response = eventService.leaveEvent(eventId, userId);
         return ResponseEntity.ok(
@@ -147,7 +161,16 @@ public class EventAPI {
             @PathVariable UUID eventId,
             @PathVariable UUID userId) {
 
-        CheckInResponseDTO response = eventService.checkInVolunteer(eventId, userId);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UUID checkerId = userService.getViewerIdFromAuthentication(auth);
+        if (checkerId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ResponseDTO.builder()
+                            .message("Not authenticated")
+                            .build());
+        }
+
+        CheckInResponseDTO response = eventService.checkInVolunteer(eventId, userId, checkerId);
         return ResponseEntity.ok(
                 ResponseDTO.<CheckInResponseDTO>builder()
                         .message(response.getMessage())

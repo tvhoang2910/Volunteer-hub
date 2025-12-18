@@ -3,6 +3,8 @@ package vnu.uet.volunteer_hub.volunteer_hub_backend.api;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.RegistrationCompletionRequest;
@@ -11,6 +13,7 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.RegistrationComp
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.RegistrationRejectionResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.ResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.EventService;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.service.UserService;
 
 import java.util.UUID;
 
@@ -20,6 +23,7 @@ import java.util.UUID;
 public class RegistrationAPI {
 
     private final EventService eventService;
+    private final UserService userService;
 
     /**
      * Approve a registration.
@@ -27,10 +31,16 @@ public class RegistrationAPI {
      * Request: approvedByUserId (query parameter for testing)
      * Response: RegistrationApprovalResponseDTO
      */
-    @PutMapping("/{registrationId}/approve/{approvedByUserId}")
-    public ResponseEntity<?> approveRegistration(
-            @PathVariable UUID registrationId,
-            @PathVariable UUID approvedByUserId) {
+    @PutMapping("/{registrationId}/approve")
+    public ResponseEntity<?> approveRegistration(@PathVariable UUID registrationId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UUID approvedByUserId = userService.getViewerIdFromAuthentication(auth);
+        if (approvedByUserId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ResponseDTO.builder()
+                            .message("Not authenticated")
+                            .build());
+        }
         try {
             RegistrationApprovalResponseDTO response = eventService.approveRegistration(registrationId,
                     approvedByUserId);
@@ -60,8 +70,16 @@ public class RegistrationAPI {
      */
     @PutMapping("/{registrationId}/reject")
     public ResponseEntity<?> rejectRegistration(@PathVariable UUID registrationId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UUID actorId = userService.getViewerIdFromAuthentication(auth);
+        if (actorId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ResponseDTO.builder()
+                            .message("Not authenticated")
+                            .build());
+        }
         try {
-            RegistrationRejectionResponseDTO response = eventService.rejectRegistration(registrationId);
+            RegistrationRejectionResponseDTO response = eventService.rejectRegistration(registrationId, actorId);
             return ResponseEntity.ok(ResponseDTO.<RegistrationRejectionResponseDTO>builder()
                     .message(response.getMessage())
                     .data(response)
@@ -91,9 +109,17 @@ public class RegistrationAPI {
     public ResponseEntity<?> completeRegistration(
             @PathVariable UUID registrationId,
             @RequestBody(required = false) RegistrationCompletionRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UUID actorId = userService.getViewerIdFromAuthentication(auth);
+        if (actorId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ResponseDTO.builder()
+                            .message("Not authenticated")
+                            .build());
+        }
         try {
             RegistrationCompletionRequest req = request != null ? request : new RegistrationCompletionRequest();
-            RegistrationCompletionResponseDTO response = eventService.completeRegistration(registrationId, req);
+            RegistrationCompletionResponseDTO response = eventService.completeRegistration(registrationId, req, actorId);
             return ResponseEntity.ok(ResponseDTO.<RegistrationCompletionResponseDTO>builder()
                     .message(response.getMessage())
                     .data(response)

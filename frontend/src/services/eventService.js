@@ -41,7 +41,9 @@ export const eventService = {
       if (!response.ok) throw new Error("Lỗi khi tải danh sách sự kiện");
 
       const payload = await response.json();
-      const events = (payload?.data || payload?.events || []).map(normalizeEvent);
+      const events = (payload?.data || payload?.events || []).map(
+        normalizeEvent
+      );
 
       return {
         events,
@@ -54,6 +56,32 @@ export const eventService = {
         events: managerEvents.map(normalizeEvent),
         total: managerEvents.length,
         totalPages: Math.ceil(managerEvents.length / limit),
+      };
+    }
+  },
+
+  getPendingEvents: async (page = 1, limit = 9) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/events?status=PENDING`);
+      if (!response.ok)
+        throw new Error("Lỗi khi tải danh sách sự kiện đang chờ duyệt");
+
+      const payload = await response.json();
+      const events = (payload?.data || payload?.events || []).map(
+        normalizeEvent
+      );
+
+      return {
+        events,
+        total: events.length,
+        totalPages: Math.max(1, Math.ceil(events.length / limit)),
+      };
+    } catch (error) {
+      console.error("Error fetching pending events:", error);
+      return {
+        events: [],
+        total: 0,
+        totalPages: 0,
       };
     }
   },
@@ -91,9 +119,8 @@ export const eventService = {
     } catch (error) {
       console.error("Fetch detail failed, fallback to mock:", error);
       const mock =
-        managerEvents.find(
-          (e) => e.id === eventId || e.event_id === eventId
-        ) || managerEvents[0];
+        managerEvents.find((e) => e.id === eventId || e.event_id === eventId) ||
+        managerEvents[0];
       return normalizeEvent(mock);
     }
   },

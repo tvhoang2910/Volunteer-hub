@@ -2,6 +2,7 @@
 import React from "react";
 import Hero from "../components/landing/hero";
 import Destination from "../components/landing/destination";
+import PendingEvents from "../components/landing/PendingEvents";
 import About from "../components/landing/about";
 import Review from "../components/landing/review";
 import Benefit from "../components/landing/benefit";
@@ -17,7 +18,7 @@ function Home() {
     AOS.init({
       duration: 1500,
       once: true,
-      easing: 'ease-out-cubic',
+      easing: "ease-out-cubic",
     });
   }, []);
 
@@ -43,6 +44,14 @@ function Home() {
         <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 via-transparent to-teal-500/5"></div>
         <div className="relative">
           <Destination />
+        </div>
+      </div>
+
+      {/* Pending Events Section - Sự kiện đang chờ duyệt */}
+      <div className="relative bg-gradient-to-b from-white via-amber-50/30 to-white py-8">
+        <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-transparent to-yellow-500/5"></div>
+        <div className="relative">
+          <PendingEvents />
         </div>
       </div>
 
@@ -72,8 +81,6 @@ function Home() {
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent via-white to-white pointer-events-none"></div>
       </div>
     </div>
-
-
   );
 }
 

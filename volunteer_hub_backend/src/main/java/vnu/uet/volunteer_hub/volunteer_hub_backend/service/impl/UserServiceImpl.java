@@ -75,7 +75,10 @@ public class UserServiceImpl implements UserService {
         }
 
         UserRoleType requestedRole =
-                UserRoleType.fromString(registrationRequest.getRole());
+                UserRoleType.fromString(
+                        registrationRequest.getRole() == null
+                                ? UserRoleType.VOLUNTEER.name()
+                                : registrationRequest.getRole());
 
         if (requestedRole == null) {
             throw new IllegalArgumentException("Vai trò không hợp lệ");
