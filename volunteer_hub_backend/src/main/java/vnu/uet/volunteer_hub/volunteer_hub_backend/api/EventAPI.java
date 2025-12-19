@@ -38,10 +38,13 @@ public class EventAPI {
      * POST /api/events
      * Request body: CreateEventRequest
      * Response: EventResponseDTO
+     * <p>
+     * TODO: Sau khi có authentication, lấy userId từ SecurityContext
      */
     @PostMapping()
     public ResponseEntity<?> createEvent(
-            @Valid @RequestBody CreateEventRequest request) {
+            @Valid @RequestBody CreateEventRequest request) { // TODO: Remove after auth, get from
+        // SecurityContext
         try {
             // Validate startTime < endTime
             if (request.getStartTime() != null && request.getEndTime() != null
@@ -52,6 +55,7 @@ public class EventAPI {
                                 .build());
             }
 
+            // TODO: Get from SecurityContext after auth
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             UUID creatorId = userService.getViewerIdFromAuthentication(auth);
 
@@ -83,11 +87,14 @@ public class EventAPI {
      * Request body: UpdateEventRequest
      * Response: EventResponseDTO
      * Only owner/manager can update, and only before event starts.
+     * <p>
+     * TODO: Sau khi có authentication, lấy userId từ SecurityContext
      */
     @PutMapping("/{id}")
     public ResponseEntity<?> updateEvent(
             @PathVariable UUID id,
-            @Valid @RequestBody UpdateEventRequest request) {
+            @Valid @RequestBody UpdateEventRequest request) { // TODO: Remove after auth, get from
+        // SecurityContext
         try {
             // Validate startTime < endTime if both provided
             if (request.getStartTime() != null && request.getEndTime() != null
@@ -98,6 +105,7 @@ public class EventAPI {
                                 .build());
             }
 
+            // TODO: Get from SecurityContext after auth
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             UUID updaterId = userService.getViewerIdFromAuthentication(auth);
 
@@ -181,12 +189,20 @@ public class EventAPI {
 
     /**
      * Join an event - User registers to volunteer
-     * POST /api/events/{eventId}/participants
+     * POST /api/events/{eventId}/join/{userId}
      * Response: JoinEventResponse
+     * <p>
+     * TODO: Sau khi test xong, sửa lại thành:
+     *
+     * @PostMapping("/{eventId}/join") public ResponseEntity<?>
+     * joinEvent(@PathVariable UUID eventId) {
+     * Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+     * UUID userId = userService.getViewerIdFromAuthentication(auth);
      */
-    @PostMapping("/{eventId}/participants/")
+    @PostMapping("/{eventId}/participants")
     public ResponseEntity<?> joinEvent(@PathVariable UUID eventId) {
         try {
+            // [TEST MODE] userId được truyền từ path parameter
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             UUID userId = userService.getViewerIdFromAuthentication(auth);
 
@@ -218,12 +234,18 @@ public class EventAPI {
 
     /**
      * Leave an event - User cancels registration
-     * DELETE /api/events/{eventId}/participants
+     * DELETE /api/events/{eventId}/leave/{userId}
      * Response: JoinEventResponse
+     * <p>
+     * TODO: Sau khi test xong, sửa lại thành:
+     * public ResponseEntity<?> leaveEvent(@PathVariable UUID eventId) {
+     * Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+     * UUID userId = userService.getViewerIdFromAuthentication(auth);
      */
     @DeleteMapping("/{eventId}/participants")
     public ResponseEntity<?> leaveEvent(@PathVariable UUID eventId) {
         try {
+            // [TEST MODE] userId được truyền từ path parameter
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             UUID userId = userService.getViewerIdFromAuthentication(auth);
 
@@ -257,6 +279,72 @@ public class EventAPI {
      * Simple DTO for event list
      */
     public record EventSimpleDTO(String id, String title, String location, String description) {
+    }
+
+    /**
+     * Get list of pending events (awaiting admin approval).
+     * GET /api/events/upcoming-count
+     * Response: List of events with PENDING admin approval status
+     * NOTE: Static paths must be defined BEFORE dynamic path variable patterns
+     */
+    @GetMapping("/upcoming-count")
+    public ResponseEntity<?> getPendingEvents() {
+        try {
+            List<Event> pendingEvents = eventService.getPendingEvents();
+
+            List<EventSimpleDTO> events = pendingEvents.stream()
+                    .map(e -> new EventSimpleDTO(
+                            e.getId().toString(),
+                            e.getTitle(),
+                            e.getLocation(),
+                            e.getDescription()))
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(ResponseDTO.<List<EventSimpleDTO>>builder()
+                    .message("Pending events retrieved successfully")
+                    .data(events)
+                    .build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseDTO.builder()
+                            .message("Failed to retrieve pending events")
+                            .detail(e.getMessage())
+                            .build());
+        }
+    }
+
+    /**
+     * Get count of registered events for the current user.
+     * GET /api/events/registered-events-count
+     * Response: Count of registered events
+     * NOTE: Static paths must be defined BEFORE dynamic path variable patterns
+     */
+    @GetMapping("/registered-events-count")
+    public ResponseEntity<?> getRegisteredEventsCount() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID userId = userService.getViewerIdFromAuthentication(auth);
+
+            // Use EventService's optimized count method instead of fetching all events
+            long count = eventService.countRegisteredEvents(userId);
+
+            return ResponseEntity.ok(ResponseDTO.<Long>builder()
+                    .message("Registered events count retrieved successfully")
+                    .data(count)
+                    .build());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ResponseDTO.builder()
+                            .message("User not found")
+                            .detail(e.getMessage())
+                            .build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseDTO.builder()
+                            .message("Failed to retrieve registered events count")
+                            .detail(e.getMessage())
+                            .build());
+        }
     }
 
     /**
@@ -322,11 +410,13 @@ public class EventAPI {
     /**
      * Check-in a volunteer to an event.
      * POST /api/events/{eventId}/check-in
+     * Request: userId (query parameter for testing)
      * Response: CheckInResponseDTO
      */
     @PostMapping("/{eventId}/check-in")
     public ResponseEntity<?> checkInVolunteer(@PathVariable UUID eventId) {
         try {
+            // [TEST MODE] userId được truyền từ query parameter
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             UUID userId = userService.getViewerIdFromAuthentication(auth);
             CheckInResponseDTO response = eventService
@@ -352,61 +442,6 @@ public class EventAPI {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ResponseDTO.builder()
                             .message("Failed to check-in")
-                            .detail(e.getMessage())
-                            .build());
-        }
-    }
-
-    /**
-     * Get list of pending events (awaiting admin approval).
-     * GET /api/events/upcoming-count
-     * Response: List of events with PENDING admin approval status
-     */
-    @GetMapping("/upcoming-count")
-    public ResponseEntity<?> getPendingEvents() {
-        try {
-            List<Event> pendingEvents = eventService.getPendingEvents();
-
-            List<EventSimpleDTO> events = pendingEvents.stream()
-                    .map(e -> new EventSimpleDTO(
-                            e.getId().toString(),
-                            e.getTitle(),
-                            e.getLocation(),
-                            e.getDescription()))
-                    .collect(Collectors.toList());
-
-            return ResponseEntity.ok(ResponseDTO.<List<EventSimpleDTO>>builder()
-                    .message("Pending events retrieved successfully")
-                    .data(events)
-                    .build());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ResponseDTO.builder()
-                            .message("Failed to retrieve pending events")
-                            .detail(e.getMessage())
-                            .build());
-        }
-    }
-    @GetMapping("/registered-events-count")
-    public ResponseEntity<?> getRegisteredEventsCount() {
-        try {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            UUID userId = userService.getViewerIdFromAuthentication(auth);
-            long count = eventService.countRegisteredEvents(userId);
-            return ResponseEntity.ok(ResponseDTO.<Long>builder()
-                    .message("Registered events count retrieved successfully")
-                    .data(count)
-                    .build());
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ResponseDTO.builder()
-                            .message("User not found")
-                            .detail(e.getMessage())
-                            .build());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ResponseDTO.builder()
-                            .message("Failed to retrieve registered events count")
                             .detail(e.getMessage())
                             .build());
         }

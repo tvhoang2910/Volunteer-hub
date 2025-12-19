@@ -1,6 +1,5 @@
 package vnu.uet.volunteer_hub.volunteer_hub_backend.config;
 
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -10,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Role;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.User;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.model.utils.JwtUtil;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.UserRepository;
@@ -42,7 +42,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
-            Authentication authentication) throws IOException, ServletException {
+                                        Authentication authentication) throws IOException {
 
         if (response.isCommitted()) {
             logger.debug("Response has already been committed. Unable to redirect.");
@@ -72,7 +72,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             // Lấy role của user
             String role = user.getRoles().stream()
                     .findFirst()
-                    .map(r -> r.getRoleName())
+                    .map(Role::getRoleName)
                     .orElse("VOLUNTEER");
 
             // Generate JWT token
@@ -96,8 +96,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                     String.format("jwt_token=%s; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=%d",
                             token, 24 * 60 * 60));
 
-            // Redirect to UI posts page
-            getRedirectStrategy().sendRedirect(request, response, "/ui/posts");
+            // Redirect to frontend with token
+            String redirectUrl = frontendUrl + oauth2RedirectPath + "?token=" + token;
+            getRedirectStrategy().sendRedirect(request, response, redirectUrl);
 
         } catch (Exception e) {
             logger.error("Error during OAuth2 authentication success handling: {}", e.getMessage(), e);

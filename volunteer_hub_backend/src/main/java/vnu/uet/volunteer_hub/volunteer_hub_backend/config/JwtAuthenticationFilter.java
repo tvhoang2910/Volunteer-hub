@@ -83,7 +83,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * Parse JWT token từ Authorization header hoặc cookies.
      * Header format: "Bearer <token>"
      * Cookie name: "jwt_token"
-     * 
+     *
      * @param request HTTP request
      * @return JWT token string hoặc null nếu không có/không hợp lệ
      */
@@ -111,20 +111,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     /**
      * Không filter các public endpoints (optional optimization).
+     * NOTE: We should NOT skip JWT validation for endpoints that may need
+     * authentication info even if they're publicly accessible.
+     * The SecurityConfig already handles authorization - this filter should
+     * still run to extract user info from valid tokens.
      */
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         String path = request.getServletPath();
-        // Skip JWT validation for public endpoints
+        // Skip JWT validation only for truly public endpoints that never need user info
         return path.startsWith("/api/auth/") ||
                 path.startsWith("/api/dashboard/") ||
-                path.startsWith("/api/events/") ||
-                path.startsWith("/api/registrations/") ||
-                path.startsWith("/api/posts") ||
-                path.startsWith("/api/comments/") ||
-                path.startsWith("/api/users/") ||
-                path.startsWith("/api/search/autocomplete/") ||
-                path.startsWith("/api/notifications/") ||
                 path.startsWith("/ui/") ||
                 path.startsWith("/oauth2/") ||
                 path.startsWith("/login/oauth2/");
