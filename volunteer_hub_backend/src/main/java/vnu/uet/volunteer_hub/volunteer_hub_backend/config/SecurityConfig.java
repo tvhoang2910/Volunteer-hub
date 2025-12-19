@@ -84,6 +84,7 @@ public class SecurityConfig {
                         // Public endpoints - không cần authentication
                         .requestMatchers(
                                 "/ui/**",
+                                "/uploads/**",
                                 "/api/auth/login",
                                 "/api/auth/signup",
                                 "/api/auth/verify-email",
