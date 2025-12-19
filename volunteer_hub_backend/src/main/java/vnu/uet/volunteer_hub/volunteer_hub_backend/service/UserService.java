@@ -17,13 +17,22 @@ public interface UserService {
 
     /**
      * Tìm user theo email (case-insensitive).
-     * 
+     *
      * @param email email của user
      * @return User entity hoặc null nếu không tìm thấy
      */
     User findByEmail(String email);
 
     void updatePassword(String email, String newPassword);
+
+    /**
+     * Thay đổi mật khẩu cho user đã đăng nhập.
+     * @param userId ID của user
+     * @param currentPassword mật khẩu hiện tại
+     * @param newPassword mật khẩu mới
+     * @throws IllegalArgumentException nếu mật khẩu hiện tại không đúng
+     */
+    void changePassword(UUID userId, String currentPassword, String newPassword);
 
     void lockUserById(UUID userId);
 

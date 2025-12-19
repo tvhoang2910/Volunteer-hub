@@ -48,12 +48,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String jwt = parseJwt(request);
 
+            logger.debug("[DEBUG] JWT from request: " + (jwt != null ? "found" : "not found"));
+
             if (jwt != null && jwtUtil.validateToken(jwt)) {
                 String userId = jwtUtil.getUserIdFromToken(jwt);
                 String email = jwtUtil.getEmailFromToken(jwt);
                 String role = jwtUtil.getRoleFromToken(jwt);
 
-                logger.debug("JWT validated for user: {}, role: {}", email, role);
+                logger.debug("JWT validated for user: {}, userId: {}, role: {}", email, userId, role);
+                System.out
+                        .println("[DEBUG] JWT validated - userId: " + userId + ", email: " + email + ", role: " + role);
 
                 // Tạo authorities từ role
                 List<SimpleGrantedAuthority> authorities = Collections.singletonList(
@@ -71,9 +75,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 // Set authentication vào SecurityContext
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                System.out.println("[DEBUG] Authentication set in SecurityContext");
+            } else {
+                System.out.println("[DEBUG] JWT not valid or not found");
             }
         } catch (Exception e) {
             logger.error("Cannot set user authentication: {}", e.getMessage());
+            System.out.println("[DEBUG] Exception in JwtAuthenticationFilter: " + e.getMessage());
+            e.printStackTrace();
         }
 
         filterChain.doFilter(request, response);
@@ -83,7 +92,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * Parse JWT token từ Authorization header hoặc cookies.
      * Header format: "Bearer <token>"
      * Cookie name: "jwt_token"
-     *
+     * 
      * @param request HTTP request
      * @return JWT token string hoặc null nếu không có/không hợp lệ
      */
@@ -119,6 +128,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         String path = request.getServletPath();
+
+        // These auth endpoints require authentication - DO NOT skip
+        if (path.equals("/api/auth/change-password")) {
+            return false;
+        }
+
         // Skip JWT validation only for truly public endpoints that never need user info
         return path.startsWith("/api/auth/") ||
                 path.startsWith("/api/dashboard/") ||

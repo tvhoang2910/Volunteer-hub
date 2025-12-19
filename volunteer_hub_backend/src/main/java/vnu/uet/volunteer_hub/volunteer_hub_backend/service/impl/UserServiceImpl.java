@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.RegistrationRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.UpdateProfileRequest;
@@ -36,7 +37,7 @@ public class UserServiceImpl implements UserService {
     private final RegistrationRepository registrationRepository;
 
     public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository,
-            PasswordEncoder passwordEncoder, RegistrationRepository registrationRepository) {
+                           PasswordEncoder passwordEncoder, RegistrationRepository registrationRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
@@ -102,6 +103,26 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public void changePassword(UUID userId, String currentPassword, String newPassword) {
+        logger.debug("Attempting to change password for userId: {}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        // Verify current password
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            logger.warn("Current password does not match for user: {}", userId);
+            throw new IllegalArgumentException("Mật khẩu hiện tại không đúng");
+        }
+
+        String encodedPassword = passwordEncoder.encode(newPassword);
+        user.setPassword(encodedPassword);
+        userRepository.save(user);
+
+        logger.info("Password changed successfully for user: {}", userId);
+    }
+
+    @Override
     public void lockUserById(UUID id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("User not found"));
@@ -119,21 +140,37 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UUID getViewerIdFromAuthentication(Authentication auth) {
-        if (auth == null || !auth.isAuthenticated()) {
+        System.out.println("[DEBUG] getViewerIdFromAuthentication - auth: " + auth);
+        if (auth == null) {
+            System.out.println("[DEBUG] getViewerIdFromAuthentication - auth is null");
+            return null;
+        }
+
+        System.out.println("[DEBUG] getViewerIdFromAuthentication - auth.isAuthenticated: " + auth.isAuthenticated());
+        if (!auth.isAuthenticated()) {
             return null;
         }
 
         Object principal = auth.getPrincipal();
+        System.out.println("[DEBUG] getViewerIdFromAuthentication - principal: " + principal + ", type: "
+                + (principal != null ? principal.getClass().getName() : "null"));
+
         if (principal instanceof UUID) {
+            System.out.println("[DEBUG] getViewerIdFromAuthentication - found UUID principal: " + principal);
             return (UUID) principal;
         }
 
+        System.out.println("[DEBUG] getViewerIdFromAuthentication - auth.getName: " + auth.getName());
         if (auth.getName() == null) {
             return null;
         }
-        return userRepository.findByEmailIgnoreCase(auth.getName())
+
+        System.out.println("[DEBUG] getViewerIdFromAuthentication - finding user by email: " + auth.getName());
+        UUID result = userRepository.findByEmailIgnoreCase(auth.getName())
                 .map(BaseEntity::getId)
                 .orElse(null);
+        System.out.println("[DEBUG] getViewerIdFromAuthentication - result: " + result);
+        return result;
     }
 
     @Override
@@ -206,6 +243,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<EventResponseDTO> getUserEvents(UUID userId) {
 
         findUserById(userId);

@@ -7,17 +7,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.ZSetOperations.TypedTuple;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.CreatePostRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.UpdatePostRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.AuthorSummaryDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.EventSummaryDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.PostDetailResponse;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.ScoredPostDTO;
-import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Event;
-import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Post;
-import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.PostImage;
-import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.PostReaction;
-import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.User;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.*;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.EventApprovalStatus;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.ReactionType;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.RegistrationStatus;
@@ -53,13 +50,13 @@ public class PostServiceImpl implements PostService {
     private final int candidateMultiplier;
 
     public PostServiceImpl(PostRepository postRepository, PostRankingService postRankingService,
-            ScoringService scoringService, RegistrationRepository registrationRepository,
-            UserRepository userRepository, EventRepository eventRepository,
-            PostReactionRepository postReactionRepository,
-            PostReactionService postReactionService,
-            CommentRepository commentRepository,
-            PostImageRepository postImageRepository,
-            @Value("${posts.feed.candidate-multiplier:5}") int candidateMultiplier) {
+                           ScoringService scoringService, RegistrationRepository registrationRepository,
+                           UserRepository userRepository, EventRepository eventRepository,
+                           PostReactionRepository postReactionRepository,
+                           PostReactionService postReactionService,
+                           CommentRepository commentRepository,
+                           PostImageRepository postImageRepository,
+                           @Value("${posts.feed.candidate-multiplier:5}") int candidateMultiplier) {
         this.postRepository = postRepository;
         this.postRankingService = postRankingService;
         this.scoringService = scoringService;
@@ -79,6 +76,7 @@ public class PostServiceImpl implements PostService {
      * personalization and sort by personalized score. For anonymous users we
      * return slices directly from the ZSET (global ranking).
      */
+    @Transactional(readOnly = true)
     public Page<ScoredPostDTO> getVisiblePosts(UUID viewerId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         if (viewerId == null) {
@@ -153,7 +151,7 @@ public class PostServiceImpl implements PostService {
                     .collect(Collectors.groupingBy(
                             reg -> reg.getEvent().getId(),
                             Collectors.mapping(
-                                    reg -> reg.getRegistrationStatus(),
+                                    Registration::getRegistrationStatus,
                                     Collectors.toSet())));
 
             // filter by visibility using batch-fetched registrations
@@ -200,7 +198,7 @@ public class PostServiceImpl implements PostService {
     /**
      * Optimized visibility check using pre-fetched registrations map.
      * Fixes N+1 problem by avoiding individual DB queries per post.
-     * 
+     *
      * @param p                      Post to check
      * @param viewerId               Viewer's user ID
      * @param registrationsByEventId Pre-fetched map of eventId -> Set of
@@ -208,7 +206,7 @@ public class PostServiceImpl implements PostService {
      * @return true if post is visible to user
      */
     private boolean isVisibleToUserWithCache(Post p, UUID viewerId,
-            Map<UUID, Set<RegistrationStatus>> registrationsByEventId) {
+                                             Map<UUID, Set<RegistrationStatus>> registrationsByEventId) {
         if (p.getEvent() == null)
             return true;
         Event ev = p.getEvent();
@@ -237,9 +235,9 @@ public class PostServiceImpl implements PostService {
 
         List<String> imageUrls = p.getImages() == null ? List.of()
                 : p.getImages().stream()
-                        .sorted(Comparator.comparing(img -> img.getSortOrder() == null ? 0 : img.getSortOrder()))
-                        .map(img -> img.getImageUrl())
-                        .collect(Collectors.toList());
+                .sorted(Comparator.comparing(img -> img.getSortOrder() == null ? 0 : img.getSortOrder()))
+                .map(PostImage::getImageUrl)
+                .collect(Collectors.toList());
 
         ScoredPostDTO dto = ScoredPostDTO.builder().postId(p.getId())
                 .eventId(p.getEvent() == null ? null : p.getEvent().getId())
@@ -309,6 +307,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PostDetailResponse getPostDetail(UUID postId, UUID viewerId) {
         // Get post with author and event
         Post post = postRepository.findByIdWithAuthorAndEvent(postId);
@@ -372,6 +371,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional
     public PostDetailResponse likePost(UUID postId, UUID viewerId, ReactionType reactionType) {
         // validate post
         Post post = postRepository.findByIdWithAuthorAndEvent(postId);
@@ -423,6 +423,7 @@ public class PostServiceImpl implements PostService {
      * - Consider adding optimistic locking with @Version
      */
     @Override
+    @Transactional
     public ScoredPostDTO updatePost(UUID postId, UpdatePostRequest request, UUID authorId) {
         // Find the post
         Post post = postRepository.findByIdWithAuthorAndEvent(postId);
@@ -478,6 +479,7 @@ public class PostServiceImpl implements PostService {
      * - Add audit logging
      */
     @Override
+    @Transactional
     public void deletePost(UUID postId, UUID authorId) {
         // Check if post exists
         Post post = postRepository.findById(postId)
@@ -509,6 +511,7 @@ public class PostServiceImpl implements PostService {
      * - Consider caching for frequently accessed user profiles
      */
     @Override
+    @Transactional(readOnly = true)
     public Page<ScoredPostDTO> getPostsByUserId(UUID userId, int page, int size) {
         // Check if user exists
         boolean userExists = userRepository.existsById(userId);

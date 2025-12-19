@@ -67,8 +67,8 @@ public class AuthAPI {
     private long jwtExpirationMs;
 
     public AuthAPI(UserService userService, EmailService emailService,
-            RecoveryCodeService recoveryCodeService, RateLimitService rateLimitService,
-            AuthenticationManager authenticationManager, JwtUtil jwtUtil) {
+                   RecoveryCodeService recoveryCodeService, RateLimitService rateLimitService,
+                   AuthenticationManager authenticationManager, JwtUtil jwtUtil) {
         this.userService = userService;
         this.emailService = emailService;
         this.recoveryCodeService = recoveryCodeService;
@@ -79,7 +79,7 @@ public class AuthAPI {
 
     @PostMapping("/register")
     public ResponseEntity<?> registerCustomer(@Valid @RequestBody RegistrationRequest registrationRequest,
-            BindingResult bindingResult) {
+                                              BindingResult bindingResult) {
 
         // Xử lý validation
         ResponseEntity<?> errorResponse1 = getErrorResponse(bindingResult);
@@ -112,7 +112,7 @@ public class AuthAPI {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request,
-            BindingResult bindingResult, HttpServletRequest httpRequest) {
+                                   BindingResult bindingResult, HttpServletRequest httpRequest) {
         ResponseEntity<?> errorResponse = getErrorResponse(bindingResult);
         if (errorResponse != null)
             return errorResponse;
@@ -224,7 +224,7 @@ public class AuthAPI {
      * - Gửi email async để không block request
      * - Token có TTL (mặc định 15 phút)
      * - Rate limiting (max 3 requests/hour per email)
-     * 
+     *
      * @param request chứa email
      * @return generic success response
      */
@@ -298,13 +298,13 @@ public class AuthAPI {
      * - Token single-use (tự động xóa sau validate)
      * - Password validation (strength rules)
      * - Confirm password matching
-     * 
+     *
      * @param request chứa token, password, confirmPassword
      * @return success/error response
      */
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request,
-            BindingResult bindingResult) {
+                                           BindingResult bindingResult) {
 
         ResponseEntity<?> errorResponse1 = getErrorResponse(bindingResult);
         if (errorResponse1 != null)
@@ -353,6 +353,65 @@ public class AuthAPI {
                     .detail(e.getMessage())
                     .build();
             return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    /**
+     * Đổi mật khẩu cho user đã đăng nhập.
+     * POST /api/auth/change-password
+     *
+     * Yêu cầu: User phải đã đăng nhập (có JWT token hợp lệ)
+     *
+     * @param request chứa currentPassword, newPassword, confirmPassword
+     * @return success/error response
+     */
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(
+            @Valid @RequestBody vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.ChangePasswordRequest request,
+            BindingResult bindingResult) {
+
+        ResponseEntity<?> errorResponse = getErrorResponse(bindingResult);
+        if (errorResponse != null)
+            return errorResponse;
+
+        // Validate password confirmation
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            logger.warn("❌ Password confirmation does not match");
+            return ResponseEntity.badRequest().body(ResponseDTO.<Void>builder()
+                    .message("Mật khẩu xác nhận không khớp")
+                    .build());
+        }
+
+        try {
+            // Get userId from JWT token
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID userId = userService.getViewerIdFromAuthentication(auth);
+
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseDTO.<Void>builder()
+                        .message("Unauthorized - Invalid token")
+                        .build());
+            }
+
+            // Change password
+            userService.changePassword(userId, request.getCurrentPassword(), request.getNewPassword());
+            logger.info("✅ Password changed successfully for userId: {}", userId);
+
+            return ResponseEntity.ok(ResponseDTO.<Void>builder()
+                    .message("Mật khẩu đã được thay đổi thành công")
+                    .build());
+
+        } catch (IllegalArgumentException e) {
+            logger.warn("❌ Change password failed: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(ResponseDTO.<Void>builder()
+                    .message(e.getMessage())
+                    .build());
+        } catch (Exception e) {
+            logger.error("❌ Error changing password: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ResponseDTO.<Void>builder()
+                    .message("Lỗi khi thay đổi mật khẩu")
+                    .detail(e.getMessage())
+                    .build());
         }
     }
 

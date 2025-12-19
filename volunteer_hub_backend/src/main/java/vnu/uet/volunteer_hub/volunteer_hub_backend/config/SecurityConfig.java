@@ -66,20 +66,30 @@ public class SecurityConfig {
                         // Content-Security-Policy
                         .contentSecurityPolicy(csp -> csp.policyDirectives(
                                 "default-src 'self'; " +
-                                        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; " +
+                                        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
+                                        +
                                         "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
                                         +
-                                        "font-src 'self' https://fonts.gstatic.com; " +
+                                        "font-src 'self' https://fonts.gstatic.com; "
+                                        +
                                         "img-src 'self' data: https:; " +
-                                        "connect-src 'self' " + frontendUrl + ";")))
+                                        "connect-src 'self' " + frontendUrl
+                                        + ";")))
                 // Stateless session - không lưu session trên server
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
+                        // Auth endpoints that require authentication - must be before permitAll
+                        .requestMatchers(HttpMethod.POST, "/api/auth/change-password").authenticated()
                         // Public endpoints - không cần authentication
                         .requestMatchers(
                                 "/ui/**",
-                                "/api/auth/**",
+                                "/api/auth/login",
+                                "/api/auth/signup",
+                                "/api/auth/verify-email",
+                                "/api/auth/forgot-password",
+                                "/api/auth/reset-password",
+                                "/api/auth/refresh",
                                 "/api/dashboard/**",
                                 "/api/events/**",
                                 "/api/registrations/**",

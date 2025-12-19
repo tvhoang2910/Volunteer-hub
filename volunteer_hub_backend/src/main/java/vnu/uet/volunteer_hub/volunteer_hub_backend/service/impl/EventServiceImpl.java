@@ -74,11 +74,13 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Event> getAllEvents() {
         return eventRepository.findAll();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Event> getApprovedEvents() {
         return eventRepository.findAllByAdminApprovalStatusAndIsArchived(EventApprovalStatus.APPROVED, Boolean.FALSE);
     }
@@ -511,7 +513,21 @@ public class EventServiceImpl implements EventService {
                 RegistrationStatus.APPROVED,
                 RegistrationStatus.CHECKED_IN,
                 RegistrationStatus.COMPLETED);
-        return registrationRepository.countByVolunteerIdAndRegistrationStatusIn(volunteerId, eligibleStatuses);
+        
+        System.out.println("[DEBUG] countRegisteredEvents - volunteerId: " + volunteerId);
+        System.out.println("[DEBUG] countRegisteredEvents - eligibleStatuses: " + eligibleStatuses);
+        
+        // Debug: get all registrations for this volunteer
+        List<Registration> allRegs = registrationRepository.findByVolunteerId(volunteerId);
+        System.out.println("[DEBUG] Total registrations for volunteer: " + allRegs.size());
+        for (Registration reg : allRegs) {
+            System.out.println("[DEBUG] Registration - eventId: " + reg.getEvent().getId() + 
+                             ", status: " + reg.getRegistrationStatus());
+        }
+        
+        long count = registrationRepository.countByVolunteerIdAndRegistrationStatusIn(volunteerId, eligibleStatuses);
+        System.out.println("[DEBUG] countRegisteredEvents - result count: " + count);
+        return count;
     }
 
     @Override

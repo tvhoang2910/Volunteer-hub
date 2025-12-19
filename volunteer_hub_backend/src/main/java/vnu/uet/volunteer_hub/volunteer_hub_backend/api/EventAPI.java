@@ -44,7 +44,7 @@ public class EventAPI {
     @PostMapping()
     public ResponseEntity<?> createEvent(
             @Valid @RequestBody CreateEventRequest request) { // TODO: Remove after auth, get from
-        // SecurityContext
+                                                              // SecurityContext
         try {
             // Validate startTime < endTime
             if (request.getStartTime() != null && request.getEndTime() != null
@@ -94,7 +94,7 @@ public class EventAPI {
     public ResponseEntity<?> updateEvent(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateEventRequest request) { // TODO: Remove after auth, get from
-        // SecurityContext
+                                                              // SecurityContext
         try {
             // Validate startTime < endTime if both provided
             if (request.getStartTime() != null && request.getEndTime() != null
@@ -325,8 +325,12 @@ public class EventAPI {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             UUID userId = userService.getViewerIdFromAuthentication(auth);
 
+            System.out.println("[DEBUG] getRegisteredEventsCount - userId from auth: " + userId);
+
             // Use EventService's optimized count method instead of fetching all events
             long count = eventService.countRegisteredEvents(userId);
+
+            System.out.println("[DEBUG] getRegisteredEventsCount - count: " + count);
 
             return ResponseEntity.ok(ResponseDTO.<Long>builder()
                     .message("Registered events count retrieved successfully")
