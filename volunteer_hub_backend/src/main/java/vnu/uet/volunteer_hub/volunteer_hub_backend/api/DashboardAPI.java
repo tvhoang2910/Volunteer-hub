@@ -2,16 +2,15 @@ package vnu.uet.volunteer_hub.volunteer_hub_backend.api;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.DashboardDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.DashboardStatsDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.LeaderboardResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.ResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.DashboardService;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.service.UserService;
 
 import java.util.UUID;
 
@@ -21,6 +20,7 @@ import java.util.UUID;
 public class DashboardAPI {
 
     private final DashboardService dashboardService;
+    private final UserService userService;
 
     /**
      * Get public dashboard: top 5 posts, trending events, and stats.
@@ -39,14 +39,13 @@ public class DashboardAPI {
     /**
      * Get personal dashboard stats: posts count, events participated, volunteer
      * hours, etc.
-     * GET /api/dashboard/stats?userId=<uuid> (admin can query others)
-     * Or just /api/dashboard/stats (returns authenticated user stats)
+     * GET /api/dashboard/stats (returns authenticated user stats)
      */
-    @GetMapping("/stats/{userId}")
-    public ResponseEntity<?> getStats(@PathVariable UUID userId) {
+    @GetMapping("/stats")
+    public ResponseEntity<?> getStats() {
         try {
-            // [TEST MODE] If userId provided, return that user's stats
-            // Otherwise, get from JWT token (SecurityContextHolder)
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID userId = userService.getViewerIdFromAuthentication(auth);
             DashboardStatsDTO stats = dashboardService.getDashboardStats();
             return ResponseEntity.ok(ResponseDTO.builder()
                     .message("Dashboard stats retrieved successfully")
@@ -64,7 +63,7 @@ public class DashboardAPI {
     /**
      * Get leaderboard by metric.
      * GET
-     * /api/dashboard/leaderboard?metric=hours&timeframe=all&limit=50&viewerId=<uuid>
+     * /api/dashboard/leaderboard?metric=hours&timeframe=all&limit=50
      * Metrics: hours, events, score (default: score)
      * Timeframe: all, month, year (default: all)
      */
@@ -72,10 +71,10 @@ public class DashboardAPI {
     public ResponseEntity<?> getLeaderboard(
             @RequestParam(required = false, defaultValue = "score") String metric,
             @RequestParam(required = false, defaultValue = "all") String timeframe,
-            @RequestParam(required = false, defaultValue = "50") int limit,
-            @RequestParam(required = false) UUID viewerId) {
+            @RequestParam(required = false, defaultValue = "50") int limit) {
         try {
-            // [TEST MODE] viewerId passed as query param
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID viewerId = userService.getViewerIdFromAuthentication(auth);
             LeaderboardResponseDTO leaderboard = dashboardService.getLeaderboard(metric, timeframe, limit, viewerId);
             return ResponseEntity.ok(ResponseDTO.<LeaderboardResponseDTO>builder()
                     .message("Leaderboard retrieved successfully")

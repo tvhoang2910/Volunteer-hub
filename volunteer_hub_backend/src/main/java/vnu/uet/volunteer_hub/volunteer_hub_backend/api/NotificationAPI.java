@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.BroadcastNotificationRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.PushSubscriptionRequest;
@@ -15,6 +17,7 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.ResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.UnreadCountResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.NotificationService;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.PushService;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.service.UserService;
 
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -35,6 +38,7 @@ public class NotificationAPI {
 
     private final NotificationService notificationService;
     private final PushService pushService;
+    private final UserService userService;
 
     @Value("${push.vapid.public-key:}")
     private String vapidPublicKey;
@@ -44,19 +48,17 @@ public class NotificationAPI {
      * Lấy danh sách thông báo của user hiện tại
      * Phân trang, sort theo ngày mới nhất
      */
-    @GetMapping("/{userId}")
+    @GetMapping
     public ResponseEntity<ResponseDTO<Page<NotificationResponseDTO>>> getNotifications(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int limit,
-            @RequestParam(required = false) Boolean isRead,
-            @PathVariable UUID userId) { // TODO: Remove after auth, get from SecurityContext
+            @RequestParam(required = false) Boolean isRead) {
         try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID userId = userService.getViewerIdFromAuthentication(auth);
+
             log.debug("GET /api/notifications - userId: {}, page: {}, limit: {}, isRead: {}",
                     userId, page, limit, isRead);
-
-            // TODO: Sau khi có authentication, lấy userId từ SecurityContext
-            // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            // UUID userId = userService.getViewerIdFromAuthentication(auth);
 
             Page<NotificationResponseDTO> result = notificationService.getNotifications(userId, isRead,
                     page, limit);
@@ -88,15 +90,14 @@ public class NotificationAPI {
      * Đếm số lượng thông báo chưa đọc (isRead = false)
      * Tối ưu query đếm
      */
-    @GetMapping("/unread-count/{userId}")
-    public ResponseEntity<ResponseDTO<UnreadCountResponseDTO>> getUnreadCount(
-            @PathVariable UUID userId) { // TODO: Remove after auth
+    @GetMapping("/unread-count")
+    public ResponseEntity<ResponseDTO<UnreadCountResponseDTO>> getUnreadCount() {
         try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID userId = userService.getViewerIdFromAuthentication(auth);
+
             log.debug("GET /api/notifications/unread-count - userId: {}", userId);
 
-            // TODO: Get from SecurityContext after auth
-            // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            // UUID userId = userService.getViewerIdFromAuthentication(auth);
             Long count = notificationService.getUnreadCount(userId);
 
             UnreadCountResponseDTO response = UnreadCountResponseDTO.builder()
@@ -124,14 +125,15 @@ public class NotificationAPI {
      * Đánh dấu 1 thông báo là đã đọc
      * Kiểm tra ownership trước khi update
      */
-    @PutMapping("/{id}/read/{userId}")
+    @PutMapping("/{id}/read")
     public ResponseEntity<ResponseDTO<String>> markAsRead(
-            @PathVariable UUID id,
-            @PathVariable UUID userId) { // TODO: Remove after auth
+            @PathVariable UUID id) {
         try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID userId = userService.getViewerIdFromAuthentication(auth);
+
             log.debug("PUT /api/notifications/{}/read - userId: {}", id, userId);
 
-            // TODO: Get from SecurityContext after auth
             notificationService.markAsRead(id, userId);
 
             return ResponseEntity.ok(
@@ -161,13 +163,14 @@ public class NotificationAPI {
      * Đánh dấu TẤT CẢ thông báo của user là đã đọc
      * Batch update
      */
-    @PutMapping("/read-all/{userId}")
-    public ResponseEntity<ResponseDTO<String>> markAllAsRead(
-            @PathVariable UUID userId) { // TODO: Remove after auth
+    @PutMapping("/read-all")
+    public ResponseEntity<ResponseDTO<String>> markAllAsRead() {
         try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID userId = userService.getViewerIdFromAuthentication(auth);
+
             log.debug("PUT /api/notifications/read-all - userId: {}", userId);
 
-            // TODO: Get from SecurityContext after auth
             int updatedCount = notificationService.markAllAsRead(userId);
 
             return ResponseEntity.ok(
@@ -191,14 +194,15 @@ public class NotificationAPI {
      * Xóa (hard delete) 1 thông báo
      * Kiểm tra ownership trước khi xóa
      */
-    @DeleteMapping("/{id}/{userId}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<ResponseDTO<String>> deleteNotification(
-            @PathVariable UUID id,
-            @PathVariable UUID userId) { // TODO: Remove after auth
+            @PathVariable UUID id) {
         try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID userId = userService.getViewerIdFromAuthentication(auth);
+
             log.debug("DELETE /api/notifications/{} - userId: {}", id, userId);
 
-            // TODO: Get from SecurityContext after auth
             notificationService.deleteNotification(id, userId);
 
             return ResponseEntity.ok(
@@ -228,13 +232,14 @@ public class NotificationAPI {
      * Xóa tất cả thông báo của user
      * Batch delete
      */
-    @DeleteMapping("/all/{userId}")
-    public ResponseEntity<ResponseDTO<String>> deleteAllNotifications(
-            @PathVariable UUID userId) { // TODO: Remove after auth
+    @DeleteMapping("/all")
+    public ResponseEntity<ResponseDTO<String>> deleteAllNotifications() {
         try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID userId = userService.getViewerIdFromAuthentication(auth);
+
             log.debug("DELETE /api/notifications/all - userId: {}", userId);
 
-            // TODO: Get from SecurityContext after auth
             int deletedCount = notificationService.deleteAllNotifications(userId);
 
             return ResponseEntity.ok(
@@ -260,14 +265,12 @@ public class NotificationAPI {
      */
     @PostMapping("/subscription")
     public ResponseEntity<ResponseDTO<String>> saveSubscription(
-            @Valid @RequestBody PushSubscriptionRequest request,
-            @RequestParam UUID userId) { // TODO: Remove after auth, get from SecurityContext
+            @Valid @RequestBody PushSubscriptionRequest request) {
         try {
-            log.debug("POST /api/notifications/subscription - userId: {}", userId);
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID userId = userService.getViewerIdFromAuthentication(auth);
 
-            // TODO: Get from SecurityContext after auth
-            // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            // UUID userId = userService.getViewerIdFromAuthentication(auth);
+            log.debug("POST /api/notifications/subscription - userId: {}", userId);
 
             notificationService.saveSubscription(request, userId);
 
@@ -300,14 +303,15 @@ public class NotificationAPI {
      * Sử dụng async queue để không block request
      */
     // @PreAuthorize("hasRole('ADMIN')") // TODO: Enable after auth setup
-    @PostMapping("/broadcast/{adminId}")
+    @PostMapping("/broadcast")
     public ResponseEntity<ResponseDTO<String>> broadcastNotification(
-            @Valid @RequestBody BroadcastNotificationRequest request,
-            @PathVariable UUID adminId) { // TODO: Remove after auth, get from SecurityContext
+            @Valid @RequestBody BroadcastNotificationRequest request) {
         try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID adminId = userService.getViewerIdFromAuthentication(auth);
+
             log.info("POST /api/notifications/broadcast - adminId: {}", adminId);
 
-            // TODO: Get adminId from SecurityContext after auth
             // TODO: Add @PreAuthorize("hasRole('ADMIN')") để kiểm tra quyền admin
 
             // Sử dụng async method để không block

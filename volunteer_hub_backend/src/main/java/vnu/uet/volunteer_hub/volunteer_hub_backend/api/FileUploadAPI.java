@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.ResponseDTO;
@@ -86,22 +88,16 @@ public class FileUploadAPI {
 
     /**
      * Upload avatar for a user (Requires authentication)
-     * POST /api/upload/avatar/{userId}
+     * POST /api/upload/avatar
      * Request: multipart/form-data with 'file' parameter
      * Response: { "avatarUrl": "/uploads/avatars/uuid.jpg" }
-     * [TEST MODE] userId passed from path parameter
-     * TODO: Sau khi test xong, sửa lại thành:
-     * Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-     * UUID userId = userService.getViewerIdFromAuthentication(auth);
      */
-    @PostMapping(value = "/avatar/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadAvatar(
-            @PathVariable UUID userId,
             @RequestParam("file") MultipartFile file) {
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                UUID userId = userService.getViewerIdFromAuthentication(auth);
         try {
-            // [TEST MODE] userId được truyền từ path parameter
-            // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            // UUID userId = userService.getViewerIdFromAuthentication(auth);
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(ResponseDTO.builder()
@@ -159,24 +155,18 @@ public class FileUploadAPI {
 
     /**
      * Upload thumbnail for an event (Requires authentication)
-     * POST /api/upload/event-thumbnail/{userId}/{eventId}
+     * POST /api/upload/event-thumbnail/{eventId}
      * Request: multipart/form-data with 'file' parameter
      * Response: { "thumbnailUrl": "/uploads/thumbnails/uuid.jpg", "eventId": "..."
      * }
-     * [TEST MODE] userId & eventId passed from path parameter
-     * TODO: Sau khi test xong, sửa lại thành:
-     * Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-     * UUID userId = userService.getViewerIdFromAuthentication(auth);
      */
-    @PostMapping(value = "/event-thumbnail/{userId}/{eventId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/event-thumbnail/{eventId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadEventThumbnail(
-            @PathVariable UUID userId,
             @PathVariable UUID eventId,
             @RequestParam("file") MultipartFile file) {
         try {
-            // [TEST MODE] userId được truyền từ path parameter
-            // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            // UUID userId = userService.getViewerIdFromAuthentication(auth);
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID userId = userService.getViewerIdFromAuthentication(auth);
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(ResponseDTO.builder()
@@ -245,24 +235,18 @@ public class FileUploadAPI {
 
     /**
      * Upload image for a post (Requires authentication)
-     * POST /api/upload/post-image/{userId}/{postId}
+     * POST /api/upload/post-image/{postId}
      * Request: multipart/form-data with 'file' parameter
      * Response: { "imageUrl": "/uploads/posts/uuid.jpg", "postId": "...",
      * "imageId": "..." }
-     * [TEST MODE] userId & postId passed from path parameter
-     * TODO: Sau khi test xong, sửa lại thành:
-     * Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-     * UUID userId = userService.getViewerIdFromAuthentication(auth);
      */
-    @PostMapping(value = "/post-image/{userId}/{postId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/post-image/{postId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadPostImage(
-            @PathVariable UUID userId,
             @PathVariable UUID postId,
             @RequestParam("file") MultipartFile file) {
         try {
-            // [TEST MODE] userId được truyền từ path parameter
-            // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            // UUID userId = userService.getViewerIdFromAuthentication(auth);
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID userId = userService.getViewerIdFromAuthentication(auth);
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(ResponseDTO.builder()
@@ -343,19 +327,14 @@ public class FileUploadAPI {
 
     /**
      * Delete avatar of a user (Requires authentication)
-     * DELETE /api/upload/avatar/{userId}
+     * DELETE /api/upload/avatar
      * Authorization: Only the user themselves can delete their own avatar
-     * [TEST MODE] userId passed from path parameter
-     * TODO: Sau khi test xong, sửa lại thành:
-     * Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-     * UUID currentUserId = userService.getViewerIdFromAuthentication(auth);
      */
-    @DeleteMapping("/avatar/{userId}")
-    public ResponseEntity<?> deleteAvatar(@PathVariable UUID userId) {
+    @DeleteMapping("/avatar")
+    public ResponseEntity<?> deleteAvatar() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UUID userId = userService.getViewerIdFromAuthentication(auth);
         try {
-            // [TEST MODE] userId được truyền từ path parameter
-            // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            // UUID currentUserId = userService.getViewerIdFromAuthentication(auth);
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(ResponseDTO.builder()
@@ -532,11 +511,13 @@ public class FileUploadAPI {
 
     /**
      * Get user avatar URL (Retrieve only)
-     * GET /api/upload/avatar/{userId}
+     * GET /api/upload/avatar
      * Response: { "avatarUrl": "/uploads/avatars/uuid.jpg" }
      */
-    @GetMapping("/avatar/{userId}")
-    public ResponseEntity<?> getAvatar(@PathVariable UUID userId) {
+    @GetMapping("/avatar")
+    public ResponseEntity<?> getAvatar() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UUID userId = userService.getViewerIdFromAuthentication(auth);
         try {
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)

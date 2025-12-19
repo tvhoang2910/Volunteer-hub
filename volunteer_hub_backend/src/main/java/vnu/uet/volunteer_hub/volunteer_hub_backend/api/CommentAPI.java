@@ -4,11 +4,14 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.UpdateCommentRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.CommentResponse;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.ResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.CommentService;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.service.UserService;
 
 import java.util.UUID;
 
@@ -18,14 +21,14 @@ import java.util.UUID;
 public class CommentAPI {
 
     private final CommentService commentService;
+    private final UserService userService;
 
-    @PutMapping("/{commentId}/{userId}")
+    @PutMapping("/{commentId}")
     public ResponseEntity<?> updateComment(@PathVariable UUID commentId,
-            @Valid @RequestBody UpdateCommentRequest request, @PathVariable UUID userId) {
+            @Valid @RequestBody UpdateCommentRequest request) {
         try {
-            // [TEST MODE] userId được truyền từ path parameter
-            // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            // UUID userId = userService.getViewerIdFromAuthentication(auth);
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID userId = userService.getViewerIdFromAuthentication(auth);
             CommentResponse response = commentService.updateComment(commentId, request, userId);
             return ResponseEntity.ok(ResponseDTO.builder()
                     .message("Comment updated successfully")
@@ -39,12 +42,11 @@ public class CommentAPI {
         }
     }
 
-    @DeleteMapping("/{commentId}/{userId}")
-    public ResponseEntity<?> deleteComment(@PathVariable UUID commentId, @PathVariable UUID userId) {
+    @DeleteMapping("/{commentId}")
+    public ResponseEntity<?> deleteComment(@PathVariable UUID commentId) {
         try {
-            // [TEST MODE] userId passed from path parameter
-            // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            // UUID userId = userService.getViewerIdFromAuthentication(auth);
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID userId = userService.getViewerIdFromAuthentication(auth);
             commentService.deleteComment(commentId, userId);
             return ResponseEntity.ok(ResponseDTO.<Void>builder()
                     .message("Comment deleted successfully")

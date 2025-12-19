@@ -315,6 +315,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public EventResponseDTO getEventById(UUID eventId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
@@ -342,6 +343,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ParticipantResponseDTO> getParticipants(
             UUID eventId) {
         Event event = eventRepository.findById(eventId)
@@ -500,5 +502,20 @@ public class EventServiceImpl implements EventService {
                 .completionNotes(savedRegistration.getCompletionNotes())
                 .message("Registration marked as completed successfully")
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countRegisteredEvents(UUID volunteerId) {
+        List<RegistrationStatus> eligibleStatuses = List.of(
+                RegistrationStatus.APPROVED,
+                RegistrationStatus.CHECKED_IN,
+                RegistrationStatus.COMPLETED);
+        return registrationRepository.countByVolunteerIdAndRegistrationStatusIn(volunteerId, eligibleStatuses);
+    }
+
+    @Override
+    public List<Event> getPendingEvents() {
+        return eventRepository.findAllByAdminApprovalStatusAndIsArchived(EventApprovalStatus.PENDING, false);
     }
 }

@@ -14,11 +14,12 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.RegistrationStatu
 
 public interface RegistrationRepository extends JpaRepository<Registration, UUID> {
 
-    boolean existsByEventIdAndVolunteerId(UUID eventId, UUID volunteerId);
-
     Optional<Registration> findByEventIdAndVolunteerId(UUID eventId, UUID volunteerId);
 
     long countByEventIdAndRegistrationStatus(UUID eventId, RegistrationStatus registrationStatus);
+
+    @Query("SELECT COUNT(r) FROM Registration r WHERE r.volunteer.id = :volunteerId AND r.registrationStatus IN :statuses")
+    long countByVolunteerIdAndRegistrationStatusIn(@Param("volunteerId") UUID volunteerId, @Param("statuses") List<RegistrationStatus> statuses);
 
     /**
      * Tìm tất cả registrations của một volunteer (user).

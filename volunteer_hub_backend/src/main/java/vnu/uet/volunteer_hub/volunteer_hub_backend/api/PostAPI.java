@@ -43,26 +43,15 @@ public class PostAPI {
 
     /**
      * Create a new post.
-     * POST /api/posts/{authorId}
+     * POST /api/posts
      * Request: CreatePostRequest
      * Response: ScoredPostDTO
-     * <p>
-     * TODO: Sau khi test xong, sửa lại thành:
-     * <p>
-     * {@code @PostMapping}
-     * public ResponseEntity<?> createPost(@Valid @RequestBody
-     * CreatePostRequest request) {
-     * Authentication auth =
-     * SecurityContextHolder.getContext().getAuthentication();
-     * UUID authorId = userService.getViewerIdFromAuthentication(auth);
      */
-    @PostMapping("/{authorId}")
-    public ResponseEntity<?> createPost(@PathVariable UUID authorId,
-            @Valid @RequestBody CreatePostRequest request) {
+    @PostMapping
+    public ResponseEntity<?> createPost(@Valid @RequestBody CreatePostRequest request) {
         try {
-            // [TEST MODE] authorId được truyền từ path parameter
-            // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            // UUID authorId = userService.getViewerIdFromAuthentication(auth);
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID authorId = userService.getViewerIdFromAuthentication(auth);
             if (authorId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(ResponseDTO.builder()
@@ -88,21 +77,15 @@ public class PostAPI {
      * Paginated feed of visible posts. page (0-based) and size query params are
      * supported. Works for anonymous and authenticated users.
      * GET /api/posts
-     * Query: page, size, viewerId (optional - for testing)
+     * Query: page, size
      * Response: Page<ScoredPostDTO>
-     * <p>
-     * TODO: Sau khi test xong, bỏ param viewerId và sửa lại:
-     * Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-     * UUID viewerId = userService.getViewerIdFromAuthentication(auth);
      */
     @GetMapping
     public ResponseEntity<?> getVisiblePosts(@RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) UUID viewerId) {
+            @RequestParam(defaultValue = "20") int size) {
         try {
-            // [TEST MODE] viewerId được truyền từ query parameter
-            // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            // UUID viewerId = userService.getViewerIdFromAuthentication(auth);
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID viewerId = userService.getViewerIdFromAuthentication(auth);
             Page<ScoredPostDTO> pageResult = postService.getVisiblePosts(viewerId, page, size);
             return ResponseEntity.ok(ResponseDTO.<Page<ScoredPostDTO>>builder()
                     .message("Posts retrieved successfully")
@@ -120,47 +103,14 @@ public class PostAPI {
     /**
      * Get post detail by ID.
      * GET /api/posts/{postId}
-     * Query: viewerId (optional - for testing)
      * Response: PostDetailResponse
-     * <p>
-     * TODO: Sau khi test xong, bỏ param viewerId và sửa lại:
-     * Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-     * UUID viewerId = userService.getViewerIdFromAuthentication(auth);
-     */
-    @GetMapping("/{postId}/{viewerId}")
-    public ResponseEntity<?> getPostDetail(@PathVariable UUID postId, @PathVariable UUID viewerId) {
-        try {
-            // [TEST MODE] viewerId được truyền từ query parameter
-            // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            // UUID viewerId = userService.getViewerIdFromAuthentication(auth);
-            PostDetailResponse postDetail = postService.getPostDetail(postId, viewerId);
-            return ResponseEntity.ok(ResponseDTO.<PostDetailResponse>builder()
-                    .message("Post detail retrieved successfully")
-                    .data(postDetail)
-                    .build());
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ResponseDTO.builder()
-                            .message("Post not found or not visible")
-                            .detail(e.getMessage())
-                            .build());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ResponseDTO.builder()
-                            .message("Failed to retrieve post detail")
-                            .detail(e.getMessage())
-                            .build());
-        }
-    }
-
-    /**
-     * Get post detail without viewer (public view).
-     * GET /api/posts/{postId}
      */
     @GetMapping("/{postId}")
-    public ResponseEntity<?> getPostDetailPublic(@PathVariable UUID postId) {
+    public ResponseEntity<?> getPostDetail(@PathVariable UUID postId) {
         try {
-            PostDetailResponse postDetail = postService.getPostDetail(postId, null);
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID viewerId = userService.getViewerIdFromAuthentication(auth);
+            PostDetailResponse postDetail = postService.getPostDetail(postId, viewerId);
             return ResponseEntity.ok(ResponseDTO.<PostDetailResponse>builder()
                     .message("Post detail retrieved successfully")
                     .data(postDetail)
@@ -191,16 +141,14 @@ public class PostAPI {
      * - Verify requester is the author or admin before allowing update
      * - Add audit logging
      */
-    @PutMapping("/{postId}/{authorId}")
+    @PutMapping("/{postId}")
     // @PreAuthorize("hasRole('VOLUNTEER')") // TODO: Enable after auth setup
     public ResponseEntity<?> updatePost(
             @PathVariable UUID postId,
-            @PathVariable UUID authorId,
             @Valid @RequestBody UpdatePostRequest request) {
         try {
-            // TODO (Future): Get authenticated user and verify ownership
-            // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            // UUID authorId = userService.getViewerIdFromAuthentication(auth);
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID authorId = userService.getViewerIdFromAuthentication(auth);
             // Verify ownership in service layer
 
             ScoredPostDTO updatedPost = postService.updatePost(postId, request, authorId);
@@ -234,13 +182,12 @@ public class PostAPI {
      * - Consider soft delete instead of hard delete
      * - Add audit logging
      */
-    @DeleteMapping("/{postId}/{authorId}")
+    @DeleteMapping("/{postId}")
     // @PreAuthorize("hasRole('VOLUNTEER')") // TODO: Enable after auth setup
-    public ResponseEntity<?> deletePost(@PathVariable UUID postId, @PathVariable UUID authorId) {
+    public ResponseEntity<?> deletePost(@PathVariable UUID postId) {
         try {
-            // TODO (Future): Get authenticated user and verify ownership
-            // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            // UUID authorId = userService.getViewerIdFromAuthentication(auth);
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID authorId = userService.getViewerIdFromAuthentication(auth);
             // Verify ownership in service layer
 
             postService.deletePost(postId, authorId);
@@ -268,13 +215,12 @@ public class PostAPI {
      * Request: CreateCommentRequest
      * Response: CommentResponse
      */
-    @PostMapping("/{postId}/comments/{userId}")
+    @PostMapping("/{postId}/comments")
     public ResponseEntity<?> createComment(@PathVariable UUID postId,
-            @Valid @RequestBody CreateCommentRequest request, @PathVariable UUID userId) {
+            @Valid @RequestBody CreateCommentRequest request) {
         try {
-            // [TEST MODE] userId được truyền từ request
-            // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            // UUID userId = userService.getViewerIdFromAuthentication(auth);
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID userId = userService.getViewerIdFromAuthentication(auth);
             CommentResponse response = commentService.createComment(postId, request, userId);
             return ResponseEntity.ok(ResponseDTO.builder()
                     .message("Comment created successfully")
@@ -315,7 +261,7 @@ public class PostAPI {
 
     /**
      * Toggle reaction on a post (add, update, or remove).
-     * POST /api/posts/{postId}/reactions/{viewerId}
+     * POST /api/posts/{postId}/reactions
      * Query: type (optional, default LIKE)
      * Response: PostDetailResponse
      * <p>
@@ -324,13 +270,12 @@ public class PostAPI {
      * - Nếu đã có react cùng type: Xóa (toggle unlike).
      * - Nếu đã có react khác type: Cập nhật.
      */
-    @PostMapping("/{postId}/reactions/{viewerId}")
-    public ResponseEntity<?> toggleReaction(@PathVariable UUID postId, @PathVariable UUID viewerId,
+    @PostMapping("/{postId}/reactions")
+    public ResponseEntity<?> toggleReaction(@PathVariable UUID postId,
             @RequestParam(name = "type", required = false, defaultValue = "LIKE") ReactionType reactionType) {
         try {
-            // [TEST MODE] viewerId passed from path param
-            // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            // UUID viewerId = userService.getViewerIdFromAuthentication(auth);
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID viewerId = userService.getViewerIdFromAuthentication(auth);
 
             PostDetailResponse response = postService.likePost(postId, viewerId, reactionType);
             return ResponseEntity.ok(ResponseDTO.<PostDetailResponse>builder()

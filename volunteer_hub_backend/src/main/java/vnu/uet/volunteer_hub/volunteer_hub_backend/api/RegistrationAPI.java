@@ -3,6 +3,8 @@ package vnu.uet.volunteer_hub.volunteer_hub_backend.api;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.RegistrationCompletionRequest;
@@ -11,6 +13,7 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.RegistrationComp
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.RegistrationRejectionResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.ResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.EventService;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.service.UserService;
 
 import java.util.UUID;
 
@@ -20,18 +23,19 @@ import java.util.UUID;
 public class RegistrationAPI {
 
     private final EventService eventService;
+    private final UserService userService;
 
     /**
      * Approve a registration.
      * PUT /api/registrations/{registrationId}/approve
-     * Request: approvedByUserId (query parameter for testing)
      * Response: RegistrationApprovalResponseDTO
      */
-    @PutMapping("/{registrationId}/approve/{approvedByUserId}")
+    @PutMapping("/{registrationId}/approve")
     public ResponseEntity<?> approveRegistration(
-            @PathVariable UUID registrationId,
-            @PathVariable UUID approvedByUserId) {
+            @PathVariable UUID registrationId) {
         try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID approvedByUserId = userService.getViewerIdFromAuthentication(auth);
             RegistrationApprovalResponseDTO response = eventService.approveRegistration(registrationId,
                     approvedByUserId);
             return ResponseEntity.ok(ResponseDTO.<RegistrationApprovalResponseDTO>builder()

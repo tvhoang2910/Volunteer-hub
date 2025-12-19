@@ -27,6 +27,8 @@ public interface EventService {
         List<Event> getAllEvents();
 
         List<Event> getApprovedEvents();
+        
+        long countRegisteredEvents(UUID volunteerId);
 
         /**
          * Create a new event.
@@ -125,4 +127,11 @@ public interface EventService {
          */
         RegistrationCompletionResponseDTO completeRegistration(UUID registrationId,
                         RegistrationCompletionRequest request);
+
+        /**
+         * Get list of pending events (adminApprovalStatus = PENDING).
+         *
+         * @return List of events awaiting admin approval
+         */
+        List<Event> getPendingEvents();
 }
