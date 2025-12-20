@@ -1,103 +1,147 @@
 /**
  * @file postService.js
  * @description Service for handling social posts in the application.
- * Features CRUD operations, reactions, and mock data simulation.
+ * Features CRUD operations, reactions, and API integration.
  */
 
 import axios from 'axios';
-import { MOCK_POSTS } from '@/data/postData';
 
-// Simulate API delay
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
-const getBaseURL = () => {
-    if (typeof window !== 'undefined') {
-        return '/api';
-    }
-    return 'http://nginx/api';
+const getAuthHeader = () => {
+    const token = localStorage.getItem("token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-// Axios instance (configured for real API usage later)
+// Axios instance for API calls
 const api = axios.create({
-    baseURL: getBaseURL(), // Replace with real API
+    baseURL: `${API_BASE_URL}/api`,
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
 export const postService = {
-    getPosts: async (page = 1, limit = 10) => {
-        // REAL CALL: return api.get(`/posts?page=${page}&limit=${limit}`);
+    getPosts: async (page = 0, size = 10) => {
+        try {
+            const response = await api.get(`/posts?page=${page}&size=${size}`, {
+                headers: getAuthHeader()
+            });
+            const data = response.data?.data;
+            return {
+                data: data?.content || [],
+                hasMore: data?.number < data?.totalPages - 1
+            };
+        } catch (error) {
+            console.error('[PostService] Error fetching posts:', error);
+            throw error;
+        }
+    },
 
-        // MOCK CALL:
-        await delay(800);
-        // Simulate infinite scroll by returning same data but with different IDs if page > 1
-        const newPosts = MOCK_POSTS.map(p => ({
-            ...p,
-            id: p.id + (page - 1) * 10
-        }));
-        return {
-            data: newPosts,
-            hasMore: page < 5 // Limit to 5 pages for demo
-        };
+    getPostsByEvent: async (eventId, page = 0, size = 10) => {
+        try {
+            const response = await api.get(`/posts/event/${eventId}?page=${page}&size=${size}`, {
+                headers: getAuthHeader()
+            });
+            const data = response.data?.data;
+            return {
+                data: data?.content || [],
+                hasMore: data?.number < data?.totalPages - 1,
+                totalElements: data?.totalElements || 0
+            };
+        } catch (error) {
+            console.error('[PostService] Error fetching posts by event:', error);
+            throw error;
+        }
     },
 
     getPost: async (id) => {
-        // REAL CALL: return api.get(`/posts/${id}`);
-        await delay(500);
-        return MOCK_POSTS.find(p => p.id === id) || MOCK_POSTS[0];
-    },
-
-    createPost: async (formData) => {
-        // REAL CALL: return api.post('/posts', formData);
-        await delay(1000);
-        const newPost = {
-            id: Date.now(),
-            user: {
-                id: 999,
-                name: 'Current User',
-                avatar: 'https://i.pravatar.cc/150?u=999',
-            },
-            content: formData.get('content'),
-            media: [], // Handle media upload mock
-            likes: 0,
-            comments: 0,
-            isLiked: false,
-            createdAt: new Date().toISOString(),
-        };
-
-        // Mock media handling
-        const files = formData.getAll('media');
-        if (files && files.length > 0) {
-            // In a real app, these would be URLs from S3/Cloudinary
-            newPost.media = files.map((file, index) => ({
-                type: file.type.startsWith('video') ? 'video' : 'image',
-                url: URL.createObjectURL(file)
-            }));
+        try {
+            const response = await api.get(`/posts/${id}`, {
+                headers: getAuthHeader()
+            });
+            return response.data?.data;
+        } catch (error) {
+            console.error('[PostService] Error fetching post:', error);
+            throw error;
         }
-
-        return newPost;
     },
 
-    updatePost: async (id, formData) => {
-        // REAL CALL: return api.put(`/posts/${id}`, formData);
-        await delay(800);
-        return {
-            id,
-            content: formData.get('content'),
-            // ... other updated fields
-        };
+    createPost: async (postData) => {
+        try {
+            // postData should be { eventId, content, imageUrls? }
+            const response = await api.post('/posts', postData, {
+                headers: getAuthHeader()
+            });
+            return response.data?.data;
+        } catch (error) {
+            console.error('[PostService] Error creating post:', error);
+            throw error;
+        }
+    },
+
+    updatePost: async (id, postData) => {
+        try {
+            const response = await api.put(`/posts/${id}`, postData, {
+                headers: getAuthHeader()
+            });
+            return response.data?.data;
+        } catch (error) {
+            console.error('[PostService] Error updating post:', error);
+            throw error;
+        }
     },
 
     deletePost: async (id) => {
-        // REAL CALL: return api.delete(`/posts/${id}`);
-        await delay(500);
-        return { success: true };
+        try {
+            const response = await api.delete(`/posts/${id}`, {
+                headers: getAuthHeader()
+            });
+            return response.data;
+        } catch (error) {
+            console.error('[PostService] Error deleting post:', error);
+            throw error;
+        }
     },
 
-    toggleReaction: async (id) => {
-        // REAL CALL: return api.post(`/posts/${id}/reactions`);
-        await delay(300);
-        return { success: true };
-    }
+    toggleReaction: async (postId, reactionType = 'LIKE') => {
+        try {
+            const response = await api.post(`/posts/${postId}/reactions`, null, {
+                params: { reactionType },
+                headers: getAuthHeader()
+            });
+            return response.data?.data;
+        } catch (error) {
+            console.error('[PostService] Error toggling reaction:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Upload an image to a post
+     * @param postId - The ID of the post to upload the image to
+     * @param file - The image file to upload
+     * @returns The uploaded image data including imageUrl, imageId, postId
+     */
+    uploadPostImage: async (postId: string, file: File) => {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await axios.post(
+                `${API_BASE_URL}/api/upload/post-image/${postId}`,
+                formData,
+                {
+                    headers: {
+                        ...getAuthHeader(),
+                        'Content-Type': 'multipart/form-data',
+                    },
+                }
+            );
+            return response.data?.data;
+        } catch (error) {
+            console.error('[PostService] Error uploading post image:', error);
+            throw error;
+        }
+    },
 };

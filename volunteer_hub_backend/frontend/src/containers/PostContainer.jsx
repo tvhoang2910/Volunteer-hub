@@ -49,9 +49,12 @@ const PostContainer = () => {
 
             <div className="space-y-4">
                 {posts.map((post, index) => {
+                    // Use post.id, post.postId, or fallback to index for unique key
+                    const postKey = post.id || post.postId || `post-${index}`;
+                    
                     if (posts.length === index + 1) {
                         return (
-                            <div ref={lastPostElementRef} key={post.id}>
+                            <div ref={lastPostElementRef} key={postKey}>
                                 <Post
                                     post={post}
                                     onPostDeleted={handlePostDeleted}
@@ -61,7 +64,7 @@ const PostContainer = () => {
                     } else {
                         return (
                             <Post
-                                key={post.id}
+                                key={postKey}
                                 post={post}
                                 onPostDeleted={handlePostDeleted}
                             />

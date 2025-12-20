@@ -534,4 +534,21 @@ public class PostServiceImpl implements PostService {
         return new PageImpl<>(dtos, pageable, postsPage.getTotalElements());
     }
 
+    /**
+     * Get posts by event ID with pagination.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ScoredPostDTO> getPostsByEventId(UUID eventId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Post> postsPage = postRepository.findByEventId(eventId, pageable);
+
+        // Map to DTOs
+        List<ScoredPostDTO> dtos = postsPage.getContent().stream()
+                .map(p -> mapToDTO(p, null, Optional.empty()))
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(dtos, pageable, postsPage.getTotalElements());
+    }
+
 }

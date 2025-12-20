@@ -13,22 +13,24 @@ import {
     MoreHorizontal,
 } from "lucide-react";
 import "quill/dist/quill.snow.css";
-import { useCreatePost } from "../../hooks/useCreatePost";
+import { postService } from "@/services/postService";
 import { toast } from "@/hooks/use-toast";
 
 // Dynamic import ReactQuill
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 // Main Component (The Modal Form)
-const CreatePostForm = ({ onClose, onSuccess, user }) => {
+const CreatePostForm = ({ onClose, onSuccess, user, eventId }) => {
     const [postContent, setPostContent] = useState("");
-    const { createPost, loading } = useCreatePost(onSuccess);
+    const [loading, setLoading] = useState(false);
+    const [selectedImages, setSelectedImages] = useState([]);
+    const [imageUploading, setImageUploading] = useState(false);
 
     const modules = {
         toolbar: [
             ["bold", "italic", "underline", "strike"],
             [{ list: "ordered" }, { list: "bullet" }],
-            ["link", "image", "code-block"],
+            ["link", "code-block"],
             ["clean"],
         ],
     };
@@ -41,33 +43,111 @@ const CreatePostForm = ({ onClose, onSuccess, user }) => {
         "list",
         "bullet",
         "link",
-        "image",
         "code-block",
     ];
+
+    const handleImageSelect = (e) => {
+        const files = Array.from(e.target.files);
+        const validFiles = files.filter(file => 
+            file.type.startsWith('image/') && file.size <= 5 * 1024 * 1024 // Max 5MB
+        );
+        
+        if (validFiles.length !== files.length) {
+            toast({
+                title: "Cảnh báo",
+                description: "Một số file không hợp lệ (chỉ chấp nhận ảnh, dung lượng tối đa 5MB)",
+                variant: "warning",
+            });
+        }
+        
+        // Create preview URLs
+        const newImages = validFiles.map(file => ({
+            file,
+            preview: URL.createObjectURL(file),
+            id: Math.random().toString(36).substr(2, 9)
+        }));
+        
+        setSelectedImages(prev => [...prev, ...newImages].slice(0, 5)); // Max 5 images
+    };
+
+    const removeImage = (id) => {
+        setSelectedImages(prev => {
+            const removed = prev.find(img => img.id === id);
+            if (removed) URL.revokeObjectURL(removed.preview);
+            return prev.filter(img => img.id !== id);
+        });
+    };
 
     const handleSubmit = async () => {
         if (!postContent.trim()) return;
 
-        const formData = new FormData();
-        formData.append('content', postContent);
-        // Note: ReactQuill handles images as base64 by default in the content. 
-        // For file uploads, we'd need a custom handler, but for now we stick to the requested UI.
+        if (!eventId) {
+            toast({
+                title: "Lỗi",
+                description: "Không xác định được sự kiện. Vui lòng thử lại.",
+                variant: "destructive",
+            });
+            return;
+        }
 
         try {
-            await createPost(formData);
+            setLoading(true);
+            const postData = {
+                eventId: eventId,
+                content: postContent,
+                imageUrls: []
+            };
+            
+            // Create the post first
+            let newPost = await postService.createPost(postData);
+            const postId = newPost.postId || newPost.id;
+            
+            // Upload images if any
+            if (selectedImages.length > 0) {
+                setImageUploading(true);
+                const uploadedImageUrls = [];
+                
+                for (const img of selectedImages) {
+                    try {
+                        const result = await postService.uploadPostImage(postId, img.file);
+                        if (result?.imageUrl) {
+                            uploadedImageUrls.push(result.imageUrl);
+                        }
+                    } catch (uploadError) {
+                        console.error("Failed to upload image:", uploadError);
+                    }
+                }
+                setImageUploading(false);
+                
+                // Update newPost with uploaded image URLs for UI display
+                newPost = {
+                    ...newPost,
+                    imageUrls: uploadedImageUrls,
+                    media: uploadedImageUrls.map(url => ({ type: 'image', url }))
+                };
+            }
+            
+            // Clean up preview URLs
+            selectedImages.forEach(img => URL.revokeObjectURL(img.preview));
+            
             setPostContent("");
+            setSelectedImages([]);
             toast({
                 title: "Thành công",
                 description: "Bài viết đã được tạo thành công.",
             });
+            if (onSuccess) onSuccess(newPost);
             if (onClose) onClose();
         } catch (error) {
             console.error("Failed to create post", error);
             toast({
                 title: "Lỗi",
-                description: "Không thể tạo bài viết. Vui lòng thử lại.",
+                description: error.response?.data?.message || "Không thể tạo bài viết. Vui lòng thử lại.",
                 variant: "destructive",
             });
+        } finally {
+            setLoading(false);
+            setImageUploading(false);
         }
     };
 
@@ -114,20 +194,54 @@ const CreatePostForm = ({ onClose, onSuccess, user }) => {
                     />
                 </div>
 
+                {/* Image Previews */}
+                {selectedImages.length > 0 && (
+                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {selectedImages.map((img) => (
+                            <div key={img.id} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
+                                <img
+                                    src={img.preview}
+                                    alt="Preview"
+                                    className="w-full h-full object-cover"
+                                />
+                                <button
+                                    onClick={() => removeImage(img.id)}
+                                    className="absolute top-2 right-2 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
             </div>
 
             {/* Footer Section */}
             <div className="px-4 pb-4 shrink-0">
-
+                {/* Image Upload Button */}
+                <div className="flex items-center gap-3 mb-3 p-3 border border-gray-200 rounded-lg">
+                    <span className="text-sm text-gray-600 flex-grow">Thêm vào bài viết của bạn</span>
+                    <label className="cursor-pointer p-2 rounded-full hover:bg-gray-100 transition-colors">
+                        <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleImageSelect}
+                            className="hidden"
+                            disabled={selectedImages.length >= 5}
+                        />
+                        <ImageIcon size={24} className={`${selectedImages.length >= 5 ? 'text-gray-300' : 'text-green-500'}`} />
+                    </label>
+                </div>
 
                 {/* Submit Button */}
                 <button
                     onClick={handleSubmit}
                     className="w-full py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
-                    disabled={!postContent.trim() || postContent === "<p><br></p>" || loading}
+                    disabled={!postContent.trim() || postContent === "<p><br></p>" || loading || imageUploading}
                 >
-                    {loading ? "Posting..." : "Post"}
+                    {loading ? (imageUploading ? "Đang tải ảnh..." : "Đang đăng...") : "Đăng bài"}
                 </button>
             </div>
         </div>
@@ -135,7 +249,7 @@ const CreatePostForm = ({ onClose, onSuccess, user }) => {
 };
 
 // Trigger Component (The Box on the Feed)
-const CreatePostInput = ({ onPostCreated }) => {
+const CreatePostInput = ({ onPostCreated, eventId }) => {
     const [isOpen, setIsOpen] = useState(false);
 
     // Mock user data - in real app this comes from context/auth
@@ -195,6 +309,7 @@ const CreatePostInput = ({ onPostCreated }) => {
                                 closePostBar();
                             }}
                             user={user}
+                            eventId={eventId}
                         />
                     </div>
                 </div>

@@ -152,6 +152,24 @@ export default function EventsIndexPage() {
   );
 }
 
+// Helper function to get proper thumbnail URL
+function getThumbnailUrl(thumbnailUrl) {
+  const defaultImage = "https://images.unsplash.com/photo-1559027615-cd4628902d4a?auto=format&fit=crop&w=800&q=80";
+  if (!thumbnailUrl) return defaultImage;
+  
+  // If it's a relative path (local upload), prepend API base URL
+  if (thumbnailUrl.startsWith('/uploads/')) {
+    return `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'}${thumbnailUrl}`;
+  }
+  
+  // If it's already a full URL, use it as-is
+  if (thumbnailUrl.startsWith('http')) {
+    return thumbnailUrl;
+  }
+  
+  return defaultImage;
+}
+
 function ManagerEventCard({ event, index, type, onDelete, itemVariants }) {
   const router = useRouter();
 
@@ -159,6 +177,8 @@ function ManagerEventCard({ event, index, type, onDelete, itemVariants }) {
   const dateDisplay = event.startTime
     ? new Date(event.startTime).toLocaleDateString('vi-VN')
     : "Chưa cập nhật";
+
+  const thumbnailSrc = getThumbnailUrl(event.thumbnailUrl);
 
   return (
     <motion.div
@@ -171,7 +191,7 @@ function ManagerEventCard({ event, index, type, onDelete, itemVariants }) {
         className="relative h-48 w-full overflow-hidden rounded-t-2xl cursor-pointer bg-gray-100"
       >
         <img
-          src={event.thumbnailUrl || "https://images.unsplash.com/photo-1559027615-cd4628902d4a?auto=format&fit=crop&w=800&q=80"}
+          src={thumbnailSrc}
           alt={event.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />

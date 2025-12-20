@@ -376,6 +376,7 @@ public class EventServiceImpl implements EventService {
                         .registeredAt(reg.getCreatedAt())
                         .isCompleted(reg.getRegistrationStatus().equals(RegistrationStatus.COMPLETED))
                         .isWithdrawn(reg.getRegistrationStatus().equals(RegistrationStatus.WITHDRAWN))
+                        .isUserActive(reg.getVolunteer().getIsActive())
                         .build())
                 .collect(Collectors.toList());
     }

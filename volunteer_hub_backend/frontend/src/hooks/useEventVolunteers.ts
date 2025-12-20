@@ -17,7 +17,8 @@ export const useEventVolunteers = (event, eventId) => {
         return volunteers.filter(
             (vol) =>
                 vol.name.toLowerCase().includes(keyword) ||
-                (vol.role && vol.role.toLowerCase().includes(keyword))
+                (vol.role && vol.role.toLowerCase().includes(keyword)) ||
+                (vol.email && vol.email.toLowerCase().includes(keyword))
         );
     }, [volunteers, search]);
 

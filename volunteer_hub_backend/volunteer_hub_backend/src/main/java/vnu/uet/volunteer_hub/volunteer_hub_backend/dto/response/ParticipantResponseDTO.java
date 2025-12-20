@@ -21,4 +21,5 @@ public class ParticipantResponseDTO {
     private LocalDateTime registeredAt;
     private Boolean isCompleted;
     private Boolean isWithdrawn;
+    private Boolean isUserActive; // User account active status
 }

@@ -5,9 +5,15 @@ export const useDeletePost = (onSuccess) => {
     const { execute, loading, error } = useAsyncFn(postService.deletePost);
 
     const deletePost = async (id) => {
-        await execute(id);
-        if (onSuccess) {
-            onSuccess(id);
+        try {
+            await execute(id);
+            console.log('[useDeletePost] Delete successful, calling onSuccess with id:', id);
+            if (onSuccess) {
+                onSuccess(id);
+            }
+        } catch (err) {
+            console.error('[useDeletePost] Delete failed:', err);
+            throw err;
         }
     };
 

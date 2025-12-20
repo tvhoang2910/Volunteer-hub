@@ -1,10 +1,37 @@
 import React, { useState } from 'react';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+
+// Helper to normalize media items and construct proper URLs
+const normalizeMediaItem = (item) => {
+    // If it's already an object with url/imageUrl
+    if (typeof item === 'object' && item !== null) {
+        const url = item.url || item.imageUrl || '';
+        return {
+            type: item.type || 'image',
+            url: url.startsWith('/uploads/') ? `${API_BASE_URL}${url}` : url
+        };
+    }
+    // If it's a string URL
+    if (typeof item === 'string') {
+        return {
+            type: 'image',
+            url: item.startsWith('/uploads/') ? `${API_BASE_URL}${item}` : item
+        };
+    }
+    return null;
+};
+
 const PostMedia = ({ media }) => {
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
 
-    if (!media || media.length === 0) return null;
+    // Normalize media array
+    const normalizedMedia = (media || [])
+        .map(normalizeMediaItem)
+        .filter(item => item && item.url);
+
+    if (normalizedMedia.length === 0) return null;
 
     const openLightbox = (url) => {
         setSelectedImage(url);
@@ -12,10 +39,10 @@ const PostMedia = ({ media }) => {
     };
 
     const renderGrid = () => {
-        const count = media.length;
+        const count = normalizedMedia.length;
 
         if (count === 1) {
-            const item = media[0];
+            const item = normalizedMedia[0];
             if (item.type === 'video') {
                 return (
                     <div className="w-full">
@@ -39,7 +66,7 @@ const PostMedia = ({ media }) => {
         if (count === 2) {
             return (
                 <div className="grid grid-cols-2 gap-1 h-[300px]">
-                    {media.map((item, idx) => (
+                    {normalizedMedia.map((item, idx) => (
                         <div key={idx} className="h-full cursor-pointer overflow-hidden" onClick={() => openLightbox(item.url)}>
                             <img src={item.url} alt={`Media ${idx}`} className="w-full h-full object-cover hover:opacity-95 transition-opacity" />
                         </div>
@@ -51,11 +78,11 @@ const PostMedia = ({ media }) => {
         if (count === 3) {
             return (
                 <div className="grid grid-cols-2 gap-1 h-[300px]">
-                    <div className="h-full cursor-pointer overflow-hidden" onClick={() => openLightbox(media[0].url)}>
-                        <img src={media[0].url} alt="Media 0" className="w-full h-full object-cover" />
+                    <div className="h-full cursor-pointer overflow-hidden" onClick={() => openLightbox(normalizedMedia[0].url)}>
+                        <img src={normalizedMedia[0].url} alt="Media 0" className="w-full h-full object-cover" />
                     </div>
                     <div className="grid grid-rows-2 gap-1 h-full">
-                        {media.slice(1, 3).map((item, idx) => (
+                        {normalizedMedia.slice(1, 3).map((item, idx) => (
                             <div key={idx} className="h-full cursor-pointer overflow-hidden" onClick={() => openLightbox(item.url)}>
                                 <img src={item.url} alt={`Media ${idx + 1}`} className="w-full h-full object-cover" />
                             </div>
@@ -68,13 +95,13 @@ const PostMedia = ({ media }) => {
         // 4 or more
         return (
             <div className="grid grid-cols-2 gap-1 h-[300px]">
-                {media.slice(0, 3).map((item, idx) => (
+                {normalizedMedia.slice(0, 3).map((item, idx) => (
                     <div key={idx} className="h-full cursor-pointer overflow-hidden" onClick={() => openLightbox(item.url)}>
                         <img src={item.url} alt={`Media ${idx}`} className="w-full h-full object-cover" />
                     </div>
                 ))}
-                <div className="relative h-full cursor-pointer overflow-hidden" onClick={() => openLightbox(media[3].url)}>
-                    <img src={media[3].url} alt="Media 3" className="w-full h-full object-cover" />
+                <div className="relative h-full cursor-pointer overflow-hidden" onClick={() => openLightbox(normalizedMedia[3].url)}>
+                    <img src={normalizedMedia[3].url} alt="Media 3" className="w-full h-full object-cover" />
                     {count > 4 && (
                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-2xl font-bold">
                             +{count - 4}

@@ -117,6 +117,31 @@ public class PostAPI {
         }
 
         /**
+         * Get posts by event ID.
+         * GET /api/posts/event/{eventId}
+         * Query: page, size
+         * Response: Page<ScoredPostDTO>
+         */
+        @GetMapping("/event/{eventId}")
+        public ResponseEntity<?> getPostsByEvent(@PathVariable UUID eventId,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "20") int size) {
+                try {
+                        Page<ScoredPostDTO> pageResult = postService.getPostsByEventId(eventId, page, size);
+                        return ResponseEntity.ok(ResponseDTO.<Page<ScoredPostDTO>>builder()
+                                        .message("Posts retrieved successfully")
+                                        .data(pageResult)
+                                        .build());
+                } catch (Exception e) {
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                        .body(ResponseDTO.builder()
+                                                        .message("Failed to retrieve posts by event")
+                                                        .detail(e.getMessage())
+                                                        .build());
+                }
+        }
+
+        /**
          * Get post detail by ID.
          * GET /api/posts/{postId}
          * Query: viewerId (optional - for testing)

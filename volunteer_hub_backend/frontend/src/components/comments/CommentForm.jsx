@@ -1,14 +1,35 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FaPaperPlane } from 'react-icons/fa';
+import { postComment } from '../../services/commentService';
 
-export default function CommentForm({ autoFocus, initialValue = '', onSubmit, loading, error }) {
+export default function CommentForm({ postId, parentId, autoFocus, initialValue = '', onSubmit, onCommentAdded }) {
     const [message, setMessage] = useState(initialValue);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
     const textareaRef = useRef(null);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!message.trim()) return;
-        onSubmit(message).then(() => setMessage(''));
+        if (!message.trim() || !postId) return;
+        
+        setLoading(true);
+        setError(null);
+        
+        try {
+            const newComment = await postComment(postId, message.trim(), parentId);
+            setMessage('');
+            if (onCommentAdded) {
+                onCommentAdded(newComment);
+            }
+            if (onSubmit) {
+                onSubmit(message);
+            }
+        } catch (err) {
+            console.error('Error posting comment:', err);
+            setError('Không thể đăng bình luận');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const adjustHeight = () => {

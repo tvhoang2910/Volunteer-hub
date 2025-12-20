@@ -61,15 +61,24 @@ export const useManagerEvent = () => {
             .filter(p => p.registrationStatus === 'APPROVED')
             .map(p => ({
               id: p.registrationId || p.id,
-              oderId: p.oderId,
+              userId: p.userId,
               name: p.userName || p.name || 'Unknown',
               email: p.email || '',
+              joinedAt: p.registeredAt ? new Date(p.registeredAt).toLocaleDateString('vi-VN') : 'N/A',
+              isActive: p.isUserActive ?? true,
               registrationStatus: p.registrationStatus
             }));
+
+          // Build full thumbnail URL for heroImage
+          const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+          const heroImage = data.thumbnailUrl 
+            ? (data.thumbnailUrl.startsWith('http') ? data.thumbnailUrl : `${API_BASE_URL}${data.thumbnailUrl}`)
+            : null;
 
           // Normalize data from backend to match frontend expectations
           const normalizedEvent = {
             ...data,
+            heroImage, // Map thumbnailUrl to heroImage for EventDetailLayout
             organizer: {
               name: data.createdByName || "Chưa cập nhật",
               organization: "Volunteer Hub" // Default or fetch from user profile

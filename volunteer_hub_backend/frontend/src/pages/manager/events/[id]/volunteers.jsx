@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { Search, Download } from "lucide-react";
 import EventDetailLayout from "@/components/manager/event/EventDetailLayout";
 import EventNotFound from "@/components/manager/event/EventNotFound";
 import { useManagerEvent } from "@/hooks/useManagerEvent";
@@ -32,6 +32,45 @@ export default function ManagerEventVolunteers() {
     }
   };
 
+  const handleExportCSV = () => {
+    if (!volunteers.length) {
+      toast({
+        title: "Thông báo",
+        description: "Không có dữ liệu để xuất.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const headers = ["STT", "Họ và tên", "Ngày tham gia", "Email", "Trạng thái"];
+    const csvContent = [
+      headers.join(","),
+      ...volunteers.map((vol, index) => [
+        index + 1,
+        `"${vol.name || ''}"`,
+        `"${vol.joinedAt || 'N/A'}"`,
+        `"${vol.email || ''}"`,
+        `"${vol.isActive ? 'Đang hoạt động' : 'Không hoạt động'}"`
+      ].join(","))
+    ].join("\n");
+
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `volunteers_${event?.title?.replace(/\s+/g, '_') || 'event'}_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Thành công",
+      description: "Đã xuất danh sách tình nguyện viên!",
+    });
+  };
+
   if (!isReady) return null;
   if (!event || !eventId) return <EventNotFound />;
 
@@ -55,11 +94,15 @@ export default function ManagerEventVolunteers() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm theo tên hoặc vai trò"
+                placeholder="Tìm theo tên hoặc email"
                 className="w-full border border-gray-200 rounded-full pl-10 pr-4 py-2.5 focus:outline-none focus:border-emerald-500 text-sm"
               />
             </div>
-            <button className="inline-flex items-center justify-center px-5 py-2.5 rounded-full border border-gray-200 font-medium text-gray-700 hover:border-gray-300">
+            <button 
+              onClick={handleExportCSV}
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition"
+            >
+              <Download className="w-4 h-4" />
               Xuất danh sách
             </button>
           </div>
@@ -97,17 +140,24 @@ export default function ManagerEventVolunteers() {
                   <td className="px-4 py-3 font-medium text-gray-900">
                     {vol.name}
                   </td>
-                  <td className="px-4 py-3 text-gray-700">{vol.joinedAt}</td>
-                  <td className="px-4 py-3 text-gray-700">{vol.phone}</td>
+                  <td className="px-4 py-3 text-gray-700">{vol.joinedAt || 'N/A'}</td>
+                  <td className="px-4 py-3 text-gray-700">
+                    {vol.email ? (
+                      <a href={`mailto:${vol.email}`} className="text-emerald-600 hover:underline">
+                        {vol.email}
+                      </a>
+                    ) : (
+                      <span className="text-gray-400 italic">Chưa cập nhật</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
-                    <select
-                      value={vol.status}
-                      onChange={(e) => changeStatus(vol.id, e.target.value)}
-                      className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:border-emerald-500 focus:outline-none"
-                    >
-                      <option value="Thành viên">Thành viên</option>
-                      <option value="Leader">Leader</option>
-                    </select>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      vol.isActive 
+                        ? 'bg-emerald-100 text-emerald-800' 
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {vol.isActive ? 'Đang hoạt động' : 'Không hoạt động'}
+                    </span>
                   </td>
                 </tr>
               ))}
@@ -138,3 +188,4 @@ export default function ManagerEventVolunteers() {
     </EventDetailLayout>
   );
 }
+

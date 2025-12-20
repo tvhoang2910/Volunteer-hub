@@ -10,6 +10,11 @@ import axios from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
+const getAuthHeader = () => {
+    const token = localStorage.getItem("token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export default function EditEventPage() {
     const router = useRouter();
     const { event, eventId, isReady } = useManagerEvent();
@@ -24,6 +29,7 @@ export default function EditEventPage() {
             formData,
             {
                 headers: {
+                    ...getAuthHeader(),
                     'Content-Type': 'multipart/form-data',
                 },
             }

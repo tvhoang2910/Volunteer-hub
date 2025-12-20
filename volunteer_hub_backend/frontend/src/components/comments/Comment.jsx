@@ -3,68 +3,84 @@ import CommentList from "./CommentList";
 import { useState, useEffect } from "react";
 import { usePost } from "@/context/PostContext";
 import CommentForm from "./CommentForm";
-import { useAsyncFn } from "@/hooks/useAsync";
-import { createComment, deleteComment, updateComment, toggleCommentLike } from "@/services/comments";
+import { updateComment, deleteComment } from "@/services/commentService";
 import useUser from "@/hooks/useUser"
 
-export default function Comment({ id, avatar, message, user, createdAt, likeCount, likedByMe }) {
-    const { post, getReplies, createLocalComment, updateLocalComment, deleteLocalComment, toggleLocalCommentLike } = usePost()
-    const childComments = getReplies(id)
+// Props từ API: { id, content, userId, userName, postId, parentId, replies, createdAt, updatedAt }
+export default function Comment({ id, content, userId, userName, postId, parentId, replies: initialReplies, createdAt, updatedAt }) {
+    const { post } = usePost()
     const [areChildrenHidden, setAreChildrenHidden] = useState(false)
     const [isReplying, setIsReplying] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
-    const [userAvatar, setUserAvatar] = useState("https://random.imagecdn.app/200/200");
-    const createCommentFn = useAsyncFn(createComment)
-    const updateCommentFn = useAsyncFn(updateComment)
-    const deleteCommentFn = useAsyncFn(deleteComment)
-    const toggleCommentLikeFn = useAsyncFn(toggleCommentLike)
+    const [localMessage, setLocalMessage] = useState(content)
+    const [localReplies, setLocalReplies] = useState(initialReplies || [])
+    const [isDeleted, setIsDeleted] = useState(false)
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState(null)
     const [localTime, setLocalTime] = useState("")
     const currentUser = useUser()
 
     useEffect(() => {
-        const date = new Date(createdAt)
-        const options = { year: 'numeric', month: 'long', day: 'numeric' }
-        const formattedDate = date.toLocaleDateString('en-US', options)
-        setLocalTime(formattedDate)
+        if (createdAt) {
+            const date = new Date(createdAt)
+            const options = { year: 'numeric', month: 'long', day: 'numeric' }
+            const formattedDate = date.toLocaleDateString('vi-VN', options)
+            setLocalTime(formattedDate)
+        }
     }, [createdAt])
 
-    function onCommentReply(message) {
-        return createCommentFn.execute({ postId: post.id, message, parentId: id }).then(comment => {
-            setIsReplying(false)
-            createLocalComment(comment)
-        })
+    // Update localReplies when initialReplies changes
+    useEffect(() => {
+        setLocalReplies(initialReplies || [])
+    }, [initialReplies])
+
+    const handleUpdate = async (newMessage) => {
+        setLoading(true)
+        setError(null)
+        try {
+            const updated = await updateComment(id, newMessage)
+            setLocalMessage(updated.content || newMessage)
+            setIsEditing(false)
+        } catch (err) {
+            console.error('Error updating comment:', err)
+            setError('Không thể cập nhật bình luận')
+        } finally {
+            setLoading(false)
+        }
     }
 
-    function onCommentUpdate(message) {
-        return updateCommentFn
-            .execute({ postId: post.id, message, id })
-            .then(comment => {
-                setIsEditing(false)
-                updateLocalComment(id, comment.message)
-            })
+    const handleDelete = async () => {
+        if (!window.confirm('Bạn có chắc muốn xóa bình luận này?')) return
+        setLoading(true)
+        try {
+            await deleteComment(id)
+            setIsDeleted(true)
+        } catch (err) {
+            console.error('Error deleting comment:', err)
+            setError('Không thể xóa bình luận')
+        } finally {
+            setLoading(false)
+        }
     }
 
-    function onCommentDelete() {
-        return deleteCommentFn
-            .execute({ postId: post.id, id })
-            .then((comment) => deleteLocalComment(comment.id)
-            )
+    const handleReplyAdded = (newReply) => {
+        setIsReplying(false)
+        // Thêm reply mới vào local state để hiển thị ngay
+        setLocalReplies(prev => [...prev, newReply])
     }
 
-    function onToggleCommentLike() {
-        return toggleCommentLikeFn
-            .execute({ id, postId: post.id })
-            .then(({ addLike }) => toggleLocalCommentLike(id, addLike))
-    }
+    if (isDeleted) return null
+
+    const isOwner = currentUser?.id === userId
 
     return (
         <>
             <div className="flex gap-2 mb-2 group">
                 {/* Avatar */}
                 <img
-                    src={avatar || "https://random.imagecdn.app/200/200"}
+                    src="https://random.imagecdn.app/200/200"
                     className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1"
-                    alt={user.name}
+                    alt={userName}
                 />
 
                 <div className="flex-1 max-w-full">
@@ -72,24 +88,21 @@ export default function Comment({ id, avatar, message, user, createdAt, likeCoun
                         {/* Bubble */}
                         <div className="relative inline-block bg-[#f0f2f5] px-3 py-2 rounded-2xl max-w-full">
                             <span className="font-semibold text-[13px] text-[#050505] block leading-4 mb-0.5">
-                                {user.name}
+                                {userName || 'Người dùng'}
                             </span>
 
                             {isEditing ? (
                                 <CommentForm
                                     autoFocus
-                                    initialValue={message}
-                                    onSubmit={onCommentUpdate}
-                                    loading={updateCommentFn.loading}
-                                    error={updateCommentFn.error}
+                                    initialValue={localMessage}
+                                    postId={postId}
+                                    onSubmit={handleUpdate}
                                 />
                             ) : (
                                 <div className="text-[15px] text-[#050505] leading-snug break-words whitespace-pre-wrap">
-                                    {message}
+                                    {localMessage}
                                 </div>
                             )}
-
-
                         </div>
                     </div>
 
@@ -98,12 +111,6 @@ export default function Comment({ id, avatar, message, user, createdAt, likeCoun
                         <span className="cursor-pointer hover:underline font-normal">
                             {localTime || "..."}
                         </span>
-                        <button
-                            onClick={onToggleCommentLike}
-                            className={`hover:underline ${likedByMe ? "text-blue-600" : ""}`}
-                        >
-                            Thích
-                        </button>
 
                         <button
                             onClick={() => setIsReplying(p => !p)}
@@ -112,62 +119,54 @@ export default function Comment({ id, avatar, message, user, createdAt, likeCoun
                             Phản hồi
                         </button>
 
-                        {user.id === currentUser?.id && (
+                        {isOwner && (
                             <>
                                 <button
                                     onClick={() => setIsEditing(p => !p)}
                                     className="hover:underline"
+                                    disabled={loading}
                                 >
                                     Sửa
                                 </button>
                                 <button
-                                    onClick={onCommentDelete}
+                                    onClick={handleDelete}
                                     className="hover:underline"
+                                    disabled={loading}
                                 >
                                     Xóa
                                 </button>
                             </>
                         )}
-                        {likeCount > 0 && (
-                            <div className="ml-auto flex items-center gap-1 cursor-pointer">
-                                <span>{likeCount}</span>
-                                <div className="flex items-center justify-center w-4 h-4 bg-blue-500 rounded-full">
-                                    <FaThumbsUp className="text-white w-2.5 h-2.5" />
-                                </div>
-                            </div>
-                        )}
                     </div>
+                    {error && <div className="text-red-500 text-xs ml-3 mt-1">{error}</div>}
 
                     {/* Reply Form */}
                     {isReplying && (
                         <div className="mt-2">
                             <CommentForm
                                 autoFocus
-                                onSubmit={onCommentReply}
-                                loading={createCommentFn.loading}
-                                error={createCommentFn.error}
+                                postId={postId || post?.id}
+                                parentId={id}
+                                onCommentAdded={handleReplyAdded}
                             />
                         </div>
                     )}
 
                     {/* Nested Replies */}
-                    {childComments?.length > 0 && (
+                    {localReplies?.length > 0 && (
                         <div className="mt-2">
-                            {/* Show/Hide Replies Button */}
                             {areChildrenHidden ? (
                                 <button
                                     onClick={() => setAreChildrenHidden(false)}
                                     className="flex items-center gap-2 text-[13px] font-semibold text-[#65676B] hover:underline ml-3 mb-2"
                                 >
                                     <div className="w-6 border-t border-[#65676B]"></div>
-                                    Xem {childComments.length} câu trả lời
+                                    Xem {localReplies.length} câu trả lời
                                 </button>
                             ) : (
-                                <>
-                                    <div className="pl-0 border-l-2 border-gray-200 ml-3.5">
-                                        <CommentList comments={childComments} />
-                                    </div>
-                                </>
+                                <div className="pl-0 border-l-2 border-gray-200 ml-3.5">
+                                    <CommentList comments={localReplies} />
+                                </div>
                             )}
                         </div>
                     )}

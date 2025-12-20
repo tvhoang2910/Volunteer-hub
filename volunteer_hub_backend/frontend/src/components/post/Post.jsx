@@ -12,18 +12,31 @@ import CommentDetailSlideUp from '../comments/CommentDetailSlideUp';
 const Post = ({ post, onPostUpdated, onPostDeleted }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [showComments, setShowComments] = useState(false);
-    const [localPost, setLocalPost] = useState(post);
+    
+    // Normalize post data to handle both API response formats (author vs user, postId vs id)
+    const normalizePost = (postData) => ({
+        ...postData,
+        id: postData.id || postData.postId,
+        user: postData.user || postData.author || { id: null, name: 'Unknown', avatarUrl: null },
+        media: postData.media || postData.imageUrls || [],
+        likes: postData.likes ?? postData.reactionCount ?? 0,
+        comments: postData.comments ?? postData.commentCount ?? 0,
+    });
+    
+    const [localPost, setLocalPost] = useState(() => normalizePost(post));
 
     const { deletePost } = useDeletePost(onPostDeleted);
     const { toggleReaction } = useToggleReaction();
 
-    // Lấy userId từ localStorage (userId được lưu khi đăng nhập , có thể cần api /login khi thành công sẽ lưu vào localStorage)
+    // Lấy userId từ localStorage (userId được lưu khi đăng nhập)
     const currentUserId = localStorage.getItem('userId');
-    const isOwner = localPost.user.id === currentUserId;
+    const isOwner = localPost.user?.id === currentUserId;
 
     const handleDelete = async () => {
         if (window.confirm('Are you sure you want to delete this post?')) {
-            await deletePost(localPost.id);
+            const postId = localPost.id || localPost.postId;
+            console.log('[Post] Deleting post with id:', postId);
+            await deletePost(postId);
         }
     };
 
@@ -83,7 +96,6 @@ const Post = ({ post, onPostUpdated, onPostDeleted }) => {
                 isOpen={showComments}
                 onClose={() => setShowComments(false)}
                 post={localPost}
-                comments={localPost.comments || []}
             />
 
             {isEditing && (

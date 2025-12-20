@@ -4,11 +4,11 @@ import { postService } from '../services/postService';
 export const usePosts = () => {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [page, setPage] = useState(1);
+    const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [error, setError] = useState(null);
 
-    const fetchPosts = useCallback(async (pageNum = 1, isRefresh = false) => {
+    const fetchPosts = useCallback(async (pageNum = 0, isRefresh = false) => {
         try {
             setLoading(true);
             const response = await postService.getPosts(pageNum);
@@ -29,7 +29,7 @@ export const usePosts = () => {
     }, []);
 
     useEffect(() => {
-        fetchPosts(1, true);
+        fetchPosts(0, true);
     }, [fetchPosts]);
 
     const loadMore = () => {
@@ -41,9 +41,9 @@ export const usePosts = () => {
     };
 
     const refresh = () => {
-        setPage(1);
+        setPage(0);
         setHasMore(true);
-        fetchPosts(1, true);
+        fetchPosts(0, true);
     };
 
     // Helper to manually update local state (e.g. after create/delete/update)

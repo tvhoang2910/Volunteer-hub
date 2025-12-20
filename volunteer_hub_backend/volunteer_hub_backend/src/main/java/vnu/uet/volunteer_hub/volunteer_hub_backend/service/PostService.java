@@ -56,6 +56,16 @@ public interface PostService {
     Page<ScoredPostDTO> getPostsByUserId(UUID userId, int page, int size);
 
     /**
+     * Get posts by event ID with pagination.
+     * 
+     * @param eventId the event ID
+     * @param page    page number (0-based)
+     * @param size    page size
+     * @return paginated posts for the event
+     */
+    Page<ScoredPostDTO> getPostsByEventId(UUID eventId, int page, int size);
+
+    /**
      * Like a post by a viewer.
      * 
      * @param postId   the post id

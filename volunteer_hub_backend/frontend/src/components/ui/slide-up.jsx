@@ -45,7 +45,7 @@ export default function SlideUpDetail({ isOpen, onClose, title, description, chi
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-6 pt-4">
+                        <div className="flex-1 overflow-y-auto p-6 pt-4 relative">
                             {children}
                         </div>
                     </motion.div>

@@ -60,6 +60,7 @@ public class UserServiceImpl implements UserService {
         user.setEmail(registrationRequest.getEmail().toLowerCase());
         user.setName(registrationRequest.getName());
         user.setPassword(passwordEncoder.encode(registrationRequest.getPassword()));
+        user.setIsActive(Boolean.TRUE);
 
         Role userRole = roleRepository.findByRoleName("VOLUNTEER")
                 .orElseThrow(() -> new RuntimeException("VOLUNTEER role not found in the database"));
