@@ -1,0 +1,80 @@
+[
+    {
+        "id": 1,
+        "parentId": null,
+        "message": "Bài viết rất hay và hữu ích! Cảm ơn bạn đã chia sẻ.",
+        "user": {
+            "id": 101,
+            "name": "Nguyễn Văn A",
+            "avatar": "https://i.pravatar.cc/150?u=101"
+        },
+        "createdAt": "2023-10-25T08:00:00Z",
+        "likeCount": 12,
+        "likedByMe": true
+    },
+    {
+        "id": 2,
+        "parentId": null,
+        "message": "Mình có thắc mắc về phần thủ tục check-in online, bạn giải thích thêm được không?",
+        "user": {
+            "id": 102,
+            "name": "Trần Thị B",
+            "avatar": "https://i.pravatar.cc/150?u=102"
+        },
+        "createdAt": "2023-10-25T09:30:00Z",
+        "likeCount": 5,
+        "likedByMe": false
+    },
+    {
+        "id": 3,
+        "parentId": 2,
+        "message": "Chào bạn, check-in online thường mở trước 24h giờ bay nhé.",
+        "user": {
+            "id": 999,
+            "name": "Admin Qairlines",
+            "avatar": "https://i.pravatar.cc/150?u=999"
+        },
+        "createdAt": "2023-10-25T10:00:00Z",
+        "likeCount": 3,
+        "likedByMe": false
+    },
+    {
+        "id": 4,
+        "parentId": 2,
+        "message": "Cảm ơn admin nhiều!",
+        "user": {
+            "id": 102,
+            "name": "Trần Thị B",
+            "avatar": "https://i.pravatar.cc/150?u=102"
+        },
+        "createdAt": "2023-10-25T10:15:00Z",
+        "likeCount": 1,
+        "likedByMe": true
+    },
+    {
+        "id": 5,
+        "parentId": null,
+        "message": "Hóng các bài viết tiếp theo của page.",
+        "user": {
+            "id": 103,
+            "name": "Lê Văn C",
+            "avatar": "https://i.pravatar.cc/150?u=103"
+        },
+        "createdAt": "2023-10-26T14:20:00Z",
+        "likeCount": 0,
+        "likedByMe": false
+    },
+    {
+        "id": 6,
+        "parentId": 1,
+        "message": "Đồng quan điểm, rất chi tiết.",
+        "user": {
+            "id": 104,
+            "name": "Phạm D",
+            "avatar": "https://i.pravatar.cc/150?u=104"
+        },
+        "createdAt": "2023-10-25T08:45:00Z",
+        "likeCount": 2,
+        "likedByMe": false
+    }
+]
