@@ -1,4 +1,3 @@
-
 import {
     Card,
     CardContent,
@@ -18,7 +17,7 @@ import {
     YAxis,
     Tooltip,
     Legend,
-} from "recharts";
+} from "@/components/ui/lazy-charts";
 
 const CHART_COLORS = ["#10B981", "#E8604C", "#06B6D4", "#F59E0B"];
 

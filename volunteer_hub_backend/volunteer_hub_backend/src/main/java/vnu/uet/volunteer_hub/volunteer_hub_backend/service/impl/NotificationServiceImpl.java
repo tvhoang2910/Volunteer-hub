@@ -192,12 +192,18 @@ public class NotificationServiceImpl implements NotificationService {
                     log.warn("No active users found to send notification");
                     return CompletableFuture.completedFuture(0);
                 }
-            } else {
-                // Gửi cho danh sách user cụ thể
-                if (request.getTargetUserIds() == null || request.getTargetUserIds().isEmpty()) {
-                    throw new IllegalArgumentException("targetUserIds cannot be empty when sendToAll is false");
-                }
+            } else if (request.getTargetRoles() != null && !request.getTargetRoles().isEmpty()) {
+                // Gửi cho users theo role
+                log.debug("Broadcasting to users with roles: {} (async)", request.getTargetRoles());
+                recipients = userRepository.findActiveUsersByRoleNames(request.getTargetRoles());
 
+                if (recipients.isEmpty()) {
+                    log.warn("No active users found with specified roles: {}", request.getTargetRoles());
+                    return CompletableFuture.completedFuture(0);
+                }
+                log.debug("Found {} users with specified roles", recipients.size());
+            } else if (request.getTargetUserIds() != null && !request.getTargetUserIds().isEmpty()) {
+                // Gửi cho danh sách user cụ thể
                 log.debug("Broadcasting to {} specific users (async)", request.getTargetUserIds().size());
                 recipients = userRepository.findAllById(request.getTargetUserIds());
 
@@ -209,6 +215,8 @@ public class NotificationServiceImpl implements NotificationService {
                     log.warn("Some users from targetUserIds were not found. Expected: {}, Found: {}",
                             request.getTargetUserIds().size(), recipients.size());
                 }
+            } else {
+                throw new IllegalArgumentException("Must specify either sendToAll=true, targetRoles, or targetUserIds");
             }
 
             // Tạo notification cho từng recipient

@@ -1,13 +1,38 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useStatistics } from '@/hooks/useStatistics'
-import { StatsOverview } from '@/components/admin/dashboard/StatsOverview'
-import { WeeklyActivityChart } from '@/components/admin/dashboard/WeeklyActivityChart'
-import { ViewsStatistics } from '@/components/admin/dashboard/ViewsStatistics'
-import { EventsFrequencyChart } from '@/components/admin/dashboard/EventsFrequencyChart'
-import { EventTypeDistribution } from '@/components/admin/dashboard/EventTypeDistribution'
-import { YearlyGrowthChart } from '@/components/admin/dashboard/YearlyGrowthChart'
 import { Loader2 } from 'lucide-react'
+
+// Dynamic imports để giảm bundle size (~800KB+)
+const StatsOverview = dynamic(() => import('@/components/admin/dashboard/StatsOverview').then(mod => ({ default: mod.StatsOverview })), {
+  loading: () => <div className="h-32 bg-gray-200 animate-pulse rounded-lg" />
+})
+
+const WeeklyActivityChart = dynamic(() => import('@/components/admin/dashboard/WeeklyActivityChart').then(mod => ({ default: mod.WeeklyActivityChart })), {
+  loading: () => <div className="h-80 bg-gray-200 animate-pulse rounded-lg" />,
+  ssr: false
+})
+
+const ViewsStatistics = dynamic(() => import('@/components/admin/dashboard/ViewsStatistics').then(mod => ({ default: mod.ViewsStatistics })), {
+  loading: () => <div className="h-80 bg-gray-200 animate-pulse rounded-lg" />,
+  ssr: false
+})
+
+const EventsFrequencyChart = dynamic(() => import('@/components/admin/dashboard/EventsFrequencyChart').then(mod => ({ default: mod.EventsFrequencyChart })), {
+  loading: () => <div className="h-80 bg-gray-200 animate-pulse rounded-lg" />,
+  ssr: false
+})
+
+const EventTypeDistribution = dynamic(() => import('@/components/admin/dashboard/EventTypeDistribution').then(mod => ({ default: mod.EventTypeDistribution })), {
+  loading: () => <div className="h-80 bg-gray-200 animate-pulse rounded-lg" />,
+  ssr: false
+})
+
+const YearlyGrowthChart = dynamic(() => import('@/components/admin/dashboard/YearlyGrowthChart').then(mod => ({ default: mod.YearlyGrowthChart })), {
+  loading: () => <div className="h-80 bg-gray-200 animate-pulse rounded-lg" />,
+  ssr: false
+})
 
 export default function Dashboard() {
   const { data, isLoading } = useStatistics()

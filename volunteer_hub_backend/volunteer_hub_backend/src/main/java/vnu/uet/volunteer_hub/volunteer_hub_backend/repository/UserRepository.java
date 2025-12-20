@@ -15,48 +15,66 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.User;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
 
-    /**
-     * Override findById with EntityGraph to fetch roles eagerly
-     * Fixes N+1 when accessing user.getAuthorities()
-     */
-    @Override
-    @EntityGraph(attributePaths = { "roles" })
-    @NonNull
-    Optional<User> findById(@NonNull UUID id);
+        /**
+         * Override findById with EntityGraph to fetch roles eagerly
+         * Fixes N+1 when accessing user.getAuthorities()
+         */
+        @Override
+        @EntityGraph(attributePaths = { "roles" })
+        @NonNull
+        Optional<User> findById(@NonNull UUID id);
 
-    boolean existsByEmailIgnoreCase(String email);
+        /**
+         * Find all users with roles eagerly loaded (fixes N+1 for leaderboard).
+         */
+        @EntityGraph(attributePaths = { "roles" })
+        @Query("SELECT u FROM User u")
+        @NonNull
+        List<User> findAllWithRoles();
 
-    /**
-     * Find user by email with eager loading of roles
-     */
-    @EntityGraph(attributePaths = { "roles" })
-    Optional<User> findByEmailIgnoreCase(String email);
+        boolean existsByEmailIgnoreCase(String email);
 
-    /**
-     * Find user by email with LEFT JOIN FETCH for optional roles
-     * (Legacy method - prefer findByEmailIgnoreCase with EntityGraph)
-     */
-    @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles WHERE LOWER(u.email) = LOWER(:email)")
-    Optional<User> findByEmailIgnoreCaseWithRoleOptional(String email);
+        /**
+         * Find user by email with eager loading of roles
+         */
+        @EntityGraph(attributePaths = { "roles" })
+        Optional<User> findByEmailIgnoreCase(String email);
 
-    /**
-     * Find active users with eager loading of roles for broadcast
-     */
-    @EntityGraph(attributePaths = { "roles" })
-    List<User> findByIsActive(Boolean isActive);
+        /**
+         * Find user by email with LEFT JOIN FETCH for optional roles
+         * (Legacy method - prefer findByEmailIgnoreCase with EntityGraph)
+         */
+        @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles WHERE LOWER(u.email) = LOWER(:email)")
+        Optional<User> findByEmailIgnoreCaseWithRoleOptional(String email);
 
-    @Query(value = "SELECT * FROM users u WHERE u.name ILIKE CONCAT('%', :keyword, '%') ORDER BY similarity(u.name, :keyword) DESC", nativeQuery = true)
-    List<User> searchByName(@Param("keyword") String keyword);
+        /**
+         * Find active users with eager loading of roles for broadcast
+         */
+        @EntityGraph(attributePaths = { "roles" })
+        List<User> findByIsActive(Boolean isActive);
 
-    @Query(value = """
-            SELECT name,user_id
-            FROM users
-            WHERE name ILIKE CONCAT(:keyword, '%')
-               OR name ILIKE CONCAT('%', :keyword, '%')
-               OR name % :keyword
-            ORDER BY similarity(name, :keyword) DESC, name
-            LIMIT :limit
-            """, nativeQuery = true)
-    List<UserAutocompleteDTO> autocompleteNames(@Param("keyword") String keyword,
-            @Param("limit") int limit);
+        @Query(value = "SELECT * FROM users u WHERE u.name ILIKE CONCAT('%', :keyword, '%') ORDER BY similarity(u.name, :keyword) DESC", nativeQuery = true)
+        List<User> searchByName(@Param("keyword") String keyword);
+
+        @Query(value = """
+                        SELECT name,user_id
+                        FROM users
+                        WHERE name ILIKE CONCAT(:keyword, '%')
+                           OR name ILIKE CONCAT('%', :keyword, '%')
+                           OR name % :keyword
+                        ORDER BY similarity(name, :keyword) DESC, name
+                        LIMIT :limit
+                        """, nativeQuery = true)
+        List<UserAutocompleteDTO> autocompleteNames(@Param("keyword") String keyword,
+                        @Param("limit") int limit);
+
+        /**
+         * Find active users by role names for broadcast notification
+         * 
+         * @param roleNames List of role names (e.g., ["VOLUNTEER", "MANAGER"])
+         * @return List of active users who have at least one of the specified roles
+         */
+        @Query("SELECT DISTINCT u FROM User u JOIN u.roles r WHERE u.isActive = true AND r.roleName IN :roleNames")
+        @EntityGraph(attributePaths = { "roles" })
+        List<User> findActiveUsersByRoleNames(@Param("roleNames") List<String> roleNames);
 }

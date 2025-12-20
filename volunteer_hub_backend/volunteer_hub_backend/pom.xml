@@ -107,6 +107,27 @@
 			<version>0.12.6</version>
 			<scope>runtime</scope>
 		</dependency>
+
+		<!-- Web Push Library -->
+		<dependency>
+			<groupId>nl.martijndwars</groupId>
+			<artifactId>web-push</artifactId>
+			<version>5.1.1</version>
+		</dependency>
+
+		<!-- BouncyCastle - Required by web-push for cryptographic operations -->
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-jdk18on</artifactId>
+			<version>1.78.1</version>
+		</dependency>
+
+		<!-- Spring Dotenv - Auto-load .env file -->
+		<dependency>
+			<groupId>me.paulschwarz</groupId>
+			<artifactId>spring-dotenv</artifactId>
+			<version>4.0.0</version>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -128,7 +149,16 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
 					<jvmArguments>
-						-Dsun.misc.Unsafe.allowMemoryAccess=true
+						--add-opens=java.base/java.lang=ALL-UNNAMED
+						--add-opens=java.base/java.nio=ALL-UNNAMED
+						--add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+						--add-opens=java.base/sun.security.ssl=ALL-UNNAMED
+						--add-opens=java.base/java.util=ALL-UNNAMED
+						--add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+						--add-opens=java.base/java.io=ALL-UNNAMED
+						--enable-native-access=ALL-UNNAMED
+						-Dio.netty.tryReflectionSetAccessible=true
+						-Dfile.encoding=UTF-8
 					</jvmArguments>
 					<excludes>
 						<exclude>

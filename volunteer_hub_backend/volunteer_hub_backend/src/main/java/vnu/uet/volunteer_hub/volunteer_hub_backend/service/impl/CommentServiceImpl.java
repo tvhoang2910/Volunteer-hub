@@ -104,6 +104,7 @@ public class CommentServiceImpl implements CommentService {
                 .content(comment.getContent())
                 .userId(comment.getUser().getId())
                 .userName(comment.getUser().getName())
+                .userAvatarUrl(comment.getUser().getAvatarUrl())
                 .postId(comment.getPost().getId())
                 .parentId(comment.getParent() != null ? comment.getParent().getId() : null)
                 .replies(comment.getReplies().stream().map(this::mapToResponse).toList())

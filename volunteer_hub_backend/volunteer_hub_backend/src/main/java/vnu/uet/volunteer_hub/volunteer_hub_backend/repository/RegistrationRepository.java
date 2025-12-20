@@ -20,6 +20,14 @@ public interface RegistrationRepository extends JpaRepository<Registration, UUID
 
         long countByEventIdAndRegistrationStatus(UUID eventId, RegistrationStatus registrationStatus);
 
+        /**
+         * Count unique volunteers registered in a list of events.
+         * Uses DISTINCT to ensure a user is counted only once even if they joined
+         * multiple events.
+         */
+        @Query("SELECT COUNT(DISTINCT r.volunteer.id) FROM Registration r WHERE r.event.id IN :eventIds")
+        long countDistinctVolunteersByEventIdIn(@Param("eventIds") List<UUID> eventIds);
+
         @Query("SELECT COUNT(r) FROM Registration r WHERE r.volunteer.id = :volunteerId AND r.registrationStatus IN :statuses")
         long countByVolunteerIdAndRegistrationStatusIn(@Param("volunteerId") UUID volunteerId,
                         @Param("statuses") List<RegistrationStatus> statuses);

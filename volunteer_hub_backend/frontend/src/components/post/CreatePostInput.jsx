@@ -15,9 +15,19 @@ import {
 import "quill/dist/quill.snow.css";
 import { postService } from "@/services/postService";
 import { toast } from "@/hooks/use-toast";
+import useUserProfile from "@/hooks/useUserProfile";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
 // Dynamic import ReactQuill
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+
+// Helper to get full avatar URL
+const getFullAvatarUrl = (avatarPath) => {
+    if (!avatarPath) return null;
+    if (avatarPath.startsWith('http')) return avatarPath;
+    return `${API_BASE_URL}${avatarPath}`;
+};
 
 // Main Component (The Modal Form)
 const CreatePostForm = ({ onClose, onSuccess, user, eventId }) => {
@@ -252,10 +262,13 @@ const CreatePostForm = ({ onClose, onSuccess, user, eventId }) => {
 const CreatePostInput = ({ onPostCreated, eventId }) => {
     const [isOpen, setIsOpen] = useState(false);
 
-    // Mock user data - in real app this comes from context/auth
+    // Get real user data from hook
+    const { user: profileUser, loading: userLoading } = useUserProfile();
+    
+    // Build user object with proper avatar URL
     const user = {
-        name: "Bạn",
-        avatar: "https://random.imagecdn.app/200/200"
+        name: profileUser?.name || "Bạn",
+        avatar: getFullAvatarUrl(profileUser?.avatarUrl) || `https://ui-avatars.com/api/?background=random&name=${encodeURIComponent(profileUser?.name || 'User')}`
     };
 
     const handlePostBar = () => {

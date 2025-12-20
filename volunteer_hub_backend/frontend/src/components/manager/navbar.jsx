@@ -1,27 +1,25 @@
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
-import axios from 'axios'
 import {
   LayoutDashboard,
   Calendar,
-  Users,
   BellRing,
   UserCircle,
   Menu,
   X,
   ChevronLeft,
   ChevronRight,
-  LogOut
+  LogOut,
+  Send
 } from 'lucide-react'
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+import ManagerAvatarSection from './ManagerAvatarSection'
 
 const navItems = [
   { name: 'Tổng quan', href: '/manager/dashboard', icon: LayoutDashboard },
   { name: 'Quản lý sự kiện', href: '/manager/events', icon: Calendar },
-  { name: 'Quản lý nhóm', href: '/manager/group', icon: Users },
   { name: 'Thông báo', href: '/manager/notifications', icon: BellRing },
+  { name: 'Gửi thông báo', href: '/manager/push-notifications', icon: Send },
   { name: 'Hồ sơ cá nhân', href: '/manager/profile', icon: UserCircle }
 ]
 
@@ -29,46 +27,6 @@ export default function ManagerNavbar({ onCollapse }) {
   const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [user, setUser] = useState(null)
-
-  useEffect(() => {
-    // Fetch user info from API
-    const fetchUserInfo = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.warn('No token found in localStorage');
-        return;
-      }
-
-      try {
-        const response = await axios.get(`${API_BASE_URL}/api/users`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        console.log('User info fetched:', response.data);
-        setUser(response.data);
-      } catch (error) {
-        console.error('Error fetching user info:', error);
-        // Set a default user object so avatar still shows
-        setUser({
-          name: 'Manager',
-          email: 'manager@volunteer.local'
-        });
-      }
-    };
-
-    fetchUserInfo();
-  }, []);
-
-  const getAvatarUrl = () => {
-    if (!user) return 'https://ui-avatars.com/api/?name=User&size=128&background=10b981&color=fff';
-    
-    if (user.avatarUrl) {
-      return user.avatarUrl.startsWith('http') ? user.avatarUrl : `${API_BASE_URL}${user.avatarUrl}`;
-    }
-    return 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.name || user.username || 'User') + '&size=128&background=10b981&color=fff';
-  };
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -139,27 +97,10 @@ export default function ManagerNavbar({ onCollapse }) {
         }`}
       >
         <nav className="p-4 space-y-1 flex flex-col h-full">
-          {/* User Avatar Section Mobile */}
-          <Link 
-            href="/manager/profile"
-            onClick={closeMobileMenu}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700/50 mb-4"
-          >
-            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-emerald-500 flex-shrink-0 bg-zinc-800">
-              <img 
-                src={getAvatarUrl()} 
-                alt={user?.name || 'User'} 
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.src = 'https://ui-avatars.com/api/?name=User&size=128&background=10b981&color=fff';
-                }}
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{user?.name || 'Người dùng'}</p>
-              <p className="text-xs text-zinc-400 truncate">{user?.email || 'manager'}</p>
-            </div>
-          </Link>
+          {/* User Avatar Section Mobile - with upload capability */}
+          <div className="mb-4">
+            <ManagerAvatarSection isCollapsed={false} />
+          </div>
 
           <div className="flex-1 space-y-1">
             {navItems.map(item => {
@@ -205,6 +146,10 @@ export default function ManagerNavbar({ onCollapse }) {
         }`}
       >
         <div className="flex flex-col w-full">
+          {/* Avatar Section at Top */}
+          <ManagerAvatarSection isCollapsed={isCollapsed} />
+
+          {/* Logo Section */}
           <div className={`border-b border-zinc-800/50 ${isCollapsed ? 'p-4' : 'p-6'}`}>
             <div className="flex items-center gap-3">
               <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg">
@@ -249,34 +194,6 @@ export default function ManagerNavbar({ onCollapse }) {
               )
             })}
           </nav>
-
-          {/* User Avatar Section */}
-          <div className={`border-t border-zinc-800/50 ${isCollapsed ? 'p-2' : 'p-4'}`}>
-            <Link 
-              href="/manager/profile"
-              className={`flex items-center rounded-xl transition text-zinc-400 hover:bg-zinc-800/50 hover:text-white w-full ${
-                isCollapsed ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-3'
-              }`}
-              title={isCollapsed ? user?.name || 'Profile' : ''}
-            >
-              <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-zinc-700 flex-shrink-0 bg-zinc-800">
-                <img 
-                  src={getAvatarUrl()} 
-                  alt={user?.name || 'User'} 
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.src = 'https://ui-avatars.com/api/?name=User&size=128&background=10b981&color=fff';
-                  }}
-                />
-              </div>
-              {!isCollapsed && (
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{user?.name || 'Người dùng'}</p>
-                  <p className="text-xs text-zinc-500 truncate">{user?.email || 'manager'}</p>
-                </div>
-              )}
-            </Link>
-          </div>
 
           <div className={`border-t border-zinc-800/50 ${isCollapsed ? 'p-2' : 'p-4'}`}>
             <button

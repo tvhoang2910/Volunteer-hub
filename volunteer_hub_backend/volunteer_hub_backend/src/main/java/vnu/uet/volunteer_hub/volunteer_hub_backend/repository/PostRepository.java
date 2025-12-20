@@ -10,6 +10,7 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.PostAutocomplete
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Post;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.EventApprovalStatus;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -19,73 +20,93 @@ import org.springframework.lang.NonNull;
 
 public interface PostRepository extends JpaRepository<Post, UUID> {
 
-   /**
-    * Override findById with EntityGraph to fetch author and event eagerly.
-    * Fixes N+1 problem when accessing author/event after loading post.
-    */
-   @Override
-   @EntityGraph(attributePaths = { "author", "event" })
-   @NonNull
-   Optional<Post> findById(@NonNull UUID id);
+      /**
+       * Override findById with EntityGraph to fetch author and event eagerly.
+       * Fixes N+1 problem when accessing author/event after loading post.
+       */
+      @Override
+      @EntityGraph(attributePaths = { "author", "event" })
+      @NonNull
+      Optional<Post> findById(@NonNull UUID id);
 
-   @Query("SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.event e LEFT JOIN FETCH p.author a "
-         + "WHERE (e IS NULL OR e.adminApprovalStatus = :approved "
-         + "OR p.author.id = :userId "
-         + "OR EXISTS (SELECT r FROM Registration r WHERE r.event = e AND r.volunteer.id = :userId))")
-   Page<Post> findVisiblePostsForUser(@Param("userId") UUID userId,
-         @Param("approved") EventApprovalStatus approved,
-         Pageable pageable);
+      /**
+       * Find all posts with author and event eagerly loaded.
+       * Fixes N+1 problem when iterating all posts.
+       */
+      @EntityGraph(attributePaths = { "author", "event" })
+      @Query("SELECT p FROM Post p")
+      List<Post> findAllWithAuthorAndEvent();
 
-   @Query("SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.event e LEFT JOIN FETCH p.author a "
-         + "WHERE (e IS NULL OR e.adminApprovalStatus = :approved)")
-   Page<Post> findVisiblePostsForAnonymous(@Param("approved") EventApprovalStatus approved,
-         Pageable pageable);
+      /**
+       * Count posts created after a specific date (efficient single query).
+       */
+      @Query("SELECT COUNT(p) FROM Post p WHERE p.createdAt > :since")
+      long countPostsCreatedAfter(@Param("since") LocalDateTime since);
 
-   @EntityGraph(attributePaths = { "author", "event" })
-   @Query("SELECT DISTINCT p FROM Post p WHERE p.id IN :ids")
-   List<Post> findAllWithAuthorAndEventByIdIn(@Param("ids") Collection<UUID> ids);
+      @Query("SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.event e LEFT JOIN FETCH p.author a "
+                  + "WHERE (e IS NULL OR e.adminApprovalStatus = :approved "
+                  + "OR p.author.id = :userId "
+                  + "OR EXISTS (SELECT r FROM Registration r WHERE r.event = e AND r.volunteer.id = :userId))")
+      Page<Post> findVisiblePostsForUser(@Param("userId") UUID userId,
+                  @Param("approved") EventApprovalStatus approved,
+                  Pageable pageable);
 
-   @EntityGraph(attributePaths = { "author", "event" })
-   @Query("SELECT p FROM Post p WHERE p.id = :postId")
-   Post findByIdWithAuthorAndEvent(@Param("postId") UUID postId);
+      @Query("SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.event e LEFT JOIN FETCH p.author a "
+                  + "WHERE (e IS NULL OR e.adminApprovalStatus = :approved)")
+      Page<Post> findVisiblePostsForAnonymous(@Param("approved") EventApprovalStatus approved,
+                  Pageable pageable);
 
-   @Query("SELECT COUNT(pr) FROM PostReaction pr WHERE pr.post.id = :postId")
-   int countReactionsByPostId(@Param("postId") UUID postId);
+      @EntityGraph(attributePaths = { "author", "event" })
+      @Query("SELECT DISTINCT p FROM Post p WHERE p.id IN :ids")
+      List<Post> findAllWithAuthorAndEventByIdIn(@Param("ids") Collection<UUID> ids);
 
-   @Query("SELECT COUNT(p) FROM Post p WHERE p.event.id = :eventId")
-   int countPostsByEventId(@Param("eventId") UUID eventId);
+      @EntityGraph(attributePaths = { "author", "event" })
+      @Query("SELECT p FROM Post p WHERE p.id = :postId")
+      Post findByIdWithAuthorAndEvent(@Param("postId") UUID postId);
 
-   /**
-    * Find all posts by author ID with pagination.
-    * Fetches author and event to avoid N+1.
-    * <p>
-    * TODO (Future):
-    * - Add visibility filtering based on viewer
-    * - Add sorting options (by date, by score, etc.)
-    */
-   @Query("SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.author a LEFT JOIN FETCH p.event e WHERE p.author.id = :userId")
-   Page<Post> findByAuthorId(@Param("userId") UUID userId, Pageable pageable);
+      @Query("SELECT COUNT(pr) FROM PostReaction pr WHERE pr.post.id = :postId")
+      int countReactionsByPostId(@Param("postId") UUID postId);
 
-   @Query(value = "SELECT * FROM posts p WHERE p.content ILIKE CONCAT('%', :keyword, '%') ORDER BY similarity(p.content, :keyword) DESC", nativeQuery = true)
-   List<Post> searchByContent(@Param("keyword") String keyword);
+      @Query("SELECT COUNT(p) FROM Post p WHERE p.event.id = :eventId")
+      int countPostsByEventId(@Param("eventId") UUID eventId);
 
-   /**
-    * Find all posts by event ID with pagination.
-    * Fetches author and event to avoid N+1.
-    */
-   @EntityGraph(attributePaths = { "author", "event" })
-   @Query("SELECT p FROM Post p WHERE p.event.id = :eventId ORDER BY p.createdAt DESC")
-   Page<Post> findByEventId(@Param("eventId") UUID eventId, Pageable pageable);
+      /**
+       * Count total posts belonging to a list of events.
+       */
+      @Query("SELECT COUNT(p) FROM Post p WHERE p.event.id IN :eventIds")
+      long countPostsByEventIdIn(@Param("eventIds") List<UUID> eventIds);
 
-   @Query(value = """
-         SELECT p.post_id as postId, p.content
-         FROM posts p
-         WHERE p.content ILIKE CONCAT(:keyword, '%')
-            OR p.content ILIKE CONCAT('%', :keyword, '%')
-            OR p.content % :keyword
-         ORDER BY similarity(p.content, :keyword) DESC
-         LIMIT :limit
-         """, nativeQuery = true)
-   List<PostAutocompleteDTO> autocompleteContent(@Param("keyword") String keyword,
-         @Param("limit") int limit);
+      /**
+       * Find all posts by author ID with pagination.
+       * Fetches author and event to avoid N+1.
+       * <p>
+       * TODO (Future):
+       * - Add visibility filtering based on viewer
+       * - Add sorting options (by date, by score, etc.)
+       */
+      @Query("SELECT DISTINCT p FROM Post p LEFT JOIN FETCH p.author a LEFT JOIN FETCH p.event e WHERE p.author.id = :userId")
+      Page<Post> findByAuthorId(@Param("userId") UUID userId, Pageable pageable);
+
+      @Query(value = "SELECT * FROM posts p WHERE p.content ILIKE CONCAT('%', :keyword, '%') ORDER BY similarity(p.content, :keyword) DESC", nativeQuery = true)
+      List<Post> searchByContent(@Param("keyword") String keyword);
+
+      /**
+       * Find all posts by event ID with pagination.
+       * Fetches author and event to avoid N+1.
+       */
+      @EntityGraph(attributePaths = { "author", "event" })
+      @Query("SELECT p FROM Post p WHERE p.event.id = :eventId ORDER BY p.createdAt DESC")
+      Page<Post> findByEventId(@Param("eventId") UUID eventId, Pageable pageable);
+
+      @Query(value = """
+                  SELECT p.post_id as postId, p.content
+                  FROM posts p
+                  WHERE p.content ILIKE CONCAT(:keyword, '%')
+                     OR p.content ILIKE CONCAT('%', :keyword, '%')
+                     OR p.content % :keyword
+                  ORDER BY similarity(p.content, :keyword) DESC
+                  LIMIT :limit
+                  """, nativeQuery = true)
+      List<PostAutocompleteDTO> autocompleteContent(@Param("keyword") String keyword,
+                  @Param("limit") int limit);
 }

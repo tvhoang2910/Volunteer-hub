@@ -256,7 +256,7 @@ public class PostServiceImpl implements PostService {
         try {
             if (p.getAuthor() != null) {
                 dto.setAuthor(new AuthorSummaryDTO(
-                        p.getAuthor().getId(), p.getAuthor().getName(), null));
+                        p.getAuthor().getId(), p.getAuthor().getName(), p.getAuthor().getAvatarUrl()));
             }
             if (p.getEvent() != null) {
                 dto.setEvent(new EventSummaryDTO(
@@ -359,7 +359,7 @@ public class PostServiceImpl implements PostService {
             response.setAuthor(new AuthorSummaryDTO(
                     post.getAuthor().getId(),
                     post.getAuthor().getName(),
-                    null));
+                    post.getAuthor().getAvatarUrl()));
         }
 
         // Add event info

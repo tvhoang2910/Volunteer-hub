@@ -7,11 +7,8 @@ export function useManagerDashboard() {
     const [stats, setStats] = useState({
         totalEvents: 0,
         totalMembers: 0,
-        recentPosts: 0,
+        totalPosts: 0,
     });
-    const [newEvents, setNewEvents] = useState([]);
-    const [trending, setTrending] = useState([]);
-    const [monthlyStats, setMonthlyStats] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -25,9 +22,6 @@ export function useManagerDashboard() {
             try {
                 const data = await managerService.getDashboardStats();
                 setStats(data.summary);
-                setNewEvents(data.newEvents);
-                setTrending(data.trending);
-                setMonthlyStats(data.monthlyStats);
             } catch (error) {
                 console.error("Failed to fetch dashboard data", error);
             } finally {
@@ -38,5 +32,5 @@ export function useManagerDashboard() {
         fetchData();
     }, [router]);
 
-    return { stats, newEvents, trending, monthlyStats, loading };
+    return { stats, loading };
 }

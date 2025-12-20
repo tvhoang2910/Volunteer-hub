@@ -176,8 +176,8 @@ public class TopPostsCacheServiceImpl implements TopPostsCacheService {
         try {
             List<TypedTuple<String>> tuples = postRankingService.getTopWithScores(limit);
             if (tuples == null || tuples.isEmpty()) {
-                // Fallback to old compute if ZSET empty
-                return postRepository.findAll().stream().map(this::mapToScoredPostDTO)
+                // Fallback to old compute if ZSET empty - use optimized query with JOIN FETCH
+                return postRepository.findAllWithAuthorAndEvent().stream().map(this::mapToScoredPostDTO)
                         .sorted((a, b) -> Double.compare(b.getTotalScore(), a.getTotalScore())).limit(limit)
                         .collect(Collectors.toList());
             }
@@ -204,8 +204,8 @@ public class TopPostsCacheServiceImpl implements TopPostsCacheService {
             }
             return result;
         } catch (Exception e) {
-            // On any error, fallback to a safer full compute
-            return postRepository.findAll().stream().map(this::mapToScoredPostDTO)
+            // On any error, fallback to a safer full compute - use optimized query
+            return postRepository.findAllWithAuthorAndEvent().stream().map(this::mapToScoredPostDTO)
                     .sorted((a, b) -> Double.compare(b.getTotalScore(), a.getTotalScore())).limit(limit)
                     .collect(Collectors.toList());
         }
@@ -273,7 +273,7 @@ public class TopPostsCacheServiceImpl implements TopPostsCacheService {
         try {
             if (post.getAuthor() != null) {
                 var authorSum = new AuthorSummaryDTO(
-                        post.getAuthor().getId(), post.getAuthor().getName(), null);
+                        post.getAuthor().getId(), post.getAuthor().getName(), post.getAuthor().getAvatarUrl());
                 // reflection safe set if field exists
                 builder.author(authorSum);
             }

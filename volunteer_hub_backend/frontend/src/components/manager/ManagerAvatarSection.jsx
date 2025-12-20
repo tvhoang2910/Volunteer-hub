@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
+import axios from 'axios';
 import { Camera, Loader2 } from 'lucide-react';
-import { userService } from '@/services/userService';
 import { toast } from '@/hooks/use-toast';
-import useUserProfile from '@/hooks/useUserProfile';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
 // Generate initials from name
 const getInitials = (name) => {
-  if (!name) return 'U';
+  if (!name) return 'M';
   return name
     .split(' ')
     .map(word => word[0])
@@ -36,18 +37,46 @@ const getAvatarColor = (name) => {
 // Convert relative avatar path to full backend URL
 const getFullAvatarUrl = (avatarPath) => {
   if (!avatarPath) return null;
-  if (avatarPath.startsWith('http')) return avatarPath; // Already full URL
-  // Convert relative path to full backend URL
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
-  return `${apiBaseUrl}${avatarPath}`;
+  if (avatarPath.startsWith('http')) return avatarPath;
+  return `${API_BASE_URL}${avatarPath}`;
 };
 
-export default function AvatarUploadSection({ isCollapsed = false }) {
-  // Use cached user profile hook instead of direct API call
-  const { user, loading, updateAvatar } = useUserProfile();
+const getAuthHeader = () => {
+  const token = localStorage.getItem('token');
+  return { Authorization: `Bearer ${token}` };
+};
+
+export default function ManagerAvatarSection({ isCollapsed = false }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [imageError, setImageError] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Fetch user info on mount
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/users`, {
+          headers: getAuthHeader()
+        });
+        setUser(response.data);
+      } catch (error) {
+        console.error('Error fetching user info:', error);
+        setUser({ name: 'Manager', email: 'manager@volunteer.local' });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
@@ -82,11 +111,15 @@ export default function AvatarUploadSection({ isCollapsed = false }) {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await userService.uploadAvatar(formData);
+      const response = await axios.post(`${API_BASE_URL}/api/upload/avatar`, formData, {
+        headers: {
+          ...getAuthHeader(),
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       
-      if (response.data?.avatarUrl) {
-        // Update avatar in cache and local state
-        updateAvatar(response.data.avatarUrl);
+      if (response.data?.data?.avatarUrl) {
+        setUser(prev => ({ ...prev, avatarUrl: response.data.data.avatarUrl }));
         setImageError(false);
 
         toast({
@@ -103,7 +136,6 @@ export default function AvatarUploadSection({ isCollapsed = false }) {
       });
     } finally {
       setUploading(false);
-      // Reset input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -115,7 +147,7 @@ export default function AvatarUploadSection({ isCollapsed = false }) {
   };
 
   const avatarUrl = user?.avatarUrl;
-  const userName = user?.name || 'User';
+  const userName = user?.name || 'Manager';
   const userEmail = user?.email || '';
   const initials = getInitials(userName);
   const avatarColor = getAvatarColor(userName);
@@ -155,7 +187,7 @@ export default function AvatarUploadSection({ isCollapsed = false }) {
             onClick={handleAvatarClick}
             disabled={uploading}
             className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer disabled:opacity-50"
-            title="Click to upload avatar"
+            title="Click để cập nhật avatar"
           >
             {uploading ? (
               <Loader2 className="w-5 h-5 text-white animate-spin" />

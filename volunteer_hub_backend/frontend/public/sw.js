@@ -27,7 +27,7 @@ firebase.initializeApp(firebaseConfig);
 
 const messaging = firebase.messaging();
 
-// Handle background push
+// Handle background push from Firebase
 messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw] Background message:', payload);
 
@@ -39,6 +39,60 @@ messaging.onBackgroundMessage((payload) => {
         body,
         icon: '/logo.png',
     });
+});
+
+// ================================
+// Native Web Push (Standard API)
+// ================================
+
+self.addEventListener('push', function(event) {
+    console.log('[SW] Push Received');
+    console.log(`[SW] Push had this data: "${event.data.text()}"`);
+
+    let data = {};
+    if (event.data) {
+        try {
+            data = event.data.json();
+        } catch (e) {
+            data = { title: 'New Notification', body: event.data.text() };
+        }
+    }
+
+    const title = data.title || 'Volunteer Hub';
+    const options = {
+        body: data.body || 'Bạn có thông báo mới!',
+        icon: '/logo.png',
+        badge: '/logo.png',
+        data: data.data || {}
+    };
+
+    const notificationPromise = self.registration.showNotification(title, options);
+    event.waitUntil(notificationPromise);
+});
+
+self.addEventListener('notificationclick', function(event) {
+    console.log('[SW] Notification click Received.');
+
+    event.notification.close();
+
+    const url = event.notification.data?.url || '/'; // Default to root if no URL provided
+
+    event.waitUntil(
+        clients.matchAll({type: 'window'}).then(windowClients => {
+            // Check if there is already a window/tab open with the target URL
+            for (var i = 0; i < windowClients.length; i++) {
+                var client = windowClients[i];
+                // If so, just focus it.
+                if (client.url === url && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            // If not, then open the target URL in a new window/tab.
+            if (clients.openWindow) {
+                return clients.openWindow(url);
+            }
+        })
+    );
 });
 
 // ================================

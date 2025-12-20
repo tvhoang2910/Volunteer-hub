@@ -18,6 +18,7 @@ public class CommentResponse {
     private String content;
     private UUID userId;
     private String userName;
+    private String userAvatarUrl;
     private UUID postId;
     private UUID parentId;
     private List<CommentResponse> replies;

@@ -91,12 +91,8 @@ export default function UserProfilePage() {
     e.preventDefault();
 
     try {
-      const userId = localStorage.getItem("userId");
-      if (!userId) {
-        throw new Error("User ID not found");
-      }
-
-      await userService.updateUserProfile(userId, {
+      // Backend gets userId from JWT token, no need to pass userId
+      await userService.updateUserProfile({
         name: editForm.name.trim(),
       });
 

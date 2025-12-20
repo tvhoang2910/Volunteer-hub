@@ -6,8 +6,20 @@ import CommentForm from "./CommentForm";
 import { updateComment, deleteComment } from "@/services/commentService";
 import useUser from "@/hooks/useUser"
 
-// Props từ API: { id, content, userId, userName, postId, parentId, replies, createdAt, updatedAt }
-export default function Comment({ id, content, userId, userName, postId, parentId, replies: initialReplies, createdAt, updatedAt }) {
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+
+// Helper to get full avatar URL
+const getFullAvatarUrl = (avatarPath, userName) => {
+    if (!avatarPath) {
+        // Return UI Avatars placeholder
+        return `https://ui-avatars.com/api/?background=random&name=${encodeURIComponent(userName || 'User')}`;
+    }
+    if (avatarPath.startsWith('http')) return avatarPath;
+    return `${API_BASE_URL}${avatarPath}`;
+};
+
+// Props từ API: { id, content, userId, userName, userAvatarUrl, postId, parentId, replies, createdAt, updatedAt }
+export default function Comment({ id, content, userId, userName, userAvatarUrl, postId, parentId, replies: initialReplies, createdAt, updatedAt }) {
     const { post } = usePost()
     const [areChildrenHidden, setAreChildrenHidden] = useState(false)
     const [isReplying, setIsReplying] = useState(false)
@@ -78,9 +90,12 @@ export default function Comment({ id, content, userId, userName, postId, parentI
             <div className="flex gap-2 mb-2 group">
                 {/* Avatar */}
                 <img
-                    src="https://random.imagecdn.app/200/200"
+                    src={getFullAvatarUrl(userAvatarUrl, userName)}
                     className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1"
                     alt={userName}
+                    onError={(e) => {
+                        e.target.src = `https://ui-avatars.com/api/?background=random&name=${encodeURIComponent(userName || 'User')}`;
+                    }}
                 />
 
                 <div className="flex-1 max-w-full">

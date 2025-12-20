@@ -1,7 +1,18 @@
 import React, { useState } from 'react';
 
+// Default avatar placeholder
+const DEFAULT_AVATAR = 'https://ui-avatars.com/api/?background=random&name=';
+
 const PostHeader = ({ user, createdAt, onEdit, onDelete, isOwner }) => {
     const [showOptions, setShowOptions] = useState(false);
+    
+    // Get avatar URL with fallback
+    const getAvatarSrc = () => {
+        if (user?.avatar) return user.avatar;
+        if (user?.avatarUrl) return user.avatarUrl;
+        // Generate placeholder with user's name
+        return `${DEFAULT_AVATAR}${encodeURIComponent(user?.name || 'User')}`;
+    };
 
     const timeAgo = (dateString) => {
         const date = new Date(dateString);
@@ -22,9 +33,12 @@ const PostHeader = ({ user, createdAt, onEdit, onDelete, isOwner }) => {
         <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center space-x-2">
                 <img
-                    src={user.avatar}
-                    alt={user.name}
+                    src={getAvatarSrc()}
+                    alt={user?.name || 'User'}
                     className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                    onError={(e) => {
+                        e.target.src = `${DEFAULT_AVATAR}${encodeURIComponent(user?.name || 'User')}`;
+                    }}
                 />
                 <div>
                     <h3 className="font-bold text-gray-900 text-sm hover:underline cursor-pointer">

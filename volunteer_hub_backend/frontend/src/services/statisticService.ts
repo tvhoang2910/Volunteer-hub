@@ -1,10 +1,10 @@
 /**
- * @file statisticService.js
+ * @file statisticService.ts
  * @description Service for fetching application statistics (dashboard data).
- * Covers both public and admin dashboard statistics with mock fallback.
+ * Uses real backend API endpoints.
  */
 
-import { MOCK_DASHBOARD_STATS } from '@/data/statisticData';
+import axios from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 
@@ -13,50 +13,83 @@ const getAuthHeader = () => {
     return { Authorization: `Bearer ${token}` };
 };
 
+export interface DashboardStats {
+    totalEvents: number;
+    approvedEvents: number;
+    pendingEvents: number;
+    totalVolunteers: number;
+    totalRegistrations: number;
+    newEventsThisWeek: number;
+    newPostsThisWeek: number;
+}
+
 export const statisticService = {
-    getStatistics: async () => {
+    /**
+     * Get dashboard statistics from backend
+     */
+    getStatistics: async (): Promise<DashboardStats> => {
         try {
-            // const response = await fetch(`${API_BASE_URL}/api/statistic`, {
-            //     method: "GET",
-            // });
-            const response = await axios.get(`${API_BASE_URL}/api/statistic`, {
+            const response = await axios.get(`${API_BASE_URL}/api/dashboard/stats`, {
                 headers: getAuthHeader()
             });
-            if (!response.ok) {
-                // If backend fails or not implemented, return mock data for now 
-                // to prevent breaking the UI during refactor if the user hasn't set up the API yet.
-                // However, the original code had a specific structure { flights, tickets, revenue }.
-                // We should probably keep that if it's being used elsewhere, 
-                // but based on the request, we are refactoring *dashboard.jsx*.
-                console.warn("Fetching statistics failed, returning mock/empty data");
-                throw new Error("Send request failed");
-            }
-            return await response.json();
+            return response.data?.data || response.data;
         } catch (error) {
             console.error("Error fetching statistics:", error);
             throw error;
         }
     },
 
-    getAdminDashboardStats: async () => {
-        // In a real app, this would be an API call.
-        // mimicking network delay
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve(MOCK_DASHBOARD_STATS);
-            }, 500);
-        });
-
-        /* 
-        // Real implementation would be:
+    /**
+     * Get admin dashboard stats - uses the same endpoint
+     */
+    getAdminDashboardStats: async (): Promise<DashboardStats> => {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/admin/dashboard-stats`, { method: "GET" });
-            if (!response.ok) throw new Error("Failed to fetch dashboard stats");
-            return await response.json();
+            const response = await axios.get(`${API_BASE_URL}/api/dashboard/stats`, {
+                headers: getAuthHeader()
+            });
+            return response.data?.data || response.data;
         } catch (error) {
             console.error("Error in getAdminDashboardStats:", error);
             throw error;
         }
-        */
+    },
+
+    /**
+     * Get leaderboard data
+     */
+    getLeaderboard: async (metric = 'score', timeframe = 'all', limit = 50, viewerId?: string) => {
+        try {
+            const params = new URLSearchParams({
+                metric,
+                timeframe,
+                limit: limit.toString(),
+            });
+            if (viewerId) {
+                params.append('viewerId', viewerId);
+            }
+            
+            const response = await axios.get(`${API_BASE_URL}/api/dashboard/leaderboard?${params}`, {
+                headers: getAuthHeader()
+            });
+            return response.data?.data || response.data;
+        } catch (error) {
+            console.error("Error fetching leaderboard:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * Get full dashboard data (top posts, trending events, stats)
+     */
+    getDashboard: async () => {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/api/dashboard`, {
+                headers: getAuthHeader()
+            });
+            return response.data?.data || response.data;
+        } catch (error) {
+            console.error("Error fetching dashboard:", error);
+            throw error;
+        }
     }
 };

@@ -2,7 +2,27 @@ import React, { useState, useEffect } from 'react';
 import SlideUpDetail from "@/components/ui/slide-up.jsx";
 import { Calendar, MapPin, Clock, Tag, Share2, Heart } from 'lucide-react';
 
-const EventDetailSlideUp = ({ isOpen, onClose, event, onRegister, onCancel }) => {
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+
+// Helper function to get proper thumbnail URL
+const getThumbnailUrl = (thumbnailUrl) => {
+    const defaultImage = "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=1200&auto=format&fit=crop&q=60";
+    if (!thumbnailUrl) return defaultImage;
+
+    // If it's a relative path (local upload), prepend API base URL
+    if (thumbnailUrl.startsWith('/uploads/')) {
+        return `${API_BASE_URL}${thumbnailUrl}`;
+    }
+
+    // If it's already a full URL, use it as-is
+    if (thumbnailUrl.startsWith('http')) {
+        return thumbnailUrl;
+    }
+
+    return defaultImage;
+};
+
+const EventDetailSlideUp = ({ isOpen, onClose, event, onRegister, onCancel, hideRegistration = false }) => {
     const [isRegistered, setIsRegistered] = useState(false);
 
     // Update registration status when event prop changes
@@ -47,7 +67,7 @@ const EventDetailSlideUp = ({ isOpen, onClose, event, onRegister, onCancel }) =>
                 {/* Banner Image */}
                 <div className="relative h-64 md:h-80 w-full">
                     <img
-                        src={event.image || event.thumbnailUrl || 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=1200&auto=format&fit=crop&q=60'}
+                        src={getThumbnailUrl(event.image || event.thumbnailUrl)}
                         alt={event.title}
                         className="w-full h-full object-cover"
                         onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=1200&auto=format&fit=crop&q=60'; }}
@@ -194,23 +214,25 @@ const EventDetailSlideUp = ({ isOpen, onClose, event, onRegister, onCancel }) =>
                                 </div>
                             </div>
 
-                            <button
-                                onClick={async () => {
-                                    if (isRegistered) {
-                                        await onCancel(eventId);
-                                        setIsRegistered(false);
-                                    } else {
-                                        await onRegister(eventId);
-                                        setIsRegistered(true);
-                                    }
-                                }}
-                                className={`w-full py-3 rounded-xl font-bold text-lg mb-3 transition-all ${isRegistered
-                                        ? "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-300"
-                                        : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02]"
-                                    }`}
-                            >
-                                {isRegistered ? "Hủy đăng ký" : "Đăng ký ngay"}
-                            </button>
+                            {!hideRegistration && (
+                                <button
+                                    onClick={async () => {
+                                        if (isRegistered) {
+                                            await onCancel(eventId);
+                                            setIsRegistered(false);
+                                        } else {
+                                            await onRegister(eventId);
+                                            setIsRegistered(true);
+                                        }
+                                    }}
+                                    className={`w-full py-3 rounded-xl font-bold text-lg mb-3 transition-all ${isRegistered
+                                            ? "bg-zinc-200 text-zinc-600 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-300"
+                                            : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02]"
+                                        }`}
+                                >
+                                    {isRegistered ? "Hủy đăng ký" : "Đăng ký ngay"}
+                                </button>
+                            )}
 
                             <div className="flex gap-2">
                                 <button className="flex-1 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 flex items-center justify-center gap-2 hover:bg-white dark:hover:bg-zinc-700 transition-colors">

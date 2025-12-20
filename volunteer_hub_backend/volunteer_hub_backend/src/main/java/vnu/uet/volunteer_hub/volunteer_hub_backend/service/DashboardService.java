@@ -6,12 +6,23 @@ import java.util.UUID;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.DashboardDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.DashboardStatsDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.LeaderboardResponseDTO;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.ManagerStatsDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.TrendingEventDTO;
 
 public interface DashboardService {
     List<TrendingEventDTO> getTrendingEvents(int limit);
 
     DashboardStatsDTO getDashboardStats();
+
+    /**
+     * Get manager-specific dashboard stats.
+     * Counts only events created by the manager, unique members in those events,
+     * and posts in those events.
+     * 
+     * @param managerId the ID of the manager (creator of events)
+     * @return ManagerStatsDTO with manager-specific counts
+     */
+    ManagerStatsDTO getManagerDashboardStats(UUID managerId);
 
     DashboardDTO buildDashboard();
 

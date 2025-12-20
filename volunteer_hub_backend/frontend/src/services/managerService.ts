@@ -98,20 +98,21 @@ export async function updateProfile(updated) {
 
 export async function getDashboardStats() {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/events/my-events`, {
+    // Call the manager-specific dashboard stats API
+    const response = await axios.get(`${API_BASE_URL}/api/dashboard/manager-stats`, {
       headers: getAuthHeader()
     });
     
-    const events = response.data || [];
+    // API returns ResponseDTO with { message, data, detail }
+    // data contains ManagerStatsDTO with { totalEvents, totalMembers, totalPosts }
+    const statsData = response.data?.data || response.data || {};
+    
     return {
       summary: {
-        totalEvents: events.length || 0,
-        totalMembers: events.reduce((sum, e) => sum + (e.participants?.length || 0), 0),
-        recentPosts: 0
-      },
-      newEvents: events.slice(0, 5) || [],
-      trending: [],
-      monthlyStats: []
+        totalEvents: statsData.totalEvents || 0,
+        totalMembers: statsData.totalMembers || 0,
+        totalPosts: statsData.totalPosts || 0
+      }
     };
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
@@ -119,11 +120,8 @@ export async function getDashboardStats() {
       summary: {
         totalEvents: 0,
         totalMembers: 0,
-        recentPosts: 0
-      },
-      newEvents: [],
-      trending: [],
-      monthlyStats: []
+        totalPosts: 0
+      }
     };
   }
 }

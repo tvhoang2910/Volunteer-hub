@@ -44,10 +44,12 @@ public class DashboardServiceImpl implements DashboardService {
     /**
      * Get trending events: approved events sorted by registration + post count +
      * recency.
+     * Uses optimized query to avoid N+1 problem.
      */
     @Transactional(readOnly = true)
     public List<TrendingEventDTO> getTrendingEvents(int limit) {
-        return eventRepository.findAll().stream()
+        // Use optimized query with JOIN FETCH to avoid N+1
+        return eventRepository.findAllWithCreatorAndStats().stream()
                 .filter(e -> e.getAdminApprovalStatus() == EventApprovalStatus.APPROVED)
                 .map(this::mapToTrendingEventDTO)
                 .sorted((a, b) -> Double.compare(b.getTrendingScore(), a.getTrendingScore()))
@@ -57,26 +59,21 @@ public class DashboardServiceImpl implements DashboardService {
 
     /**
      * Get dashboard stats: totals and weekly counts.
+     * Uses COUNT queries to avoid loading all entities into memory.
      */
     @Transactional(readOnly = true)
     public DashboardStatsDTO getDashboardStats() {
+        // Use efficient COUNT queries instead of findAll().stream().filter().count()
         long totalEvents = eventRepository.count();
-        long approvedEvents = eventRepository.findAll().stream()
-                .filter(e -> e.getAdminApprovalStatus() == EventApprovalStatus.APPROVED)
-                .count();
-        long pendingEvents = eventRepository.findAll().stream()
-                .filter(e -> e.getAdminApprovalStatus() == EventApprovalStatus.PENDING)
-                .count();
+        long approvedEvents = eventRepository.countByAdminApprovalStatus(EventApprovalStatus.APPROVED);
+        long pendingEvents = eventRepository.countByAdminApprovalStatus(EventApprovalStatus.PENDING);
         long totalVolunteers = userRepository.count();
         long totalRegistrations = registrationRepository.count();
+        long totalPosts = postRepository.count();
 
         LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
-        long newEventsThisWeek = eventRepository.findAll().stream()
-                .filter(e -> e.getCreatedAt() != null && e.getCreatedAt().isAfter(sevenDaysAgo))
-                .count();
-        long newPostsThisWeek = postRepository.findAll().stream()
-                .filter(p -> p.getCreatedAt() != null && p.getCreatedAt().isAfter(sevenDaysAgo))
-                .count();
+        long newEventsThisWeek = eventRepository.countEventsCreatedAfter(sevenDaysAgo);
+        long newPostsThisWeek = postRepository.countPostsCreatedAfter(sevenDaysAgo);
 
         return DashboardStatsDTO.builder()
                 .totalEvents(totalEvents)
@@ -84,8 +81,50 @@ public class DashboardServiceImpl implements DashboardService {
                 .pendingEvents(pendingEvents)
                 .totalVolunteers(totalVolunteers)
                 .totalRegistrations(totalRegistrations)
+                .totalPosts(totalPosts)
                 .newEventsThisWeek(newEventsThisWeek)
                 .newPostsThisWeek(newPostsThisWeek)
+                .build();
+    }
+
+    /**
+     * Get manager-specific dashboard stats.
+     * Counts only approved events created by this manager, unique members, and
+     * posts.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public ManagerStatsDTO getManagerDashboardStats(UUID managerId) {
+        // Get approved events created by this manager
+        List<Event> managerApprovedEvents = eventRepository.findAllByCreatedBy_IdAndAdminApprovalStatus(
+                managerId, EventApprovalStatus.APPROVED);
+
+        long totalEvents = managerApprovedEvents.size();
+
+        // If no approved events, return zeros
+        if (totalEvents == 0) {
+            return ManagerStatsDTO.builder()
+                    .totalEvents(0)
+                    .totalMembers(0)
+                    .totalPosts(0)
+                    .build();
+        }
+
+        // Get event IDs for querying members and posts
+        List<UUID> eventIds = managerApprovedEvents.stream()
+                .map(Event::getId)
+                .collect(Collectors.toList());
+
+        // Count unique volunteers registered in those events (no duplicates)
+        long totalMembers = registrationRepository.countDistinctVolunteersByEventIdIn(eventIds);
+
+        // Count posts in those events
+        long totalPosts = postRepository.countPostsByEventIdIn(eventIds);
+
+        return ManagerStatsDTO.builder()
+                .totalEvents(totalEvents)
+                .totalMembers(totalMembers)
+                .totalPosts(totalPosts)
                 .build();
     }
 
@@ -121,8 +160,8 @@ public class DashboardServiceImpl implements DashboardService {
         java.util.Map<UUID, List<Registration>> regsByUser = allCompletedRegs.stream()
                 .collect(Collectors.groupingBy(r -> r.getVolunteer().getId()));
 
-        // Fetch all users
-        List<User> users = userRepository.findAll();
+        // Fetch all users with roles eagerly loaded (fix N+1)
+        List<User> users = userRepository.findAllWithRoles();
 
         // Build leaderboard entries
         List<LeaderboardEntryDTO> entries = users.stream()
@@ -154,7 +193,7 @@ public class DashboardServiceImpl implements DashboardService {
                     return LeaderboardEntryDTO.builder()
                             .userId(user.getId())
                             .name(user.getName())
-                            .avatarUrl(null) // TODO: add avatar field to User
+                            .avatarUrl(user.getAvatarUrl())
                             .volunteerHours(volunteerHours)
                             .eventsParticipated(eventsParticipated)
                             .score(score)

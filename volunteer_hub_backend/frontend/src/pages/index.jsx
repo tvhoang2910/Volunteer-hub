@@ -1,7 +1,6 @@
 // pages/index.js
 import React from "react";
 import Hero from "../components/landing/hero";
-import Destination from "../components/landing/destination";
 import PendingEvents from "../components/landing/PendingEvents";
 import About from "../components/landing/about";
 import Review from "../components/landing/review";
@@ -37,14 +36,6 @@ function Home() {
       <div className="relative">
         <Hero />
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent via-white/80 to-white pointer-events-none"></div>
-      </div>
-
-      {/* Destination Section với gradient wrapper */}
-      <div className="relative bg-gradient-to-b from-white via-emerald-50/50 to-white py-8">
-        <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 via-transparent to-teal-500/5"></div>
-        <div className="relative">
-          <Destination />
-        </div>
       </div>
 
       {/* Pending Events Section - Sự kiện đang chờ duyệt */}

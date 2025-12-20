@@ -1,6 +1,8 @@
 package vnu.uet.volunteer_hub.volunteer_hub_backend.entity;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.hibernate.annotations.Comment;
@@ -52,6 +54,10 @@ public class Post extends BaseEntity {
     @Comment("Ảnh/Album đính kèm cho bài viết")
     @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<PostImage> images = new HashSet<>();
+
+    @Comment("Danh sách bình luận của bài viết")
+    @OneToMany(mappedBy = "post", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Comment> comments = new ArrayList<>();
 
     @org.hibernate.annotations.Formula("(SELECT COUNT(*) FROM post_reactions r WHERE r.post_id = post_id)")
     private int reactionCount;

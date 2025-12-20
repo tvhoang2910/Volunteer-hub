@@ -29,9 +29,16 @@ public class BroadcastNotificationRequest {
 
     /**
      * Danh sách ID user cần gửi thông báo
-     * Null hoặc empty nếu sendToAll = true
+     * Null hoặc empty nếu sendToAll = true hoặc nếu gửi theo role
      */
     private List<UUID> targetUserIds;
+
+    /**
+     * Danh sách role cần gửi thông báo
+     * Ví dụ: ["VOLUNTEER", "MANAGER"]
+     * Null hoặc empty nếu sendToAll = true hoặc nếu gửi theo targetUserIds
+     */
+    private List<String> targetRoles;
 
     /**
      * Gửi đến tất cả user trong hệ thống

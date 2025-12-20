@@ -12,17 +12,17 @@ export default function SummaryCards({ stats }) {
         {
             title: "Tổng sự kiện",
             value: stats.totalEvents,
-            desc: "Sự kiện đã tổ chức",
+            desc: "Sự kiện đã được duyệt",
         },
         {
             title: "Tổng thành viên",
             value: stats.totalMembers,
-            desc: "Người tham gia các hoạt động",
+            desc: "Người tham gia các sự kiện",
         },
         {
-            title: "Bài viết gần đây",
-            value: stats.recentPosts,
-            desc: "Tin bài & trao đổi mới",
+            title: "Tổng số bài viết",
+            value: stats.totalPosts,
+            desc: "Bài viết trong sự kiện",
         },
     ];
 

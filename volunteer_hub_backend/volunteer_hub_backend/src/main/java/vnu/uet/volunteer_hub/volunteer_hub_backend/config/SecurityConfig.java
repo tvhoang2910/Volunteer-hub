@@ -86,6 +86,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/ui/**",
                                 "/uploads/**",
+                                "/.well-known/**",
                                 "/api/auth/login",
                                 "/api/auth/signup",
                                 "/api/auth/register",
@@ -93,7 +94,7 @@ public class SecurityConfig {
                                 "/api/auth/forgot-password",
                                 "/api/auth/reset-password",
                                 "/api/auth/refresh",
-                                "/api/dashboard/**",
+                                "/api/dashboard/stats",
                                 "/api/events/**",
                                 "/api/registrations/**",
                                 "/api/posts/visible",

@@ -15,6 +15,7 @@ public class DashboardStatsDTO {
     private long pendingEvents;
     private long totalVolunteers;
     private long totalRegistrations;
+    private long totalPosts;
     private long newEventsThisWeek;
     private long newPostsThisWeek;
 }

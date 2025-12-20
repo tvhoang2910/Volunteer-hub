@@ -9,19 +9,35 @@ import { useDeletePost } from '../../hooks/useDeletePost';
 import { useToggleReaction } from '../../hooks/useToggleReaction';
 import CommentDetailSlideUp from '../comments/CommentDetailSlideUp';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+
+// Convert relative avatar path to full backend URL
+const getFullAvatarUrl = (avatarPath) => {
+    if (!avatarPath) return null;
+    if (avatarPath.startsWith('http')) return avatarPath;
+    return `${API_BASE_URL}${avatarPath}`;
+};
+
 const Post = ({ post, onPostUpdated, onPostDeleted }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [showComments, setShowComments] = useState(false);
     
     // Normalize post data to handle both API response formats (author vs user, postId vs id)
-    const normalizePost = (postData) => ({
-        ...postData,
-        id: postData.id || postData.postId,
-        user: postData.user || postData.author || { id: null, name: 'Unknown', avatarUrl: null },
-        media: postData.media || postData.imageUrls || [],
-        likes: postData.likes ?? postData.reactionCount ?? 0,
-        comments: postData.comments ?? postData.commentCount ?? 0,
-    });
+    const normalizePost = (postData) => {
+        const author = postData.user || postData.author || { id: null, name: 'Unknown', avatarUrl: null };
+        return {
+            ...postData,
+            id: postData.id || postData.postId,
+            user: {
+                ...author,
+                // Normalize avatar field and convert to full URL
+                avatar: getFullAvatarUrl(author.avatar || author.avatarUrl),
+            },
+            media: postData.media || postData.imageUrls || [],
+            likes: postData.likes ?? postData.reactionCount ?? 0,
+            comments: postData.comments ?? postData.commentCount ?? 0,
+        };
+    };
     
     const [localPost, setLocalPost] = useState(() => normalizePost(post));
 

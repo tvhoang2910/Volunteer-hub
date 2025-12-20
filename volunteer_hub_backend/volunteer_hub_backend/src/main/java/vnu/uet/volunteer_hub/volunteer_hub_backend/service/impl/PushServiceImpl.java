@@ -3,12 +3,14 @@ package vnu.uet.volunteer_hub.volunteer_hub_backend.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
+import jakarta.annotation.PostConstruct;
+import nl.martijndwars.webpush.Notification;
+import org.apache.http.HttpResponse;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.WebPushPayload;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.PushDeliveryLog;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.PushSubscription;
@@ -16,6 +18,8 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.PushDeliveryLogRep
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.PushSubscriptionRepository;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.PushService;
 
+import java.security.GeneralSecurityException;
+import java.security.Security;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -37,7 +41,6 @@ import java.util.concurrent.Future;
 @RequiredArgsConstructor
 public class PushServiceImpl implements PushService {
 
-    private final RestTemplate restTemplate;
     private final PushDeliveryLogRepository pushDeliveryLogRepository;
     private final PushSubscriptionRepository pushSubscriptionRepository;
     private final ObjectMapper objectMapper;
@@ -54,12 +57,35 @@ public class PushServiceImpl implements PushService {
     @Value("${push.max-retries:3}")
     private int maxRetries;
 
+    private nl.martijndwars.webpush.PushService pushService;
+
+    // Static block to register BouncyCastle security provider
+    static {
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+    }
+
+    @PostConstruct
+    public void init() throws GeneralSecurityException {
+        if (vapidPublicKey != null && !vapidPublicKey.isEmpty() &&
+                vapidPrivateKey != null && !vapidPrivateKey.isEmpty()) {
+            pushService = new nl.martijndwars.webpush.PushService(
+                    vapidPublicKey,
+                    vapidPrivateKey,
+                    vapidSubject);
+            log.info("Web Push service initialized successfully with VAPID keys");
+        } else {
+            log.warn("VAPID keys not configured. Web Push will not work.");
+        }
+    }
+
     /**
      * Gửi push tới một subscription (synchronous)
      * Logic:
      * 1. Kiểm tra subscription hợp lệ
-     * 2. Tạo signed JWT token (VAPID)
-     * 3. Gửi POST request tới endpoint
+     * 2. Tạo Notification object từ library web-push
+     * 3. Gửi notification
      * 4. Xử lý response (200/201=success, 410=cleanup, 429=rate-limit, 5xx=retry)
      * 5. Lưu log delivery
      */
@@ -67,6 +93,11 @@ public class PushServiceImpl implements PushService {
     @Transactional
     public boolean sendPush(PushSubscription subscription, WebPushPayload payload) {
         log.debug("Sending push to subscription: {}", subscription.getEndpoint());
+
+        if (pushService == null) {
+            log.error("PushService not initialized. Check VAPID configuration.");
+            return false;
+        }
 
         try {
             // Validate subscription
@@ -78,27 +109,42 @@ public class PushServiceImpl implements PushService {
             // Create payload JSON
             String payloadJson = objectMapper.writeValueAsString(payload);
 
-            // TODO: Implement VAPID signing
-            // Bây giờ giả lập gửi, sau này sẽ dùng library WebPush-Java hoặc tương tự
-            // Map<String, String> headers = generateVAPIDHeaders(subscription);
+            // Construct Notification
+            Notification notification = new Notification(
+                    subscription.getEndpoint(),
+                    subscription.getP256dh(),
+                    subscription.getAuth(),
+                    payloadJson);
 
-            log.info("Sending push payload to endpoint: {}", subscription.getEndpoint());
+            // Send notification
+            HttpResponse response = pushService.send(notification);
+            int statusCode = response.getStatusLine().getStatusCode();
 
-            // Simulate successful delivery (200 OK)
-            // Thực tế cần dùng library hoặc call HTTP request tới push service
+            log.info("Push sent to endpoint: {}. Status: {}", subscription.getEndpoint(), statusCode);
+
+            PushDeliveryLog.PushDeliveryStatus status;
+            if (statusCode >= 200 && statusCode < 300) {
+                status = PushDeliveryLog.PushDeliveryStatus.SUCCESS;
+            } else if (statusCode == 410) { // Gone
+                status = PushDeliveryLog.PushDeliveryStatus.INVALID_SUBSCRIPTION;
+            } else if (statusCode == 429) { // Too Many Requests
+                status = PushDeliveryLog.PushDeliveryStatus.RATE_LIMITED;
+            } else {
+                status = PushDeliveryLog.PushDeliveryStatus.FAILED;
+            }
+
             PushDeliveryLog deliveryLog = PushDeliveryLog.builder()
                     .userId(subscription.getUser().getId().toString())
                     .endpoint(subscription.getEndpoint())
                     .payload(payloadJson)
-                    .status(PushDeliveryLog.PushDeliveryStatus.SUCCESS)
-                    .httpStatusCode(201)
+                    .status(status)
+                    .httpStatusCode(statusCode)
                     .retryCount(0)
                     .build();
 
             pushDeliveryLogRepository.save(deliveryLog);
-            log.info("Push delivery logged successfully for endpoint: {}", subscription.getEndpoint());
 
-            return true;
+            return statusCode >= 200 && statusCode < 300;
 
         } catch (Exception e) {
             log.error("Failed to send push", e);

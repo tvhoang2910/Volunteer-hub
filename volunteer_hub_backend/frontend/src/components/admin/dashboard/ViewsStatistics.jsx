@@ -2,7 +2,7 @@
 import React from 'react';
 import { Eye, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BarChart, Bar, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, ResponsiveContainer } from '@/components/ui/lazy-charts';
 
 export function ViewsStatistics({ data }) {
     if (!data) return null;
