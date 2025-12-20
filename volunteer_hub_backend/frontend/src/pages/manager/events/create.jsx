@@ -1,94 +1,102 @@
-import React, { useState } from 'react';
-import { useRouter } from 'next/router';
-import ManagerLayout from '@/layouts/ManagerLayout';
-import EventForm from '@/components/manager/EventForm';
-import { eventService } from '@/services/eventService';
-import { ArrowLeft } from 'lucide-react';
+import React, { useState } from "react";
+import { useRouter } from "next/router";
+import ManagerLayout from "@/layouts/ManagerLayout";
+import EventForm from "@/components/manager/EventForm";
+import { eventService } from "@/services/eventService";
+import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 
 export default function CreateEventPage() {
-    const router = useRouter();
-    const [loading, setLoading] = useState(false);
-    const { isAuthenticated } = useAuth();
-    const token = isAuthenticated ? localStorage.getItem("token") : "mock-token"; // Placeholder
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const token = isAuthenticated ? localStorage.getItem("token") : null;
 
-    const uploadThumbnail = async (eventId, file) => {
-        const formData = new FormData();
-        formData.append('file', file);
-        
-        const res = await axios.post(
-            `${API_BASE_URL}/api/upload/event-thumbnail/${eventId}`,
-            formData,
-            {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                    'Authorization': `Bearer ${token}`
-                }
-            }
-        );
-        return res.data;
-    };
+  const uploadThumbnail = async (eventId, file) => {
+    if (!token) throw new Error("Missing auth token");
+    const formData = new FormData();
+    formData.append("file", file);
 
-    const handleCreate = async (data, thumbnailFile) => {
-        setLoading(true);
-        try {
-            console.log('[CreateEvent] Submitting event data:', data);
-            const result = await eventService.createEvent(data, token);
-            console.log('[CreateEvent] Event created successfully:', result);
-            
-            // Upload thumbnail if file was selected
-            const eventId = result?.data?.eventId;
-            if (thumbnailFile && eventId) {
-                console.log('[CreateEvent] Uploading thumbnail for event:', eventId);
-                const thumbnailResult = await uploadThumbnail(eventId, thumbnailFile);
-                console.log('[CreateEvent] Thumbnail uploaded:', thumbnailResult);
-            }
-            
-            router.push('/manager/events');
-        } catch (error) {
-            console.error('[CreateEvent] Failed to create event:', {
-                message: error.message,
-                response: error.response?.data,
-                status: error.response?.status,
-                statusText: error.response?.statusText,
-                data: error.response?.data,
-                headers: error.response?.headers,
-                config: {
-                    url: error.config?.url,
-                    method: error.config?.method,
-                    data: error.config?.data
-                }
-            });
-            // Không dùng alert nữa - chỉ log lỗi vào console để debug
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="min-h-screen bg-gray-50/50 pb-20">
-            <div className="max-w-4xl mx-auto px-6 py-10">
-                <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-500 hover:text-gray-800 transition mb-6 group">
-                    <div className="p-2 rounded-full bg-white border border-gray-200 group-hover:border-emerald-500 group-hover:text-emerald-500 transition shadow-sm">
-                        <ArrowLeft className="w-5 h-5" />
-                    </div>
-                    <span className="font-medium">Quay lại danh sách</span>
-                </button>
-
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">Tạo sự kiện mới</h1>
-                    <p className="text-gray-500 mt-2">Điền thông tin chi tiết để tổ chức sự kiện thiện nguyện của bạn.</p>
-                </div>
-
-                <EventForm onSubmit={handleCreate} loading={loading} />
-            </div>
-        </div>
+    const res = await axios.post(
+      `${API_BASE_URL}/api/upload/event-thumbnail/${eventId}`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
+      }
     );
+    return res.data;
+  };
+
+  const handleCreate = async (data, thumbnailFile) => {
+    setLoading(true);
+    try {
+      if (!token) throw new Error("Missing auth token");
+      console.log("[CreateEvent] Submitting event data:", data);
+      const result = await eventService.createEvent(data, token);
+      console.log("[CreateEvent] Event created successfully:", result);
+
+      // Upload thumbnail if file was selected
+      const eventId = result?.data?.eventId;
+      if (thumbnailFile && eventId) {
+        console.log("[CreateEvent] Uploading thumbnail for event:", eventId);
+        const thumbnailResult = await uploadThumbnail(eventId, thumbnailFile);
+        console.log("[CreateEvent] Thumbnail uploaded:", thumbnailResult);
+      }
+
+      router.push("/manager/events");
+    } catch (error) {
+      console.error("[CreateEvent] Failed to create event:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.response?.headers,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          data: error.config?.data,
+        },
+      });
+      // Không dùng alert nữa - chỉ log lỗi vào console để debug
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50/50 pb-20">
+      <div className="max-w-4xl mx-auto px-6 py-10">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-gray-500 hover:text-gray-800 transition mb-6 group"
+        >
+          <div className="p-2 rounded-full bg-white border border-gray-200 group-hover:border-emerald-500 group-hover:text-emerald-500 transition shadow-sm">
+            <ArrowLeft className="w-5 h-5" />
+          </div>
+          <span className="font-medium">Quay lại danh sách</span>
+        </button>
+
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Tạo sự kiện mới</h1>
+          <p className="text-gray-500 mt-2">
+            Điền thông tin chi tiết để tổ chức sự kiện thiện nguyện của bạn.
+          </p>
+        </div>
+
+        <EventForm onSubmit={handleCreate} loading={loading} />
+      </div>
+    </div>
+  );
 }
 
 CreateEventPage.getLayout = function getLayout(page) {
-    return <ManagerLayout>{page}</ManagerLayout>;
+  return <ManagerLayout>{page}</ManagerLayout>;
 };

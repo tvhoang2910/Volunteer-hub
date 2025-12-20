@@ -24,6 +24,7 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.EventRepository;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.RegistrationRepository;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.UserRepository;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.EventService;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.service.NotificationService;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.PostRankingService;
 
 import java.time.LocalDateTime;
@@ -39,6 +40,7 @@ public class EventServiceImpl implements EventService {
     private final RegistrationRepository registrationRepository;
     private final UserRepository userRepository;
     private final PostRankingService postRankingService;
+    private final NotificationService notificationService;
 
     @Override
     public void approveEventStatus(UUID id) {
@@ -226,16 +228,27 @@ public class EventServiceImpl implements EventService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
 
-        // Check if already registered
-        Optional<Registration> existingRegistrationOpt = registrationRepository.findByEventIdAndVolunteerId(eventId,
-                userId);
-        if (existingRegistrationOpt.isPresent()) {
-            Registration existingRegistration = existingRegistrationOpt.get();
+        // Check if already registered - use List to handle potential duplicates
+        List<Registration> existingRegistrations = registrationRepository.findByEventIdAndVolunteerId(eventId, userId);
+        if (!existingRegistrations.isEmpty()) {
+            // Take the most recent registration
+            Registration existingRegistration = existingRegistrations.stream()
+                    .max((r1, r2) -> r1.getCreatedAt().compareTo(r2.getCreatedAt()))
+                    .orElse(existingRegistrations.get(0));
+
             if (existingRegistration.getRegistrationStatus().equals(RegistrationStatus.WITHDRAWN)) {
                 // allow re-registration by resetting state to PENDING
                 existingRegistration.setRegistrationStatus(RegistrationStatus.PENDING);
                 existingRegistration.setWithdrawnAt(null);
                 Registration savedRegistration = registrationRepository.save(existingRegistration);
+
+                // Clean up duplicate registrations if any
+                if (existingRegistrations.size() > 1) {
+                    existingRegistrations.stream()
+                            .filter(r -> !r.getId().equals(savedRegistration.getId()))
+                            .forEach(registrationRepository::delete);
+                }
+
                 return JoinEventResponse.builder()
                         .registrationId(savedRegistration.getId())
                         .eventId(event.getId())
@@ -265,6 +278,14 @@ public class EventServiceImpl implements EventService {
 
         Registration savedRegistration = registrationRepository.save(registration);
 
+        // Notify manager about new registration
+        try {
+            notificationService.notifyNewRegistration(event, user);
+        } catch (Exception e) {
+            // Log but don't fail the registration
+            System.err.println("Failed to send notification: " + e.getMessage());
+        }
+
         return JoinEventResponse.builder()
                 .registrationId(savedRegistration.getId())
                 .eventId(event.getId())
@@ -286,13 +307,23 @@ public class EventServiceImpl implements EventService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
 
-        // Find registration
-        Registration registration = registrationRepository.findByEventIdAndVolunteerId(eventId, userId)
-                .orElseThrow(() -> new EntityNotFoundException("User is not registered for this event"));
+        // Find registration - use List to handle potential duplicates
+        List<Registration> registrations = registrationRepository.findByEventIdAndVolunteerId(eventId, userId);
+        if (registrations.isEmpty()) {
+            throw new EntityNotFoundException("User is not registered for this event");
+        }
+
+        // Take the most recent non-withdrawn registration, or the most recent one
+        Registration registration = registrations.stream()
+                .filter(r -> !r.getRegistrationStatus().equals(RegistrationStatus.WITHDRAWN))
+                .max((r1, r2) -> r1.getCreatedAt().compareTo(r2.getCreatedAt()))
+                .orElse(registrations.stream()
+                        .max((r1, r2) -> r1.getCreatedAt().compareTo(r2.getCreatedAt()))
+                        .orElse(registrations.get(0)));
 
         // Check if already completed
         if (registration.getRegistrationStatus().equals(RegistrationStatus.COMPLETED)) {
-            throw new IllegalStateException("Cannot cancel registration for a completed event");
+            throw new IllegalStateException("Không thể hủy đăng ký cho sự kiện đã hoàn thành");
         }
 
         // If already withdrawn, return a friendly idempotent message
@@ -311,6 +342,13 @@ public class EventServiceImpl implements EventService {
         registration.setRegistrationStatus(RegistrationStatus.WITHDRAWN);
         registration.setWithdrawnAt(java.time.Instant.now());
         registrationRepository.save(registration);
+
+        // Clean up duplicate registrations if any
+        if (registrations.size() > 1) {
+            registrations.stream()
+                    .filter(r -> !r.getId().equals(registration.getId()))
+                    .forEach(registrationRepository::delete);
+        }
 
         return JoinEventResponse.builder()
                 .registrationId(registration.getId())
@@ -391,9 +429,19 @@ public class EventServiceImpl implements EventService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
 
-        Registration registration = registrationRepository.findByEventIdAndVolunteerId(eventId, userId)
-                .orElseThrow(() -> new EntityNotFoundException(
-                        "User is not registered for this event"));
+        // Find registration - use List to handle potential duplicates
+        List<Registration> registrations = registrationRepository.findByEventIdAndVolunteerId(eventId, userId);
+        if (registrations.isEmpty()) {
+            throw new EntityNotFoundException("User is not registered for this event");
+        }
+
+        // Take the most recent approved registration
+        Registration registration = registrations.stream()
+                .filter(r -> r.getRegistrationStatus().equals(RegistrationStatus.APPROVED) ||
+                        r.getRegistrationStatus().equals(RegistrationStatus.CHECKED_IN) ||
+                        r.getRegistrationStatus().equals(RegistrationStatus.COMPLETED))
+                .max((r1, r2) -> r1.getCreatedAt().compareTo(r2.getCreatedAt()))
+                .orElse(registrations.get(0));
 
         // Check if registration is approved
         if (!registration.getRegistrationStatus().equals(RegistrationStatus.APPROVED)) {
@@ -444,6 +492,16 @@ public class EventServiceImpl implements EventService {
 
         Registration savedRegistration = registrationRepository.save(registration);
 
+        // Notify volunteer about approval
+        try {
+            notificationService.notifyRegistrationApproved(
+                    savedRegistration.getEvent(),
+                    savedRegistration.getVolunteer());
+        } catch (Exception e) {
+            // Log but don't fail the approval
+            System.err.println("Failed to send notification: " + e.getMessage());
+        }
+
         return RegistrationApprovalResponseDTO.builder()
                 .registrationId(savedRegistration.getId().toString())
                 .userId(savedRegistration.getVolunteer().getId().toString())
@@ -467,6 +525,16 @@ public class EventServiceImpl implements EventService {
         registration.setRegistrationStatus(RegistrationStatus.REJECTED);
 
         Registration savedRegistration = registrationRepository.save(registration);
+
+        // Notify volunteer about rejection
+        try {
+            notificationService.notifyRegistrationRejected(
+                    savedRegistration.getEvent(),
+                    savedRegistration.getVolunteer());
+        } catch (Exception e) {
+            // Log but don't fail the rejection
+            System.err.println("Failed to send notification: " + e.getMessage());
+        }
 
         return RegistrationRejectionResponseDTO.builder()
                 .registrationId(savedRegistration.getId().toString())
@@ -521,6 +589,16 @@ public class EventServiceImpl implements EventService {
         }
 
         Registration savedRegistration = registrationRepository.save(registration);
+
+        // Notify volunteer about completion
+        try {
+            notificationService.notifyRegistrationCompleted(
+                    savedRegistration.getEvent(),
+                    savedRegistration.getVolunteer());
+        } catch (Exception e) {
+            // Log but don't fail the completion
+            System.err.println("Failed to send notification: " + e.getMessage());
+        }
 
         return RegistrationCompletionResponseDTO.builder()
                 .registrationId(savedRegistration.getId().toString())

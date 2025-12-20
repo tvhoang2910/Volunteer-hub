@@ -11,9 +11,11 @@ export function useManagerProfile() {
 
     useEffect(() => {
         let mounted = true;
-        managerService.getProfile().then((u) => {
+        managerService.getProfile().then((response) => {
             if (!mounted) return;
-            setUser(u);
+            // API returns { data: { userId, name, email, ... }, message: "..." }
+            const userData = response?.data || response;
+            setUser(userData);
             setLoading(false);
         });
         return () => (mounted = false);
@@ -45,8 +47,10 @@ export function useManagerProfile() {
                 }
             }
             
-            const updated = await managerService.updateProfile(data);
-            setUser(updated);
+            const response = await managerService.updateProfile(data);
+            // API returns { data: { userId, name, email, ... }, message: "..." }
+            const updatedUser = response?.data || response;
+            setUser(updatedUser);
             setAlert({ type: "success", message: "Cập nhật hồ sơ thành công." });
         } catch (err) {
             setAlert({ type: "error", message: err.message || "Lỗi khi lưu." });

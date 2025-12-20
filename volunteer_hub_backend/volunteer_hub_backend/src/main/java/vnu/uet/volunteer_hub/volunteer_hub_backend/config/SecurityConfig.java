@@ -1,10 +1,11 @@
 package vnu.uet.volunteer_hub.volunteer_hub_backend.config;
 
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -21,29 +22,56 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+        private final Environment environment;
+
 
     // Allow frontend URL to be configured via property. Default to Next.js dev
     // server.
     @Value("${app.frontend.url:http://localhost:3000}")
     private String frontendUrl;
 
+
+        /**
+         * DEV-ONLY: allow unauthenticated export endpoints for quick manual testing.
+         * This is intentionally narrow and opt-in.
+         */
+        @Value("${app.security.dev.permit-admin-exports:false}")
+        private boolean permitAdminExportsInDev;
+
+
+        /**
+         * DEV-ONLY: allow localhost-only admin bootstrap endpoint.
+         * Endpoint still checks remoteAddr == localhost.
+         */
+        @Value("${app.security.dev.enable-bootstrap-admin:false}")
+        private boolean enableBootstrapAdmin;
+
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);
     }
+
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -78,48 +106,67 @@ public class SecurityConfig {
                 // Stateless session - không lưu session trên server
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(authz -> authz
-                        // Auth endpoints that require authentication - must be before permitAll
-                        .requestMatchers(HttpMethod.POST, "/api/auth/change-password")
-                        .authenticated()
-                        // Public endpoints - không cần authentication
-                        .requestMatchers(
-                                "/ui/**",
-                                "/uploads/**",
-                                "/.well-known/**",
-                                "/api/auth/login",
-                                "/api/auth/signup",
-                                "/api/auth/register",
-                                "/api/auth/verify-email",
-                                "/api/auth/forgot-password",
-                                "/api/auth/reset-password",
-                                "/api/auth/refresh",
-                                "/api/dashboard/stats",
-                                "/api/events/**",
-                                "/api/registrations/**",
-                                "/api/posts/visible",
-                                "/api/posts/{postId}",
-                                "/api/posts",
-                                "/api/posts/**",
-                                "/api/comments/**",
-                                "/api/users/**",
-                                "/api/search/autocomplete/**",
-                                "/api/users/profile/**",
-                                "/api/notifications/**",
-                                "/api/upload/**",
-                                "/oauth2/**",
-                                "/login/oauth2/**")
-                        .permitAll()
-                        // GET /api/posts - cho phép anonymous nhưng có thêm info nếu
-                        // authenticated
-                        .requestMatchers(HttpMethod.GET, "/api/posts")
-                        .permitAll()
-                        // Allow check-in endpoint for events without authentication
-                        .requestMatchers(HttpMethod.POST, "/api/events/*/check-in").permitAll()
-                        // Admin endpoints - yêu cầu role ADMIN
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        // Tất cả các request khác cần authenticated (bao gồm POST /api/posts)
-                        .anyRequest().authenticated())
+                .authorizeHttpRequests(authz -> {
+                    var registry = authz
+                            // Auth endpoints that require authentication - must be before permitAll
+                            .requestMatchers(HttpMethod.POST, "/api/auth/change-password")
+                            .authenticated()
+                            // Public endpoints - không cần authentication
+                            .requestMatchers(
+                                    "/ui/**",
+                                    "/uploads/**",
+                                    "/api/auth/login",
+                                    "/api/auth/signup",
+                                    "/api/auth/register",
+                                    "/api/auth/verify-email",
+                                    "/api/auth/forgot-password",
+                                    "/api/auth/reset-password",
+                                    "/api/auth/refresh",
+                                    "/api/dashboard/**",
+                                    "/api/events/**",
+                                    "/api/registrations/**",
+                                    "/api/posts/visible",
+                                    "/api/posts/{postId}",
+                                    "/api/posts",
+                                    "/api/posts/**",
+                                    "/api/comments/**",
+                                    "/api/users/**",
+                                    "/api/search/autocomplete/**",
+                                    "/api/users/profile/**",
+                                    "/api/notifications/**",
+                                    "/api/upload/**",
+                                    "/oauth2/**",
+                                    "/login/oauth2/**")
+                            .permitAll()
+                            // GET /api/posts - cho phép anonymous nhưng có thêm info nếu authenticated
+                            .requestMatchers(HttpMethod.GET, "/api/posts")
+                            .permitAll()
+                            // Allow check-in endpoint for events without authentication
+                            .requestMatchers(HttpMethod.POST, "/api/events/*/check-in").permitAll();
+
+
+                    // DEV-ONLY: allow unauthenticated export endpoints if explicitly enabled.
+                    if (permitAdminExportsInDev && environment.acceptsProfiles(Profiles.of("dev"))) {
+                        registry.requestMatchers(
+                                HttpMethod.GET,
+                                "/api/admin/events/export",
+                                "/api/admin/volunteers/export")
+                                .permitAll();
+                    }
+
+
+                                        // DEV-ONLY: allow bootstrap endpoint if explicitly enabled.
+                                        if (enableBootstrapAdmin && environment.acceptsProfiles(Profiles.of("dev"))) {
+                                                registry.requestMatchers(HttpMethod.POST, "/api/dev/bootstrap-admin").permitAll();
+                                        }
+
+
+                    registry
+                            // Admin endpoints - yêu cầu role ADMIN
+                            .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                            // Tất cả các request khác cần authenticated (bao gồm POST /api/posts)
+                            .anyRequest().authenticated();
+                })
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setContentType("application/json");
@@ -138,8 +185,10 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(oAuth2AuthenticationSuccessHandler));
 
+
         return http.build();
     }
+
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {

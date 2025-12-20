@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { notificationService } from "@/services/notificationService";
+import { triggerRefetchUnreadCount } from "./useUnreadCount";
 
 export const useNotifications = (initialPage = 0, limit = 10) => {
   const READ_STATUS = "Đã đọc";
@@ -65,6 +66,9 @@ export const useNotifications = (initialPage = 0, limit = 10) => {
       );
 
       await notificationService.markAsRead(id);
+      
+      // Trigger refetch unread count sau khi đánh dấu đã đọc
+      triggerRefetchUnreadCount();
     } catch (error) {
       console.error("Lỗi cập nhật trạng thái:", error);
       setNotifications((prev) =>
@@ -75,6 +79,59 @@ export const useNotifications = (initialPage = 0, limit = 10) => {
         )
       );
       setError(error.message || "Không thể đánh dấu đã đọc thông báo");
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      // Optimistic update
+      setNotifications((prev) =>
+        prev.map((notif) => ({ ...notif, status: READ_STATUS, isRead: true }))
+      );
+
+      await notificationService.markAllAsRead();
+      
+      // Trigger refetch unread count
+    markAllAsRead,
+    deleteNotification,
+    deleteAllNotifications,
+      triggerRefetchUnreadCount();
+    } catch (error) {
+      console.error("Lỗi đánh dấu tất cả đã đọc:", error);
+      fetchNotifications(currentPage);
+      setError(error.message || "Không thể đánh dấu tất cả đã đọc");
+    }
+  };
+
+  const deleteNotification = async (id) => {
+    try {
+      // Optimistic update
+      setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+
+      await notificationService.deleteNotification(id);
+      
+      // Trigger refetch unread count
+      triggerRefetchUnreadCount();
+    } catch (error) {
+      console.error("Lỗi xóa thông báo:", error);
+      fetchNotifications(currentPage);
+      setError(error.message || "Không thể xóa thông báo");
+    }
+  };
+
+  const deleteAllNotifications = async () => {
+    try {
+      // Optimistic update
+      setNotifications([]);
+
+      await notificationService.deleteAllNotifications();
+      
+      // Trigger refetch unread count
+      triggerRefetchUnreadCount();
+    } catch (error) {
+      console.error("Lỗi xóa tất cả thông báo:", error);
+      fetchNotifications(currentPage);
+      setError(error.message || "Không thể xóa tất cả thông báo");
     }
   };
 

@@ -16,18 +16,20 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import AvatarUploadSection from './AvatarUploadSection'
+import { useUnreadCount } from '@/hooks/useUnreadCount'
 
 const navItems = [
   { name: 'Tổng quan', href: '/user/dashboard', icon: LayoutDashboard },
   { name: 'Lịch sử hoạt động', href: '/user/history', icon: Users },
   { name: 'Kênh trao đổi', href: '/user/exchangeChannel', icon: MessageSquare },
-  { name: 'Thông báo', href: '/user/notify', icon: BellRing },
+  { name: 'Thông báo', href: '/user/notify', icon: BellRing, showBadge: true },
   { name: 'Cài đặt tài khoản', href: '/user/profile', icon: UserCircle }
 ]
 
 export default function Navbar() {
   const router = useRouter()
   const { logout } = useAuth()
+  const { unreadCount } = useUnreadCount()
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -112,7 +114,14 @@ export default function Navbar() {
                     : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
                 }`}
               >
-                <item.icon className="w-5 h-5" />
+                <div className="relative">
+                  <item.icon className="w-5 h-5" />
+                  {item.showBadge && unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold text-white bg-red-600 border-2 border-red-700 rounded-full px-1">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </div>
                 {item.name}
               </Link>
             )
@@ -172,7 +181,14 @@ export default function Navbar() {
                   }`}
                   title={isCollapsed ? item.name : ''}
                 >
-                  <item.icon className="w-5 h-5" />
+                  <div className="relative">
+                    <item.icon className="w-5 h-5" />
+                    {item.showBadge && unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold text-white bg-red-600 border-2 border-red-700 rounded-full px-1">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
+                  </div>
                   {!isCollapsed && item.name}
                 </Link>
               )

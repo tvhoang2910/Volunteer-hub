@@ -3,6 +3,7 @@ package vnu.uet.volunteer_hub.volunteer_hub_backend.api;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -117,6 +118,38 @@ public class UserAPI {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ResponseDTO.builder()
                             .message("Failed to update user profile")
+                            .detail(e.getMessage())
+                            .build());
+        }
+    }
+
+    /**
+     * Deactivate (soft-delete) current authenticated user's account.
+     * DELETE /api/users/me
+     */
+    @DeleteMapping("/me")
+    public ResponseEntity<?> deactivateMyAccount() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            UUID userId = userService.getViewerIdFromAuthentication(auth);
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ResponseDTO.builder()
+                                .message("Unauthorized")
+                                .detail("Authentication required")
+                                .build());
+            }
+
+            userService.lockUserById(userId);
+
+            return ResponseEntity.ok(ResponseDTO.<Void>builder()
+                    .message("Account deactivated successfully")
+                    .data(null)
+                    .build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseDTO.builder()
+                            .message("Failed to deactivate account")
                             .detail(e.getMessage())
                             .build());
         }

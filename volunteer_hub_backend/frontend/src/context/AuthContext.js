@@ -7,6 +7,7 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState(null);
   const [userId, setUserId] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -17,6 +18,7 @@ export const AuthProvider = ({ children }) => {
       setUserId(userId);
       setIsAuthenticated(!!token);
       setUserRole(role);
+      setAuthReady(true);
     };
 
     checkAuth();
@@ -44,6 +46,7 @@ export const AuthProvider = ({ children }) => {
       setUserId(storedUserId);
     }
     setIsAuthenticated(true);
+    setAuthReady(true);
   };
 
   const logout = () => {
@@ -53,11 +56,14 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
     setUserRole(null);
     setUserId(null);
+    setAuthReady(true);
     router.push("/");
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, userRole, userId, login, logout }}>
+    <AuthContext.Provider
+      value={{ isAuthenticated, userRole, userId, authReady, login, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

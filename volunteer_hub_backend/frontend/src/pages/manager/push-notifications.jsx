@@ -50,6 +50,8 @@ export default function PushNotificationDashboard() {
     // State for Stats
     const [stats, setStats] = useState(null);
     const [loadingStats, setLoadingStats] = useState(false);
+    const [justSent, setJustSent] = useState(false);
+    const statsRefreshIntervalRef = useRef(null);
 
     const { toast } = useToast();
 
@@ -143,6 +145,36 @@ export default function PushNotificationDashboard() {
         fetchStats();
     }, []);
 
+    // Auto-refresh stats mỗi 2 giây sau khi gửi broadcast
+    useEffect(() => {
+        if (!justSent) return;
+
+        // Fetch ngay lập tức
+        fetchStats();
+
+        // Sau đó polling mỗi 2 giây
+        statsRefreshIntervalRef.current = setInterval(() => {
+            fetchStats();
+        }, 2000);
+
+        // Dừng polling sau 10 giây
+        const timeoutId = setTimeout(() => {
+            if (statsRefreshIntervalRef.current) {
+                clearInterval(statsRefreshIntervalRef.current);
+                statsRefreshIntervalRef.current = null;
+            }
+            setJustSent(false);
+        }, 10000);
+
+        return () => {
+            clearTimeout(timeoutId);
+            if (statsRefreshIntervalRef.current) {
+                clearInterval(statsRefreshIntervalRef.current);
+                statsRefreshIntervalRef.current = null;
+            }
+        };
+    }, [justSent]);
+
     const handleSend = async () => {
         if (!title.trim() || !content.trim()) {
             toast({
@@ -196,7 +228,9 @@ export default function PushNotificationDashboard() {
             setTitle("");
             setContent("");
             setSelectedUsers([]);
-            fetchStats();
+            
+            // Bắt đầu polling stats
+            setJustSent(true);
             
         } catch (error) {
             toast({

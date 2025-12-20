@@ -66,7 +66,9 @@ export default function ManagerAvatarSection({ isCollapsed = false }) {
         const response = await axios.get(`${API_BASE_URL}/api/users`, {
           headers: getAuthHeader()
         });
-        setUser(response.data);
+        // API returns { data: { userId, name, email, avatarUrl, ... }, message: "..." }
+        const userData = response.data?.data || response.data;
+        setUser(userData);
       } catch (error) {
         console.error('Error fetching user info:', error);
         setUser({ name: 'Manager', email: 'manager@volunteer.local' });

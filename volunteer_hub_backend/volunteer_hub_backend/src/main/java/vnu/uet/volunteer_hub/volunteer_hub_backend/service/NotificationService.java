@@ -8,6 +8,9 @@ import org.springframework.data.domain.Page;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.BroadcastNotificationRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.PushSubscriptionRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.NotificationResponseDTO;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Event;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.User;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.NotificationType;
 
 /**
  * Service interface cho business logic của Notification
@@ -90,4 +93,49 @@ public interface NotificationService {
      * @throws IllegalArgumentException nếu dữ liệu không hợp lệ
      */
     void saveSubscription(PushSubscriptionRequest request, UUID userId);
+
+    // ==================== EVENT-BASED NOTIFICATION HELPERS ====================
+
+    /**
+     * Tạo notification chung với đầy đủ thông tin
+     * 
+     * @param recipient        User nhận thông báo
+     * @param event            Event liên quan (có thể null)
+     * @param title            Tiêu đề thông báo
+     * @param body             Nội dung thông báo
+     * @param notificationType Loại thông báo
+     */
+    void createNotification(User recipient, Event event, String title, String body, NotificationType notificationType);
+
+    /**
+     * Thông báo cho Manager khi có volunteer mới đăng ký sự kiện
+     * 
+     * @param event     Event được đăng ký
+     * @param volunteer User đăng ký
+     */
+    void notifyNewRegistration(Event event, User volunteer);
+
+    /**
+     * Thông báo cho Volunteer khi đăng ký được duyệt
+     * 
+     * @param event     Event được duyệt
+     * @param volunteer User được duyệt
+     */
+    void notifyRegistrationApproved(Event event, User volunteer);
+
+    /**
+     * Thông báo cho Volunteer khi đăng ký bị từ chối
+     * 
+     * @param event     Event bị từ chối
+     * @param volunteer User bị từ chối
+     */
+    void notifyRegistrationRejected(Event event, User volunteer);
+
+    /**
+     * Thông báo cho Volunteer khi hoàn thành sự kiện
+     * 
+     * @param event     Event hoàn thành
+     * @param volunteer User hoàn thành
+     */
+    void notifyRegistrationCompleted(Event event, User volunteer);
 }

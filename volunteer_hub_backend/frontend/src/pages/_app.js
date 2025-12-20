@@ -17,6 +17,45 @@ import { useAppLogic } from "../hooks/useAppLogic";
 import { Toaster } from "@/components/ui/toaster";
 import { useEffect, useState } from "react";
 import Head from "next/head";
+import { useAuth } from "../context/AuthContext";
+import PushNotificationManager from "@/components/common/PushNotificationManager";
+
+function getRequiredRole(pathname) {
+  if (pathname.startsWith("/admin") && pathname !== "/admin") return "ADMIN";
+  if (pathname.startsWith("/manager") && pathname !== "/manager")
+    return "MANAGER";
+  if (pathname.startsWith("/user")) return "VOLUNTEER";
+  return null;
+}
+
+function getLoginPathForRole(role) {
+  if (role === "ADMIN") return "/admin";
+  if (role === "MANAGER") return "/manager";
+  return "/login";
+}
+
+function AuthGate({ children }) {
+  const router = useRouter();
+  const { isAuthenticated, userRole, authReady } = useAuth();
+
+  useEffect(() => {
+    if (!authReady) return;
+
+    const requiredRole = getRequiredRole(router.pathname);
+    if (!requiredRole) return;
+
+    if (!isAuthenticated) {
+      router.replace(getLoginPathForRole(requiredRole));
+      return;
+    }
+
+    if (userRole !== requiredRole) {
+      router.replace(getLoginPathForRole(requiredRole));
+    }
+  }, [authReady, isAuthenticated, userRole, router.pathname]);
+
+  return children;
+}
 
 function MyApp({ Component, pageProps }) {
   const router = useRouter();
@@ -65,33 +104,36 @@ function MyApp({ Component, pageProps }) {
         <meta name="theme-color" content="#ffffff" />
       </Head>
 
-      {isAdminPage ? (
-        isAdminLoginPage ? (
-          <Component {...pageProps} />
-        ) : (
-          <AdminLayout>
+      <AuthGate>
+        {isAdminPage ? (
+          isAdminLoginPage ? (
             <Component {...pageProps} />
-          </AdminLayout>
-        )
-      ) : isManagerPage ? (
-        isManagerLoginPage ? (
-          <Component {...pageProps} />
-        ) : (
-          <ManagerLayout>
+          ) : (
+            <AdminLayout>
+              <Component {...pageProps} />
+            </AdminLayout>
+          )
+        ) : isManagerPage ? (
+          isManagerLoginPage ? (
             <Component {...pageProps} />
-          </ManagerLayout>
-        )
-      ) : isUserPage ? (
-        <UserLayout>
-          <Component {...pageProps} />
-        </UserLayout>
-      ) : (
-        <MainLayout>
-          <Component {...pageProps} />
-        </MainLayout>
-      )}
+          ) : (
+            <ManagerLayout>
+              <Component {...pageProps} />
+            </ManagerLayout>
+          )
+        ) : isUserPage ? (
+          <UserLayout>
+            <Component {...pageProps} />
+          </UserLayout>
+        ) : (
+          <MainLayout>
+            <Component {...pageProps} />
+          </MainLayout>
+        )}
+      </AuthGate>
 
       <Toaster />
+      <PushNotificationManager />
 
       {showScrollTopButton && (
         <button

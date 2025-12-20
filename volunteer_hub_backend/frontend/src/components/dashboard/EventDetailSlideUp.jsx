@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import SlideUpDetail from "@/components/ui/slide-up.jsx";
 import { Calendar, MapPin, Clock, Tag, Share2, Heart } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
@@ -23,12 +24,18 @@ const getThumbnailUrl = (thumbnailUrl) => {
 };
 
 const EventDetailSlideUp = ({ isOpen, onClose, event, onRegister, onCancel, hideRegistration = false }) => {
+    const { toast } = useToast();
     const [isRegistered, setIsRegistered] = useState(false);
+
+    // Valid registration statuses (user is considered "registered")
+    const ACTIVE_REGISTRATION_STATUSES = ['PENDING', 'APPROVED', 'CHECKED_IN', 'COMPLETED'];
 
     // Update registration status when event prop changes
     useEffect(() => {
         if (event) {
-            setIsRegistered(event.registered || event.registrationStatus === 'APPROVED');
+            const isActive = event.registered || 
+                ACTIVE_REGISTRATION_STATUSES.includes(event.registrationStatus);
+            setIsRegistered(isActive);
         }
     }, [event, event?.registered, event?.registrationStatus]);
 
@@ -218,8 +225,17 @@ const EventDetailSlideUp = ({ isOpen, onClose, event, onRegister, onCancel, hide
                                 <button
                                     onClick={async () => {
                                         if (isRegistered) {
-                                            await onCancel(eventId);
-                                            setIsRegistered(false);
+                                            const result = await onCancel(eventId);
+                                            if (result?.success) {
+                                                setIsRegistered(false);
+                                            }
+                                            if (result?.error) {
+                                                toast({
+                                                    title: "Lỗi",
+                                                    description: result.error,
+                                                    variant: "destructive",
+                                                });
+                                            }
                                         } else {
                                             await onRegister(eventId);
                                             setIsRegistered(true);

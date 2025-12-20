@@ -8,8 +8,10 @@ import FeaturedSlider from "@/components/dashboard/FeaturedSlider";
 import EventDetailSlideUp from "@/components/dashboard/EventDetailSlideUp";
 import { useEvents } from "@/hooks/useEvents";
 import { eventService } from "@/services/eventService";
+import { useToast } from "@/hooks/use-toast";
 
 export default function EventShowcase() {
+  const { toast } = useToast();
   const {
     allEvents,
     featuredEvents,
@@ -38,9 +40,16 @@ export default function EventShowcase() {
   };
 
   const handleCancelRegistration = async (eventId) => {
-    const success = await cancelRegistration(eventId);
-    if (success && selectedEvent?.event_id === eventId) {
+    const result = await cancelRegistration(eventId);
+    if (result.success && selectedEvent?.event_id === eventId) {
       setSelectedEvent((prev) => ({ ...prev, registered: false }));
+    }
+    if (result.error) {
+      toast({
+        title: "Lỗi",
+        description: result.error,
+        variant: "destructive",
+      });
     }
   };
 

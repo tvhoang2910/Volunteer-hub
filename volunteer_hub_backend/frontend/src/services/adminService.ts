@@ -88,6 +88,30 @@ export const adminService = {
             { headers: getAuthHeader() }
         )
         return response.data;
-    }
+    },
+
+    /**
+     * Export events data
+     * @param {string} format - 'json' or 'csv'
+     */
+    exportEvents: async (format = 'json') => {
+        const response = await axios.get(`${API_BASE_URL}/api/admin/events/export`, {
+            params: { format },
+            headers: getAuthHeader()
+        });
+        return response.data;
+    },
+
+    /**
+     * Export volunteers data
+     * @param {string} format - 'json' or 'csv'
+     */
+    exportVolunteers: async (format = 'json') => {
+        const response = await axios.get(`${API_BASE_URL}/api/admin/volunteers/export`, {
+            params: { format },
+            headers: getAuthHeader()
+        });
+        return response.data;
+    },
 
 };

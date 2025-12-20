@@ -34,6 +34,9 @@ export const useEvents = (initialPage = 1, limit = 9) => {
         image: event.image || event.thumbnailUrl || "",
     }), []);
 
+    // Valid registration statuses (user is considered "registered")
+    const ACTIVE_REGISTRATION_STATUSES = ['PENDING', 'APPROVED', 'CHECKED_IN', 'COMPLETED'];
+
     // Fetch Events with registration status
     const fetchEvents = useCallback(async (page) => {
         setIsLoading(true);
@@ -49,17 +52,26 @@ export const useEvents = (initialPage = 1, limit = 9) => {
             if (token) {
                 try {
                     const registeredEvents = await eventService.getMyRegisteredEvents();
-                    const registeredEventIds = new Set(
-                        registeredEvents.map((e: any) => e.eventId || e.event_id || e.id)
-                    );
+                    
+                    // Create a map of eventId -> registrationStatus (only for active registrations)
+                    const activeRegistrationMap = new Map();
+                    registeredEvents.forEach((e: any) => {
+                        const eventId = e.eventId || e.event_id || e.id;
+                        const status = e.registrationStatus || 'PENDING';
+                        // Only consider active registrations (not REJECTED or WITHDRAWN)
+                        if (ACTIVE_REGISTRATION_STATUSES.includes(status)) {
+                            activeRegistrationMap.set(eventId, status);
+                        }
+                    });
                     
                     // Merge registration status into events
                     events = events.map(event => ({
                         ...event,
-                        registered: registeredEventIds.has(event.event_id)
+                        registered: activeRegistrationMap.has(event.event_id),
+                        registrationStatus: activeRegistrationMap.get(event.event_id) || null
                     }));
                     
-                    console.log("Registered event IDs:", Array.from(registeredEventIds));
+                    console.log("Active registration event IDs:", Array.from(activeRegistrationMap.keys()));
                 } catch (regErr) {
                     console.warn("Could not fetch registration status:", regErr);
                 }
@@ -167,10 +179,11 @@ export const useEvents = (initialPage = 1, limit = 9) => {
             );
             setAllEvents(updatedEvents);
             setFeaturedEvents(updatedEvents.slice(0, 5));
-            return true;
+            return { success: true, error: null };
         } catch (err) {
             console.error(err);
-            return false;
+            const errorMessage = err?.response?.data?.message || 'Không thể hủy đăng ký';
+            return { success: false, error: errorMessage };
         }
     };
 

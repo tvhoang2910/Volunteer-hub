@@ -134,6 +134,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return false;
         }
 
+        // Manager-stats requires authentication - DO NOT skip
+        if (path.equals("/api/dashboard/manager-stats")) {
+            return false;
+        }
+
         // Skip JWT validation only for truly public endpoints that never need user info
         return path.startsWith("/api/auth/") ||
                 path.startsWith("/api/dashboard/") ||

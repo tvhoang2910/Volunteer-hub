@@ -192,11 +192,12 @@ public class PostServiceImpl implements PostService {
             return true;
         if (p.getAuthor() != null && p.getAuthor().getId() != null && p.getAuthor().getId().equals(viewerId))
             return true;
+        // Use stream to handle List return type
         return registrationRepository.findByEventIdAndVolunteerId(p.getEvent().getId(), viewerId)
-                .filter(reg -> reg.getRegistrationStatus().equals(RegistrationStatus.APPROVED)
+                .stream()
+                .anyMatch(reg -> reg.getRegistrationStatus().equals(RegistrationStatus.APPROVED)
                         || reg.getRegistrationStatus().equals(RegistrationStatus.CHECKED_IN)
-                        || reg.getRegistrationStatus().equals(RegistrationStatus.COMPLETED))
-                .isPresent();
+                        || reg.getRegistrationStatus().equals(RegistrationStatus.COMPLETED));
     }
 
     /**

@@ -16,7 +16,18 @@ public interface RegistrationRepository extends JpaRepository<Registration, UUID
 
         boolean existsByEventIdAndVolunteerId(UUID eventId, UUID volunteerId);
 
-        Optional<Registration> findByEventIdAndVolunteerId(UUID eventId, UUID volunteerId);
+        /**
+         * Find registrations by event and volunteer.
+         * Returns List to handle potential duplicates gracefully.
+         * Use findFirstByEventIdAndVolunteerIdOrderByCreatedAtDesc for single result.
+         */
+        List<Registration> findByEventIdAndVolunteerId(UUID eventId, UUID volunteerId);
+
+        /**
+         * Find the most recent registration for an event and volunteer.
+         * Prefer this over findByEventIdAndVolunteerId when expecting single result.
+         */
+        Optional<Registration> findFirstByEventIdAndVolunteerIdOrderByCreatedAtDesc(UUID eventId, UUID volunteerId);
 
         long countByEventIdAndRegistrationStatus(UUID eventId, RegistrationStatus registrationStatus);
 

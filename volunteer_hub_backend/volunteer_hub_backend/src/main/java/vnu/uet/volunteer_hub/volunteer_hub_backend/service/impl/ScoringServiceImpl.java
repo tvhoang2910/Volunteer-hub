@@ -115,12 +115,13 @@ public class ScoringServiceImpl implements ScoringService {
             long comments = commentRepository.countByPostIdAndUserId(post.getId(), viewerId);
 
             double boost = (recentReactions * 10.0) + (comments * 20.0);
+            // Use stream to handle List return type
             if (post.getEvent() != null && registrationRepository
                     .findByEventIdAndVolunteerId(post.getEvent().getId(), viewerId)
-                    .filter(reg -> reg.getRegistrationStatus().equals(RegistrationStatus.APPROVED)
+                    .stream()
+                    .anyMatch(reg -> reg.getRegistrationStatus().equals(RegistrationStatus.APPROVED)
                             || reg.getRegistrationStatus().equals(RegistrationStatus.CHECKED_IN)
-                            || reg.getRegistrationStatus().equals(RegistrationStatus.COMPLETED))
-                    .isPresent()) {
+                            || reg.getRegistrationStatus().equals(RegistrationStatus.COMPLETED))) {
                 boost += 50.0; // registered for the event
             }
             if (post.getAuthor() != null && post.getAuthor().getId() != null

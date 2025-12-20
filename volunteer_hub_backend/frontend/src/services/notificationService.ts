@@ -2,6 +2,14 @@
  * @file notificationService.js
  * @description Service for handling general system notifications (not limited to manager).
  * Includes fetching notifications and marking them as read.
+ * 
+ * API Endpoints (Backend):
+ * - GET /api/notifications - Lấy danh sách thông báo (userId từ JWT)
+ * - GET /api/notifications/unread-count - Đếm số thông báo chưa đọc
+ * - PUT /api/notifications/{id}/read - Đánh dấu 1 thông báo đã đọc
+ * - PUT /api/notifications/read-all - Đánh dấu tất cả đã đọc
+ * - DELETE /api/notifications/{id} - Xóa 1 thông báo
+ * - DELETE /api/notifications/all - Xóa tất cả thông báo
  */
 
 import axios from "axios";
@@ -15,9 +23,10 @@ const getAuthHeader = () => {
 
 export const notificationService = {
   /**
-   * Lấy danh sách thông báo của user với phân trang
+   * Lấy danh sách thông báo của user hiện tại (userId từ JWT token)
+   * GET /api/notifications?page=0&limit=10&isRead=false
    */
-  async getUserNotifications(userId: string, { page = 0, limit = 10, isRead }: { page?: number; limit?: number; isRead?: boolean } = {}) {
+  async getNotifications({ page = 0, limit = 10, isRead }: { page?: number; limit?: number; isRead?: boolean } = {}) {
     try {
       const params: any = { page, limit };
       if (isRead !== undefined) {
@@ -25,7 +34,7 @@ export const notificationService = {
       }
 
       const response = await axios.get(
-        `${API_URL}/api/notifications/${userId}`,
+        `${API_URL}/api/notifications`,
         {
           params,
           headers: getAuthHeader(),
@@ -34,38 +43,39 @@ export const notificationService = {
 
       return response.data;
     } catch (error) {
-      console.error("Get User Notifications Error:", error);
+      console.error("Get Notifications Error:", error);
       throw error;
     }
   },
 
   /**
-   * Lấy danh sách thông báo chung (của user hiện tại từ token)
+   * Đếm số lượng thông báo chưa đọc
+   * GET /api/notifications/unread-count
    */
-  async getNotifications(page = 0, limit = 10) {
+  async getUnreadCount() {
     try {
       const response = await axios.get(
-        `${API_URL}/api/notifications`,
+        `${API_URL}/api/notifications/unread-count`,
         {
-          params: { page, limit },
           headers: getAuthHeader(),
         }
       );
 
       return response.data;
     } catch (error) {
-      console.error("Notification Service Error:", error);
+      console.error("Get Unread Count Error:", error);
       throw error;
     }
   },
 
   /**
-   * Đánh dấu thông báo đã đọc
+   * Đánh dấu 1 thông báo đã đọc
+   * PUT /api/notifications/{notificationId}/read
    */
-  async markAsRead(notificationId, userId) {
+  async markAsRead(notificationId: string) {
     try {
       const response = await axios.put(
-        `${API_URL}/api/notifications/${notificationId}/read/${userId}`,
+        `${API_URL}/api/notifications/${notificationId}/read`,
         {},
         { headers: getAuthHeader() }
       );
@@ -75,5 +85,71 @@ export const notificationService = {
       console.error("Mark as read error:", error);
       throw error;
     }
+  },
+
+  /**
+   * Đánh dấu tất cả thông báo đã đọc
+   * PUT /api/notifications/read-all
+   */
+  async markAllAsRead() {
+    try {
+      const response = await axios.put(
+        `${API_URL}/api/notifications/read-all`,
+        {},
+        { headers: getAuthHeader() }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("Mark all as read error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Xóa 1 thông báo
+   * DELETE /api/notifications/{notificationId}
+   */
+  async deleteNotification(notificationId: string) {
+    try {
+      const response = await axios.delete(
+        `${API_URL}/api/notifications/${notificationId}`,
+        { headers: getAuthHeader() }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("Delete notification error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Xóa tất cả thông báo
+   * DELETE /api/notifications/all
+   */
+  async deleteAllNotifications() {
+    try {
+      const response = await axios.delete(
+        `${API_URL}/api/notifications/all`,
+        { headers: getAuthHeader() }
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error("Delete all notifications error:", error);
+      throw error;
+    }
+  },
+
+  // ==================== LEGACY METHODS (for backward compatibility) ====================
+
+  /**
+   * @deprecated Use getNotifications() instead
+   * Legacy method - userId is now extracted from JWT token
+   */
+  async getUserNotifications(userId: string, options: { page?: number; limit?: number; isRead?: boolean } = {}) {
+    console.warn('getUserNotifications is deprecated, use getNotifications() instead');
+    return this.getNotifications(options);
   },
 };

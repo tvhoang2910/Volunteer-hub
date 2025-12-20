@@ -1,81 +1,307 @@
-import React, { useState } from 'react'
-import ProfileHeader from '@/components/manager/profile/ProfileHeader'
-import ProfileDetails from '@/components/manager/profile/ProfileDetails'
-import EditProfileModal from '@/components/manager/profile/EditProfileModal'
-import SimpleAlert from '@/components/ui/SimpleAlert'
-import Tabs from '@/components/common/Tabs'
-import { useManagerProfile } from '@/hooks/useManagerProfile'
+"use client";
 
-const tabs = [
-  { key: 'info', label: 'Thông tin' },
-  { key: 'activity', label: 'Hoạt động' },
-  { key: 'settings', label: 'Cài đặt' },
-  { key: 'security', label: 'Bảo mật' },
-]
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useRouter } from "next/router";
+import { toast } from "@/hooks/use-toast";
+import { userService } from "@/services/userService";
 
 export default function ManagerProfilePage() {
-  const { user, loading, alert, handleSave, closeAlert } = useManagerProfile();
-  const [showEdit, setShowEdit] = useState(false)
-  const [activeTab, setActiveTab] = useState('info')
+  const router = useRouter();
+
+  const [user, setUser] = useState({
+    uid: "",
+    name: "",
+    email: "",
+  });
+  const [editForm, setEditForm] = useState({
+    name: "",
+  });
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/manager");
+    } else {
+      getUser();
+    }
+  }, [router]);
+
+  const getUser = async () => {
+    try {
+      const userId = localStorage.getItem("userId");
+      const response = await userService.getUserById(userId || undefined);
+
+      const fullName = response?.data?.name || "";
+      setUser({
+        uid: response?.data?.userId || response?.data?.id || "",
+        name: fullName,
+        email: response?.data?.email || "",
+      });
+      setEditForm({ name: fullName });
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      toast({
+        title: "Lỗi",
+        description:
+          "Đã có lỗi xảy ra khi kết nối với máy chủ, vui lòng tải lại trang hoặc đăng nhập lại",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    try {
+      await userService.updateUserProfile({
+        name: editForm.name.trim(),
+      });
+
+      toast({
+        title: "Thành công",
+        description: "Thông tin của bạn đã được cập nhật",
+      });
+      setIsEditDialogOpen(false);
+      getUser();
+    } catch (error) {
+      console.error("Error updating user:", error);
+      toast({
+        title: "Cập nhật thông tin thất bại",
+        description:
+          error.response?.data?.message ||
+          "Đã có lỗi xảy ra khi kết nối với máy chủ",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      const userId = localStorage.getItem("userId");
+      await userService.deleteUserAccount(userId || undefined);
+
+      toast({
+        title: "Thành công",
+        description: "Tài khoản đã được xóa",
+      });
+
+      localStorage.removeItem("token");
+      localStorage.removeItem("userId");
+      router.push("/manager");
+    } catch (error) {
+      toast({
+        title: "Xóa tài khoản thất bại",
+        description:
+          error.response?.data?.message ||
+          "Đã có lỗi xảy ra khi kết nối với máy chủ",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handlePasswordReset = async (e) => {
+    e.preventDefault();
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Lỗi",
+        description: "Mật khẩu được gõ lại không chính xác!",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await userService.changePassword({
+        currentPassword: oldPassword,
+        newPassword: newPassword,
+        confirmPassword: confirmPassword,
+      });
+
+      toast({
+        title: "Thành công",
+        description: "Đổi mật khẩu thành công. Vui lòng đăng nhập lại",
+      });
+
+      localStorage.removeItem("token");
+      localStorage.removeItem("userId");
+      router.push("/manager");
+    } catch (error) {
+      toast({
+        title: "Đổi mật khẩu thất bại",
+        description:
+          error.response?.data?.message ||
+          "Mật khẩu hiện tại không đúng hoặc có lỗi xảy ra",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("userId");
+    router.push("/manager");
+  };
 
   return (
-    <div className="bg-gray-50 min-h-screen pt-24">
-      <div className="mx-auto px-6 lg:px-10 max-w-6xl space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Hồ sơ quản lý</h1>
-          <div />
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-orange-50 p-8">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <h1 className="text-2xl font-semibold">Hồ Sơ Cá Nhân</h1>
 
-        {alert && (
-          <SimpleAlert type={alert.type} message={alert.message} onClose={closeAlert} />
-        )}
-
-        {loading ? (
-          <div className="p-6 bg-white rounded shadow">Đang tải...</div>
-        ) : (
-          <>
-            <ProfileHeader user={user} onEdit={() => setShowEdit(true)} />
-
-            <div className="mt-6">
-              <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
-              <div className="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  {activeTab === 'info' && <ProfileDetails user={user} />}
-                  {activeTab === 'activity' && (
-                    <div className="bg-white rounded-lg p-6 shadow-sm">Hoạt động gần đây (placeholder)</div>
-                  )}
-                  {activeTab === 'settings' && (
-                    <div className="bg-white rounded-lg p-6 shadow-sm">Cài đặt thông báo (placeholder)</div>
-                  )}
-                  {activeTab === 'security' && (
-                    <div className="bg-white rounded-lg p-6 shadow-sm">Bảo mật & mật khẩu (placeholder)</div>
-                  )}
-                </div>
-
-                <aside className="space-y-4">
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
-                    <h4 className="font-semibold">Thống kê</h4>
-                    <div className="mt-3 grid grid-cols-2 gap-3">
-                      <div className="bg-emerald-50 p-3 rounded text-emerald-700">{user?.stats?.managedProjects || 0} dự án</div>
-                      <div className="bg-emerald-50 p-3 rounded text-emerald-700">{user?.stats?.volunteers || 0} tình nguyện viên</div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Thông tin cơ bản</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <p>
+                <strong>UID:</strong> {user.uid}
+              </p>
+              <p>
+                <strong>Họ và Tên:</strong> {user.name}
+              </p>
+              <p>
+                <strong>Email:</strong> {user.email}
+              </p>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>Chỉnh sửa</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Thông tin hồ sơ</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleUpdateUser}>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="name">Họ và Tên</Label>
+                      <Input
+                        id="name"
+                        value={editForm.name}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, name: e.target.value })
+                        }
+                        placeholder="Ví dụ: Nguyễn Văn Thắng"
+                      />
                     </div>
                   </div>
-                  <div className="bg-white rounded-lg p-4 shadow-sm">Các hành động nhanh (placeholder)</div>
-                </aside>
+                  <DialogFooter className="mt-4">
+                    <Button type="submit">Lưu thay đổi</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </CardFooter>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Đặt lại mật khẩu</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handlePasswordReset} className="space-y-4">
+              <div>
+                <Label htmlFor="oldPassword">Mật khẩu hiện tại</Label>
+                <Input
+                  id="oldPassword"
+                  type="password"
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                />
               </div>
-            </div>
-          </>
-        )}
+              <div>
+                <Label htmlFor="newPassword">Mật khẩu mới</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="confirmPassword">Gõ lại mật khẩu mới</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </div>
+              <Button type="submit">Lưu thay đổi</Button>
+            </form>
+          </CardContent>
+        </Card>
 
-        {showEdit && (
-          <EditProfileModal
-            initialData={user}
-            onClose={() => setShowEdit(false)}
-            onSave={handleSave}
-          />
-        )}
+        <Card>
+          <CardHeader>
+            <CardTitle>Cài đặt tài khoản</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">Xóa tài khoản</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Bạn có chắc chắn muốn xóa tài khoản?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Sẽ không thể khôi phục tài khoản một khi đã được xóa. Tất cả
+                    những dữ liệu liên quan tới tài khoản của bạn đều sẽ không
+                    được lưu lại.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Thoát</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteAccount}>
+                    Xóa tài khoản
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
+            <Button onClick={handleLogout} variant="outline" className="ml-4">
+              Đăng xuất
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
-  )
+  );
 }

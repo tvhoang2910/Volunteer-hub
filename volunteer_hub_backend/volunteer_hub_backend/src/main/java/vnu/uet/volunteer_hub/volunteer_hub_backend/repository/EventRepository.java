@@ -19,6 +19,13 @@ public interface EventRepository extends JpaRepository<Event, UUID> {
     List<Event> findAllByCreatedBy_Id(UUID userId);
 
     /**
+     * Export helper: fetch createdBy eagerly to avoid LazyInitializationException
+     * when spring.jpa.open-in-view=false.
+     */
+    @Query("SELECT e FROM Event e LEFT JOIN FETCH e.createdBy")
+    List<Event> findAllWithCreatedBy();
+
+    /**
      * Find all approved events created by a specific user (manager).
      */
     List<Event> findAllByCreatedBy_IdAndAdminApprovalStatus(UUID userId, EventApprovalStatus status);

@@ -31,6 +31,8 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.RegistrationStatu
         @Index(name = "idx_registrations_event_user", columnList = "event_id,user_id"),
         @Index(name = "idx_registrations_user_id", columnList = "user_id"),
         @Index(name = "idx_registrations_user_status", columnList = "user_id,registration_status")
+}, uniqueConstraints = {
+        @jakarta.persistence.UniqueConstraint(name = "uk_registration_event_user", columnNames = {"event_id", "user_id"})
 })
 @AttributeOverrides({
         @AttributeOverride(name = "id", column = @Column(name = "registration_id", nullable = false, updatable = false)),

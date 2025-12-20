@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.BroadcastNotificationRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.PushSubscriptionRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.NotificationResponseDTO;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Event;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Notification;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.PushSubscription;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.User;
@@ -20,6 +21,8 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.NotificationReposi
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.PushSubscriptionRepository;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.UserRepository;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.NotificationService;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.service.PushService;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.WebPushPayload;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +43,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final PushSubscriptionRepository pushSubscriptionRepository;
+    private final PushService pushService;
 
     /**
      * Lấy danh sách thông báo với phân trang, sort theo ngày mới nhất
@@ -237,9 +241,8 @@ public class NotificationServiceImpl implements NotificationService {
             log.info("Successfully broadcasted {} notifications asynchronously by admin: {}",
                     savedNotifications.size(), adminId);
 
-            // TODO: Implement actual Web Push sending logic here
-            // For each recipient, look up their push subscriptions and send via Web Push
-            // API
+            // Send Web Push to all recipients who have subscriptions
+            sendWebPushToRecipients(recipients, request.getTitle(), request.getContent());
 
             return CompletableFuture.completedFuture(savedNotifications.size());
         } catch (Exception e) {
@@ -312,5 +315,167 @@ public class NotificationServiceImpl implements NotificationService {
                 .isRead(notification.getIsRead())
                 .createdAt(notification.getCreatedAt())
                 .build();
+    }
+
+    // ==================== EVENT-BASED NOTIFICATION HELPERS ====================
+
+    /**
+     * Tạo notification chung với đầy đủ thông tin
+     */
+    @Override
+    @Transactional
+    public void createNotification(User recipient, Event event, String title, String body,
+            NotificationType notificationType) {
+        log.debug("Creating notification for user: {}, type: {}", recipient.getId(), notificationType);
+
+        Notification notification = new Notification();
+        notification.setRecipient(recipient);
+        notification.setEvent(event);
+        notification.setTitle(title);
+        notification.setBody(body);
+        notification.setNotificationType(notificationType);
+        notification.setIsRead(false);
+
+        notificationRepository.save(notification);
+        log.info("Created notification for user: {}, type: {}", recipient.getId(), notificationType);
+    }
+
+    /**
+     * Thông báo cho Manager khi có volunteer mới đăng ký sự kiện
+     */
+    @Override
+    @Transactional
+    public void notifyNewRegistration(Event event, User volunteer) {
+        User manager = event.getCreatedBy();
+        if (manager == null) {
+            log.warn("Event {} has no creator, skipping notification", event.getId());
+            return;
+        }
+
+        String title = "Đăng ký mới: " + event.getTitle();
+        String body = String.format("Tình nguyện viên %s đã đăng ký tham gia sự kiện \"%s\". Vui lòng xem xét và phê duyệt.",
+                volunteer.getName(), event.getTitle());
+
+        createNotification(manager, event, title, body, NotificationType.REGISTRATION_SUBMITTED);
+    }
+
+    /**
+     * Thông báo cho Volunteer khi đăng ký được duyệt
+     */
+    @Override
+    @Transactional
+    public void notifyRegistrationApproved(Event event, User volunteer) {
+        String title = "Đăng ký được duyệt: " + event.getTitle();
+        String body = String.format("Chúc mừng! Đơn đăng ký của bạn cho sự kiện \"%s\" đã được phê duyệt. Hãy chuẩn bị tham gia nhé!",
+                event.getTitle());
+
+        createNotification(volunteer, event, title, body, NotificationType.REGISTRATION_CONFIRMED);
+    }
+
+    /**
+     * Thông báo cho Volunteer khi đăng ký bị từ chối
+     */
+    @Override
+    @Transactional
+    public void notifyRegistrationRejected(Event event, User volunteer) {
+        String title = "Đăng ký bị từ chối: " + event.getTitle();
+        String body = String.format("Rất tiếc, đơn đăng ký của bạn cho sự kiện \"%s\" không được phê duyệt. Bạn có thể tham gia các sự kiện khác.",
+                event.getTitle());
+
+        createNotification(volunteer, event, title, body, NotificationType.REGISTRATION_REJECTED);
+    }
+
+    /**
+     * Thông báo cho Volunteer khi hoàn thành sự kiện
+     */
+    @Override
+    @Transactional
+    public void notifyRegistrationCompleted(Event event, User volunteer) {
+        String title = "Hoàn thành sự kiện: " + event.getTitle();
+        String body = String.format("Cảm ơn bạn đã tham gia và hoàn thành sự kiện \"%s\". Đóng góp của bạn rất có ý nghĩa!",
+                event.getTitle());
+
+        createNotification(volunteer, event, title, body, NotificationType.COMPLETION_MARKED);
+    }
+
+    // ==================== WEB PUSH HELPERS ====================
+
+    /**
+     * Gửi Web Push notifications cho danh sách recipients
+     * Tìm tất cả subscriptions của mỗi user và gửi push
+     */
+    private void sendWebPushToRecipients(List<User> recipients, String title, String content) {
+        log.info("[WebPush] ====== BẮT ĐẦU GỬI WEB PUSH ======");
+        log.info("[WebPush] Số recipients: {}", recipients.size());
+        
+        int pushCount = 0;
+        int usersWithSubscription = 0;
+        
+        for (User recipient : recipients) {
+            // Lấy tất cả subscriptions của user
+            List<PushSubscription> subscriptions = pushSubscriptionRepository.findByUserId(recipient.getId());
+            
+            log.info("[WebPush] User {} ({}) có {} subscriptions", 
+                    recipient.getName(), recipient.getId(), subscriptions.size());
+            
+            if (subscriptions.isEmpty()) {
+                continue;
+            }
+            
+            usersWithSubscription++;
+            
+            // Tạo payload
+            WebPushPayload payload = WebPushPayload.builder()
+                    .title(title)
+                    .body(content)
+                    .icon("/logo192.png")
+                    .badge("/badge.png")
+                    .tag("broadcast-" + System.currentTimeMillis())
+                    .build();
+            
+            // Gửi push tới tất cả devices của user
+            for (PushSubscription subscription : subscriptions) {
+                try {
+                    log.info("[WebPush] Gửi push tới endpoint: {}...", 
+                            subscription.getEndpoint().substring(0, Math.min(50, subscription.getEndpoint().length())));
+                    pushService.sendPushAsync(subscription, payload);
+                    pushCount++;
+                } catch (Exception e) {
+                    log.error("[WebPush] Lỗi gửi push tới subscription {}: {}", 
+                            subscription.getId(), e.getMessage());
+                }
+            }
+        }
+        
+        log.info("[WebPush] ====== KẾT THÚC GỬI WEB PUSH ======");
+        log.info("[WebPush] Tổng: {} users có subscription, {} push đã gửi", usersWithSubscription, pushCount);
+    }
+
+    /**
+     * Gửi Web Push notification cho một user cụ thể
+     */
+    private void sendWebPushToUser(User recipient, String title, String body) {
+        List<PushSubscription> subscriptions = pushSubscriptionRepository.findByUserId(recipient.getId());
+        
+        if (subscriptions.isEmpty()) {
+            log.debug("No push subscriptions for user: {}", recipient.getId());
+            return;
+        }
+        
+        WebPushPayload payload = WebPushPayload.builder()
+                .title(title)
+                .body(body)
+                .icon("/logo192.png")
+                .badge("/badge.png")
+                .tag("notification-" + System.currentTimeMillis())
+                .build();
+        
+        for (PushSubscription subscription : subscriptions) {
+            try {
+                pushService.sendPushAsync(subscription, payload);
+            } catch (Exception e) {
+                log.error("Failed to send push: {}", e.getMessage());
+            }
+        }
     }
 }

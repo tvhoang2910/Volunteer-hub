@@ -1,6 +1,7 @@
 package vnu.uet.volunteer_hub.volunteer_hub_backend.api;
 
 import java.util.*;
+import java.nio.charset.StandardCharsets;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -99,11 +100,13 @@ public class AdminAPI {
         }).collect(Collectors.toList());
 
         if ("csv".equalsIgnoreCase(format)) {
-            String csv = toCsv(rows);
-            InputStreamResource resource = new InputStreamResource(new ByteArrayInputStream(csv.getBytes()));
+            String csv = "\uFEFF" + toCsv(rows); // UTF-8 BOM for Excel on Windows
+            byte[] bytes = csv.getBytes(StandardCharsets.UTF_8);
+            InputStreamResource resource = new InputStreamResource(new ByteArrayInputStream(bytes));
             HttpHeaders headers = new HttpHeaders();
             headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=events.csv");
-            return ResponseEntity.ok().headers(headers).contentType(MediaType.parseMediaType("text/csv"))
+            return ResponseEntity.ok().headers(headers)
+                    .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
                     .body(resource);
         }
 
@@ -124,11 +127,13 @@ public class AdminAPI {
         }).collect(Collectors.toList());
 
         if ("csv".equalsIgnoreCase(format)) {
-            String csv = toCsv(rows);
-            InputStreamResource resource = new InputStreamResource(new ByteArrayInputStream(csv.getBytes()));
+            String csv = "\uFEFF" + toCsv(rows); // UTF-8 BOM for Excel on Windows
+            byte[] bytes = csv.getBytes(StandardCharsets.UTF_8);
+            InputStreamResource resource = new InputStreamResource(new ByteArrayInputStream(bytes));
             HttpHeaders headers = new HttpHeaders();
             headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=volunteers.csv");
-            return ResponseEntity.ok().headers(headers).contentType(MediaType.parseMediaType("text/csv"))
+            return ResponseEntity.ok().headers(headers)
+                    .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
                     .body(resource);
         }
 
@@ -250,12 +255,12 @@ public class AdminAPI {
         if (rows == null || rows.isEmpty()) {
             return "";
         }
-        List<String> headers = new ArrayList<>(rows.getFirst().keySet());
+        List<String> headers = new ArrayList<>(rows.get(0).keySet());
         StringBuilder sb = new StringBuilder();
-        sb.append(String.join(",", headers)).append("\n");
+        sb.append(String.join(",", headers)).append("\r\n");
         for (Map<String, Object> row : rows) {
             List<String> values = headers.stream().map(h -> escapeCsv(row.get(h))).collect(Collectors.toList());
-            sb.append(String.join(",", values)).append("\n");
+            sb.append(String.join(",", values)).append("\r\n");
         }
         return sb.toString();
     }

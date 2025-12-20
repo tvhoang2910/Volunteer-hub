@@ -2,13 +2,43 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { useForm } from "@/hooks/useForm";
-
 import { authService } from "@/services/authService";
 
-export const useLogin = (onSuccess, initialRole = "VOLUNTEER") => {
+const normalizeRole = (role?: string | null) => {
+  if (!role) return null;
+  const r = String(role).trim();
+  return r.startsWith("ROLE_") ? r.slice("ROLE_".length) : r;
+};
+
+const tryGetJwtPayload = (token: string): any | null => {
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+    const json = decodeURIComponent(
+      Array.from(atob(padded))
+        .map((c) => `%${c.charCodeAt(0).toString(16).padStart(2, "0")}`)
+        .join("")
+    );
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+};
+
+type UseLoginOptions = {
+  expectedRole?: string;
+};
+
+export const useLogin = (
+  onSuccess,
+  initialRole = "VOLUNTEER",
+  options: UseLoginOptions = {}
+) => {
   const { login } = useAuth();
 
-  // Dùng useForm của Hoanghai nhưng giữ role UPPERCASE cho BE
   const { formData, handleInputChange, setFieldValue } = useForm({
     email: "",
     password: "",
@@ -16,37 +46,21 @@ export const useLogin = (onSuccess, initialRole = "VOLUNTEER") => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMessage(null);
 
     try {
-      // const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(formData),
-      // });
       const response = await authService.login(formData);
-
       const serverMessage =
-        response.data?.message ||
-        (Array.isArray(response.data?.data)
-          ? response.data.data.join("; ")
-          : response.data?.data?.message) ||
+        response?.message ||
+        (Array.isArray(response?.data)
+          ? response.data.join("; ")
+          : response?.data?.message) ||
         null;
-
-      if (!response.status === 200) {
-        const message =
-          serverMessage ||
-          "Đăng nhập thất bại. Kiểm tra email / mật khẩu / vai trò.";
-        toast({
-          title: "Lỗi đăng nhập",
-          description: message,
-          variant: "destructive",
-        });
-        return;
-      }
 
       // BE-compatible token resolve
       const token =
@@ -56,18 +70,40 @@ export const useLogin = (onSuccess, initialRole = "VOLUNTEER") => {
         response?.token;
 
       if (!token) {
+        const message =
+          serverMessage ||
+          "Đăng nhập thất bại. Không nhận được token từ server.";
+        setErrorMessage(message);
         toast({
           title: "Lỗi đăng nhập",
-          description: "Không nhận được token từ server.",
+          description: message,
           variant: "destructive",
         });
         return;
       }
 
-      const resolvedRole = response?.data?.role || response?.role || formData.role;
-      const userId = response?.data?.userId || response?.userId || null;
+      const jwtPayload = tryGetJwtPayload(token);
+      const resolvedRole = normalizeRole(
+        response?.data?.role ||
+          response?.role ||
+          jwtPayload?.role ||
+          formData.role
+      );
+      const userId =
+        response?.data?.userId || response?.userId || jwtPayload?.sub || null;
 
-      // Quan trọng: login(token, role)
+      // Validate expectedRole nếu có
+      if (options.expectedRole && resolvedRole !== options.expectedRole) {
+        const message = `Tài khoản của bạn có vai trò ${resolvedRole}. Vui lòng đăng nhập đúng khu vực ${options.expectedRole}.`;
+        setErrorMessage(message);
+        toast({
+          title: "Sai luồng đăng nhập",
+          description: message,
+          variant: "destructive",
+        });
+        return;
+      }
+
       login(token, resolvedRole, userId);
 
       toast({
@@ -78,9 +114,11 @@ export const useLogin = (onSuccess, initialRole = "VOLUNTEER") => {
       onSuccess && onSuccess(resolvedRole, response);
     } catch (error) {
       console.error("Lỗi khi đăng nhập:", error);
+      const message = "Không thể kết nối đến server.";
+      setErrorMessage(message);
       toast({
         title: "Lỗi hệ thống",
-        description: "Không thể kết nối đến server.",
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -91,6 +129,7 @@ export const useLogin = (onSuccess, initialRole = "VOLUNTEER") => {
   return {
     formData,
     loading,
+    errorMessage,
     handleInputChange,
     handleSubmit,
     setFieldValue,

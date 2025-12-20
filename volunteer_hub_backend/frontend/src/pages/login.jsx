@@ -4,14 +4,12 @@ import { useRouter } from "next/router";
 import { Eye, EyeOff } from "lucide-react";
 
 import { useLogin } from "@/hooks/useLoginForm";
-import { useAuth } from "@/context/AuthContext";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 
 export default function LoginForm() {
   const router = useRouter();
-  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
 
   // Login bằng BE (email/password)
@@ -32,14 +30,12 @@ export default function LoginForm() {
     handleInputChange,
     handleSubmit,
     setFieldValue,
-  } = useLogin(handleLoginSuccess, "VOLUNTEER");
+  } = useLogin(handleLoginSuccess, "VOLUNTEER", { expectedRole: "VOLUNTEER" });
 
-  // Nhận role từ query (?role=MANAGER)
+  // Luồng user login cố định VOLUNTEER
   useEffect(() => {
-    if (router.query.role) {
-      setFieldValue("role", router.query.role.toUpperCase());
-    }
-  }, [router.query.role, setFieldValue]);
+    setFieldValue("role", "VOLUNTEER");
+  }, [setFieldValue]);
 
   // Google Login via backend OAuth2
   const handleGoogleLogin = () => {
@@ -125,21 +121,15 @@ export default function LoginForm() {
                 </div>
               </div>
 
-              {/* Role */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">
                   Vai trò
                 </label>
-                <select
-                  name="role"
-                  value={formData.role}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-green-400"
-                >
-                  <option value="VOLUNTEER">Tình nguyện viên</option>
-                  <option value="MANAGER">Quản lý</option>
-                  <option value="ADMIN">Admin</option>
-                </select>
+                <input
+                  value="Tình nguyện viên"
+                  disabled
+                  className="w-full px-4 py-3 rounded-xl border bg-gray-50"
+                />
               </div>
 
               <button

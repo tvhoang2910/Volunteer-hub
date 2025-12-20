@@ -4,13 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useRouter } from "next/router";
 import { useLogin } from "@/hooks/useLoginForm";
 
@@ -19,17 +12,11 @@ const AdminLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLoginSuccess = (role) => {
-    if (role === "ADMIN") {
-      router.push("/admin/dashboard");
-    } else if (role === "MANAGER") {
-      router.push("/manager/dashboard");
-    } else {
-      router.push("/user/dashboard");
-    }
+    router.push("/admin/dashboard");
   };
 
   const { formData, loading, errorMessage, handleInputChange, handleSubmit } =
-    useLogin(handleLoginSuccess, "ADMIN");
+    useLogin(handleLoginSuccess, "ADMIN", { expectedRole: "ADMIN" });
 
   return (
     <div
@@ -62,21 +49,11 @@ const AdminLogin = () => {
 
             <div className="space-y-2">
               <Label>Vai trò</Label>
-              <Select
-                value={formData.role}
-                onValueChange={(value) =>
-                  handleInputChange({ target: { name: "role", value } })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ADMIN">Admin</SelectItem>
-                  <SelectItem value="MANAGER">Manager</SelectItem>
-                  <SelectItem value="VOLUNTEER">Volunteer</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input
+                value="Admin"
+                disabled
+                className="bg-gray-50"
+              />
             </div>
 
             <div className="space-y-2">

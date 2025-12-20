@@ -17,8 +17,8 @@ export const userService = {
    * Get user by ID
    * @param {string} userId
    */
-  getUserById: async (userId) => {
-    // Backend endpoint /api/users returns current authenticated user's profile
+  getUserById: async (_userId?: string) => {
+    // Backend endpoint /api/users returns current authenticated user's profile (userId from JWT)
     const response = await axios.get(`${API_BASE_URL}/api/users`, {
       headers: getAuthHeader(),
     });
@@ -72,9 +72,16 @@ export const userService = {
   /**
    * Update user profile
    * Backend gets userId from JWT token, no need to pass in URL
-   * @param {Object} profileData - { firstName, lastName, email, etc. }
+   * Accepts either (profileData) or (userId, profileData) for legacy callsites.
+   * @param {Object|string} profileDataOrUserId
+   * @param {Object} maybeProfileData
    */
-  updateUserProfile: async (profileData) => {
+  updateUserProfile: async (profileDataOrUserId, maybeProfileData?) => {
+    const profileData =
+      typeof profileDataOrUserId === "string" || profileDataOrUserId == null
+        ? maybeProfileData
+        : profileDataOrUserId;
+
     const response = await axios.put(
       `${API_BASE_URL}/api/users/profile`,
       profileData,
@@ -89,11 +96,11 @@ export const userService = {
   },
 
   /**
-   * Delete user account
-   * @param {string} userId
+   * Delete (deactivate) current authenticated account.
+   * Backend uses userId from JWT, ignores any provided userId.
    */
-  deleteUserAccount: async (userId) => {
-    const response = await axios.delete(`${API_BASE_URL}/api/users/${userId}`, {
+  deleteUserAccount: async (_userId?: string) => {
+    const response = await axios.delete(`${API_BASE_URL}/api/users/me`, {
       headers: getAuthHeader(),
     });
     return response.data;
