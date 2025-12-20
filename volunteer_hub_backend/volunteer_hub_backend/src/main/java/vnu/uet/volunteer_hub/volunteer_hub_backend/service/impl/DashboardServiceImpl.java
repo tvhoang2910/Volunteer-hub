@@ -112,17 +112,23 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     @Transactional(readOnly = true)
     public LeaderboardResponseDTO getLeaderboard(String metric, String timeframe, int limit, UUID viewerId) {
-        // Fetch all users with completed registrations
+        // Fetch all completed registrations with event and volunteer in ONE query (fix
+        // N+1)
+        List<Registration> allCompletedRegs = registrationRepository
+                .findAllByRegistrationStatusWithEventAndVolunteer(RegistrationStatus.COMPLETED);
+
+        // Group registrations by user ID
+        java.util.Map<UUID, List<Registration>> regsByUser = allCompletedRegs.stream()
+                .collect(Collectors.groupingBy(r -> r.getVolunteer().getId()));
+
+        // Fetch all users
         List<User> users = userRepository.findAll();
 
         // Build leaderboard entries
         List<LeaderboardEntryDTO> entries = users.stream()
                 .map(user -> {
-                    // Get completed registrations
-                    List<Registration> completedRegs = registrationRepository.findAll().stream()
-                            .filter(r -> r.getVolunteer().getId().equals(user.getId())
-                                    && r.getRegistrationStatus() == RegistrationStatus.COMPLETED)
-                            .toList();
+                    // Get completed registrations from pre-fetched map (no extra queries!)
+                    List<Registration> completedRegs = regsByUser.getOrDefault(user.getId(), List.of());
 
                     // Calculate volunteer hours (sum of event durations)
                     double volunteerHours = completedRegs.stream()

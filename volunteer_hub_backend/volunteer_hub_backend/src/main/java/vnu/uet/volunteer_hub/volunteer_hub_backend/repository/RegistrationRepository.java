@@ -14,36 +14,47 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.RegistrationStatu
 
 public interface RegistrationRepository extends JpaRepository<Registration, UUID> {
 
-    boolean existsByEventIdAndVolunteerId(UUID eventId, UUID volunteerId);
+        boolean existsByEventIdAndVolunteerId(UUID eventId, UUID volunteerId);
 
-    Optional<Registration> findByEventIdAndVolunteerId(UUID eventId, UUID volunteerId);
+        Optional<Registration> findByEventIdAndVolunteerId(UUID eventId, UUID volunteerId);
 
-    long countByEventIdAndRegistrationStatus(UUID eventId, RegistrationStatus registrationStatus);
+        long countByEventIdAndRegistrationStatus(UUID eventId, RegistrationStatus registrationStatus);
 
-    @Query("SELECT COUNT(r) FROM Registration r WHERE r.volunteer.id = :volunteerId AND r.registrationStatus IN :statuses")
-    long countByVolunteerIdAndRegistrationStatusIn(@Param("volunteerId") UUID volunteerId,
-            @Param("statuses") List<RegistrationStatus> statuses);
+        @Query("SELECT COUNT(r) FROM Registration r WHERE r.volunteer.id = :volunteerId AND r.registrationStatus IN :statuses")
+        long countByVolunteerIdAndRegistrationStatusIn(@Param("volunteerId") UUID volunteerId,
+                        @Param("statuses") List<RegistrationStatus> statuses);
 
-    /**
-     * Tìm tất cả registrations của một volunteer (user).
-     * Dùng để lấy danh sách sự kiện đã tham gia.
-     * 
-     * @param volunteerId ID của volunteer (user)
-     * @return Danh sách registrations
-     */
-    List<Registration> findByVolunteerId(UUID volunteerId);
+        /**
+         * Tìm tất cả registrations của một volunteer (user).
+         * Dùng để lấy danh sách sự kiện đã tham gia.
+         * 
+         * @param volunteerId ID của volunteer (user)
+         * @return Danh sách registrations
+         */
+        List<Registration> findByVolunteerId(UUID volunteerId);
 
-    /**
-     * Batch fetch registrations for multiple events by a volunteer.
-     * Used to fix N+1 problem when checking visibility of multiple posts.
-     * Eager loads event and volunteer to avoid lazy loading.
-     * 
-     * @param eventIds    List of event IDs
-     * @param volunteerId ID của volunteer (user)
-     * @return Danh sách registrations
-     */
-    @EntityGraph(attributePaths = { "event", "volunteer" })
-    @Query("SELECT r FROM Registration r WHERE r.event.id IN :eventIds AND r.volunteer.id = :volunteerId")
-    List<Registration> findByEventIdInAndVolunteerId(@Param("eventIds") List<UUID> eventIds,
-            @Param("volunteerId") UUID volunteerId);
+        /**
+         * Batch fetch registrations for multiple events by a volunteer.
+         * Used to fix N+1 problem when checking visibility of multiple posts.
+         * Eager loads event and volunteer to avoid lazy loading.
+         * 
+         * @param eventIds    List of event IDs
+         * @param volunteerId ID của volunteer (user)
+         * @return Danh sách registrations
+         */
+        @EntityGraph(attributePaths = { "event", "volunteer" })
+        @Query("SELECT r FROM Registration r WHERE r.event.id IN :eventIds AND r.volunteer.id = :volunteerId")
+        List<Registration> findByEventIdInAndVolunteerId(@Param("eventIds") List<UUID> eventIds,
+                        @Param("volunteerId") UUID volunteerId);
+
+        /**
+         * Find all completed registrations with event and volunteer eagerly loaded.
+         * Used to fix N+1 problem in leaderboard computation.
+         * 
+         * @param status Registration status to filter by
+         * @return Danh sách registrations with event and volunteer loaded
+         */
+        @EntityGraph(attributePaths = { "event", "volunteer" })
+        @Query("SELECT r FROM Registration r WHERE r.registrationStatus = :status")
+        List<Registration> findAllByRegistrationStatusWithEventAndVolunteer(@Param("status") RegistrationStatus status);
 }

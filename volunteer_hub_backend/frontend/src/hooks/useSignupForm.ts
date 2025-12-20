@@ -77,6 +77,7 @@ export const useSignup = (onSuccess, initialRole = "VOLUNTEER") => {
   return {
     formData,
     loading,
+    passwordErrors,
     handleInputChange,
     handleSubmit,
     setFieldValue,
