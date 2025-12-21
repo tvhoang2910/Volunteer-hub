@@ -107,7 +107,7 @@ export const postService = {
     toggleReaction: async (postId, reactionType = 'LIKE') => {
         try {
             const response = await api.post(`/posts/${postId}/reactions`, null, {
-                params: { reactionType },
+                params: { type: reactionType },
                 headers: getAuthHeader()
             });
             return response.data?.data;

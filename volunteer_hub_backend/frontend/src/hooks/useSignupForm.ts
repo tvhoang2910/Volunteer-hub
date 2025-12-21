@@ -28,15 +28,6 @@ export const useSignup = (onSuccess, initialRole = "VOLUNTEER") => {
       return;
     }
 
-    if (formData.role === "ADMIN") {
-      toast({
-        title: "Lỗi đăng ký",
-        description: "Không thể tự đăng ký vai trò ADMIN.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -48,25 +39,30 @@ export const useSignup = (onSuccess, initialRole = "VOLUNTEER") => {
         name: fullName,
         role: formData.role,
       });
-    
-      if (response.status === 200) {
-        toast({
-          title: "Đăng ký thành công!",
-          description: "Tài khoản đã được tạo thành công.",
-        });
-        onSuccess && onSuccess();
-      } else if (response.status === 400) {
-        toast({
-          title: "Lỗi đăng ký",
-          description: "Không thể tạo tài khoản. Vui lòng kiểm tra trong phút lát.",
-          variant: "destructive",
-        });
+
+      // Đăng ký thành công (status 200)
+      let successMessage = 'Tài khoản đã được tạo thành công.';
+      if (formData.role === 'ADMIN') {
+        successMessage = 'Yêu cầu đăng ký ADMIN đã được gửi. Vui lòng chờ admin duyệt trước khi đăng nhập với quyền Admin.';
       }
-    } catch (error) {
-      console.error("Lỗi khi đăng ký:", error);
       toast({
-        title: "Lỗi hệ thống",
-        description: "Không thể kết nối đến máy chủ.",
+        title: "Đăng ký thành công!",
+        description: successMessage,
+      });
+      onSuccess && onSuccess();
+    } catch (error: any) {
+      console.error("Lỗi khi đăng ký:", error);
+
+      // Lấy message lỗi từ server response (nếu có)
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.detail ||
+        error?.message ||
+        "Không thể tạo tài khoản. Vui lòng thử lại.";
+
+      toast({
+        title: "Lỗi đăng ký",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

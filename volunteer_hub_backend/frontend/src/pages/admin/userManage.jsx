@@ -30,9 +30,14 @@ import {
 import { useToast } from "@/hooks/use-toast";
 
 const getRoleBadge = (role) => {
-    return role === 'EVENT_MANAGER'
-        ? <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200 border-none whitespace-nowrap">Event Manager</Badge>
-        : <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 border-none whitespace-nowrap">Volunteer</Badge>;
+    const normalized = (role || '').toUpperCase();
+    if (normalized === 'ADMIN') {
+        return <Badge className="bg-red-100 text-red-800 hover:bg-red-200 border-none whitespace-nowrap">Admin</Badge>;
+    }
+    if (normalized === 'MANAGER' || normalized === 'EVENT_MANAGER') {
+        return <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200 border-none whitespace-nowrap">Manager</Badge>;
+    }
+    return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 border-none whitespace-nowrap">Volunteer</Badge>;
 };
 
 const getStatusBadge = (status) => {
@@ -260,11 +265,11 @@ const UserManagement = () => {
     }, []);
 
     const normalizeUser = (u = {}) => ({
-    id: u.id,
-    fullName: `${u.lastName || ''} ${u.firstName || ''}`.trim(),
+    id: u.id || u.userId,
+    fullName: u.name || `${u.lastName || ''} ${u.firstName || ''}`.trim() || 'Không có tên',
     email: u.email || '',
-    role: u.role || 'VOLUNTEER',
-    status: u.isActive ? 'ACTIVE' : 'LOCKED',
+    role: (u.role || 'VOLUNTEER').toUpperCase(),
+    status: u.isActive === true || u.isActive === 'true' ? 'ACTIVE' : 'LOCKED',
     joinedAt: u.createdAt
         ? new Date(u.createdAt).toISOString().split('T')[0]
         : '-',

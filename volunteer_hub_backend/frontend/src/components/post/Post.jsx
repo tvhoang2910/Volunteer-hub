@@ -36,6 +36,8 @@ const Post = ({ post, onPostUpdated, onPostDeleted }) => {
             media: postData.media || postData.imageUrls || [],
             likes: postData.likes ?? postData.reactionCount ?? 0,
             comments: postData.comments ?? postData.commentCount ?? 0,
+            // Map likedByViewer from API to isLiked
+            isLiked: postData.isLiked ?? postData.likedByViewer ?? false,
         };
     };
     

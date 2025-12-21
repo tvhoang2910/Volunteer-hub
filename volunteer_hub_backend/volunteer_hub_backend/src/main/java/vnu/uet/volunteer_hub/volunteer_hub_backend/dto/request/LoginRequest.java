@@ -18,4 +18,11 @@ public class LoginRequest {
 
     @NotBlank(message = "Mật khẩu không được để trống")
     private String password;
+
+    /**
+     * Optional: The role the user wants to login as.
+     * If provided, the backend will verify that the user has at least this role.
+     * Possible values: VOLUNTEER, MANAGER, ADMIN
+     */
+    private String role;
 }

@@ -13,13 +13,15 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  LogOut
+  LogOut,
+  BarChart3
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useUnreadCount } from '@/hooks/useUnreadCount'
 
 const navItems = [
-  { name: 'Tổng quan', href: '/admin/dashboard', icon: LayoutDashboard },
+  { name: 'Tổng quan', href: '/admin/overview', icon: LayoutDashboard },
+  { name: 'Thống kê', href: '/admin/dashboard', icon: BarChart3 },
   { name: 'Quản lý sự kiện', href: '/admin/eventManage', icon: CalendarDays },
   { name: 'Quản lý người dùng', href: '/admin/userManage', icon: Users },
   { name: 'Thông báo', href: '/admin/notifications', icon: BellRing, showBadge: true },

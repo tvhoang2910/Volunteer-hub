@@ -478,4 +478,42 @@ public class NotificationServiceImpl implements NotificationService {
             }
         }
     }
+
+    /**
+     * Thông báo cho Manager khi có volunteer post bài mới trong kênh trao đổi
+     * Chỉ gửi thông báo nếu người đăng bài KHÔNG phải là Manager của sự kiện
+     */
+    @Override
+    @Transactional
+    public void notifyNewPostInExchange(Event event, User volunteer, String postContent) {
+        User manager = event.getCreatedBy();
+        if (manager == null) {
+            log.warn("Event {} has no creator, skipping notification", event.getId());
+            return;
+        }
+
+        // Không gửi thông báo nếu người đăng bài chính là Manager của sự kiện
+        if (manager.getId().equals(volunteer.getId())) {
+            log.debug("Post author is the manager of event {}, skipping notification", event.getId());
+            return;
+        }
+
+        String title = "Bài viết mới: " + event.getTitle();
+        
+        // Truncate content for preview (max 100 characters)
+        String contentPreview = postContent;
+        if (postContent != null && postContent.length() > 100) {
+            contentPreview = postContent.substring(0, 100) + "...";
+        }
+        
+        String body = String.format("Tình nguyện viên %s đã đăng bài mới trong kênh trao đổi của sự kiện \"%s\": %s",
+                volunteer.getName(), event.getTitle(), contentPreview);
+
+        // Tạo notification trong database
+        createNotification(manager, event, title, body, NotificationType.NEW_POST);
+        
+        // Gửi Web Push notification
+        log.info("Sending push notification to manager {} for new post in event {}", manager.getId(), event.getId());
+        sendWebPushToUser(manager, title, body);
+    }
 }

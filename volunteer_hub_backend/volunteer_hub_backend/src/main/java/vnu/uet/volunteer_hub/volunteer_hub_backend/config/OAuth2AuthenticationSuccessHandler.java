@@ -12,6 +12,7 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.User;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.model.utils.JwtUtil;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.model.utils.RoleUtils;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.UserRepository;
 
 import java.io.IOException;
@@ -69,11 +70,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 return;
             }
 
-            // Lấy role của user
-            String role = user.getRoles().stream()
-                    .findFirst()
-                    .map(r -> r.getRoleName())
-                    .orElse("VOLUNTEER");
+            // Determine the effective role deterministically
+            String role = RoleUtils.resolvePrimaryRole(user.getRoles());
 
             // Generate JWT token
             String token = jwtUtil.generateToken(

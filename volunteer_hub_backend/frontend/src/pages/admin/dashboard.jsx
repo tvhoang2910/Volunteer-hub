@@ -9,6 +9,10 @@ const StatsOverview = dynamic(() => import('@/components/admin/dashboard/StatsOv
   loading: () => <div className="h-32 bg-gray-200 animate-pulse rounded-lg" />
 })
 
+const AdminRoleRequests = dynamic(() => import('@/components/admin/dashboard/AdminRoleRequests').then(mod => ({ default: mod.AdminRoleRequests })), {
+  loading: () => <div className="h-48 bg-gray-200 animate-pulse rounded-lg" />
+})
+
 const WeeklyActivityChart = dynamic(() => import('@/components/admin/dashboard/WeeklyActivityChart').then(mod => ({ default: mod.WeeklyActivityChart })), {
   loading: () => <div className="h-80 bg-gray-200 animate-pulse rounded-lg" />,
   ssr: false
@@ -55,6 +59,9 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Tổng Quan</h1>
           <p className="text-gray-600">Theo dõi và phân tích hiệu suất hoạt động</p>
         </div>
+
+        {/* Admin Role Requests - Pending approvals */}
+        <AdminRoleRequests />
 
         {/* Stats Cards */}
         <StatsOverview data={data.overview} />

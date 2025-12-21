@@ -32,6 +32,7 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.ResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Role;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.User;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.model.utils.JwtUtil;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.model.utils.RoleUtils;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.model.utils.TokenUtil;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.EmailService;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.RateLimitService;
@@ -140,11 +141,23 @@ public class AuthAPI {
                 throw new RuntimeException("User not found after authentication");
             }
 
-            // Lấy role (lấy role đầu tiên nếu có nhiều roles)
-            String role = user.getRoles().stream()
-                    .findFirst()
-                    .map(Role::getRoleName)
-                    .orElse("VOLUNTEER");
+            // Lấy role ưu tiên cao nhất (ADMIN > MANAGER > VOLUNTEER)
+            String primaryRole = RoleUtils.resolvePrimaryRole(user.getRoles());
+            String role = primaryRole;
+
+            // Validate requested role nếu có
+            String requestedRole = request.getRole();
+            if (requestedRole != null && !requestedRole.isBlank()) {
+                if (!RoleUtils.satisfiesRequestedRole(primaryRole, requestedRole)) {
+                    logger.warn("❌ User {} requested role {} but doesn't have it", user.getEmail(), requestedRole);
+                    ResponseDTO<Void> errorResponse1 = ResponseDTO.<Void>builder()
+                            .message("You don't have the requested role: " + requestedRole)
+                            .build();
+                    return ResponseEntity.status(403).body(errorResponse1);
+                }
+                // Use requested role instead of primary role
+                role = RoleUtils.normalizeRole(requestedRole);
+            }
 
             // Generate JWT token
             String token = jwtUtil.generateToken(
@@ -176,9 +189,27 @@ public class AuthAPI {
             return ResponseEntity.ok(successResponse);
 
         } catch (Exception e) {
-            logger.warn("❌ Login failed for email: {} from IP: {}", request.getEmail(), clientIP);
+            // Log chi tiết hơn để debug
+            logger.warn("❌ Login failed for email: {} from IP: {} - Reason: {}",
+                    request.getEmail(), clientIP, e.getMessage());
+
+            // Check specific error types for better error messages
+            String errorMessage = "Invalid email or password";
+            if (e.getMessage() != null) {
+                if (e.getMessage().contains("User is disabled")) {
+                    errorMessage = "Tài khoản đã bị khóa. Vui lòng liên hệ admin.";
+                    logger.warn("❌ User {} is disabled (isActive=false)", request.getEmail());
+                } else if (e.getMessage().contains("User not found")) {
+                    errorMessage = "Email hoặc mật khẩu không đúng";
+                    logger.warn("❌ User {} not found in database", request.getEmail());
+                } else if (e.getMessage().contains("Bad credentials")) {
+                    errorMessage = "Email hoặc mật khẩu không đúng";
+                    logger.warn("❌ Bad credentials for user {}", request.getEmail());
+                }
+            }
+
             ResponseDTO<Void> errorResponse1 = ResponseDTO.<Void>builder()
-                    .message("Invalid email or password")
+                    .message(errorMessage)
                     .build();
             return ResponseEntity.status(401).body(errorResponse1);
         }

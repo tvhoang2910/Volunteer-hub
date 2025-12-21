@@ -25,7 +25,9 @@ public class PostReactionServiceImpl implements PostReactionService {
     @Override
     @Transactional
     public PostReaction addReaction(PostReaction reaction) {
-        PostReaction saved = postReactionRepository.save(reaction);
+        // Use saveAndFlush to ensure data is immediately written to DB
+        // This is needed because getPostDetail() queries DB right after this
+        PostReaction saved = postReactionRepository.saveAndFlush(reaction);
         try {
             if (saved.getPost() != null && saved.getPost().getId() != null) {
                 postRankingService.updatePostScore(saved.getPost().getId());
@@ -42,6 +44,8 @@ public class PostReactionServiceImpl implements PostReactionService {
         postReactionRepository.findById(reactionId).ifPresent(r -> {
             UUID postId = r.getPost() == null ? null : r.getPost().getId();
             postReactionRepository.delete(r);
+            // Flush to ensure delete is committed before getPostDetail() queries
+            postReactionRepository.flush();
             try {
                 if (postId != null) {
                     postRankingService.updatePostScore(postId);

@@ -59,19 +59,17 @@ export default function UserProfilePage() {
 
   const getUser = async () => {
     try {
-      // Lấy userId từ localStorage hoặc từ token
-      const userId = localStorage.getItem("userId");
-      if (!userId) {
-        throw new Error("User ID not found");
-      }
+      // Backend lấy userId từ JWT token, không cần truyền vào
+      const response = await userService.getUserById();
+      console.log('[Profile] User data:', response);
 
-      const response = await userService.getUserById(userId);
-      const fullName = response.data.name || "";
+      const userData = response.data || response;
+      const fullName = userData.name || "";
 
       setUser({
-        uid: response.data.userId,
+        uid: userData.userId || userData.id,
         name: fullName,
-        email: response.data.email,
+        email: userData.email,
       });
       setEditForm({
         name: fullName,
@@ -81,7 +79,7 @@ export default function UserProfilePage() {
       toast({
         title: "Lỗi",
         description:
-          "Đã có lỗi xảy ra khi kết nối với máy chủ, vui lòng tải lại trang hoặc đăng nhập lại",
+          error.message || "Đã có lỗi xảy ra khi kết nối với máy chủ, vui lòng tải lại trang hoặc đăng nhập lại",
         variant: "destructive",
       });
     }
@@ -115,12 +113,8 @@ export default function UserProfilePage() {
 
   const handleDeleteAccount = async () => {
     try {
-      const userId = localStorage.getItem("userId");
-      if (!userId) {
-        throw new Error("User ID not found");
-      }
-
-      await userService.deleteUserAccount(userId);
+      // Backend gets userId from JWT token, no need to pass it
+      await userService.deleteUserAccount();
 
       toast({
         title: "Thành công",

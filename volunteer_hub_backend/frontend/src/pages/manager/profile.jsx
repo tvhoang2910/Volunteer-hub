@@ -73,10 +73,10 @@ export default function ManagerProfilePage() {
       setEditForm({ name: fullName });
     } catch (error) {
       console.error("Error fetching user:", error);
+      const errorMsg = error.response?.data?.message || error.response?.data?.detail || error.message || "Đã có lỗi xảy ra khi kết nối với máy chủ, vui lòng tải lại trang hoặc đăng nhập lại";
       toast({
         title: "Lỗi",
-        description:
-          "Đã có lỗi xảy ra khi kết nối với máy chủ, vui lòng tải lại trang hoặc đăng nhập lại",
+        description: errorMsg,
         variant: "destructive",
       });
     }

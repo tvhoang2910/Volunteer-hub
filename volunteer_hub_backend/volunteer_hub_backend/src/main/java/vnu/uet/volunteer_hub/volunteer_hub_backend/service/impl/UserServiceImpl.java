@@ -16,10 +16,13 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.UpdateProfileRequ
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.EventResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.UserProfileResponse;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.BaseEntity;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.ManagerRoleRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Role;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.Registration;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.entity.User;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.ManagerRequestStatus;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.RegistrationStatus;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.ManagerRoleRequestRepository;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.RegistrationRepository;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.RoleRepository;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.UserRepository;
@@ -36,12 +39,16 @@ public class UserServiceImpl implements UserService {
 
     private final RegistrationRepository registrationRepository;
 
+    private final ManagerRoleRequestRepository managerRoleRequestRepository;
+
     public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository,
-            PasswordEncoder passwordEncoder, RegistrationRepository registrationRepository) {
+            PasswordEncoder passwordEncoder, RegistrationRepository registrationRepository,
+            ManagerRoleRequestRepository managerRoleRequestRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.registrationRepository = registrationRepository;
+        this.managerRoleRequestRepository = managerRoleRequestRepository;
     }
 
     @Override
@@ -60,15 +67,42 @@ public class UserServiceImpl implements UserService {
         user.setEmail(registrationRequest.getEmail().toLowerCase());
         user.setName(registrationRequest.getName());
         user.setPassword(passwordEncoder.encode(registrationRequest.getPassword()));
-        user.setIsActive(Boolean.TRUE);
+        user.setIsActive(Boolean.TRUE); // Activate user immediately after registration
 
-        Role userRole = roleRepository.findByRoleName("VOLUNTEER")
+        // Base role is VOLUNTEER
+        Role volunteerRole = roleRepository.findByRoleName("VOLUNTEER")
                 .orElseThrow(() -> new RuntimeException("VOLUNTEER role not found in the database"));
-        user.getRoles().add(userRole);
+        user.getRoles().add(volunteerRole);
+
+        // If user requested MANAGER, add MANAGER role immediately (no approval needed)
+        String requestedRole = registrationRequest.getRole();
+        if (requestedRole != null && requestedRole.equalsIgnoreCase("MANAGER")) {
+            Role managerRole = roleRepository.findByRoleName("MANAGER")
+                    .orElseThrow(() -> new RuntimeException("MANAGER role not found in the database"));
+            user.getRoles().add(managerRole);
+            logger.info("MANAGER role added directly for user: {}", registrationRequest.getEmail());
+        }
 
         logger.info("Attempting to save user: {}", user.getEmail());
         userRepository.save(user);
         logger.info("User saved successfully: {}", user.getEmail());
+
+        // If user requested ADMIN at signup, create a pending approval request
+        // (requires admin approval)
+        if (requestedRole != null && requestedRole.equalsIgnoreCase("ADMIN")) {
+            // Avoid creating duplicate pending requests
+            boolean hasPending = managerRoleRequestRepository
+                    .findFirstByRequestedBy_IdAndStatusOrderByCreatedAtDesc(user.getId(),
+                            ManagerRequestStatus.PENDING.name())
+                    .isPresent();
+            if (!hasPending) {
+                ManagerRoleRequest req = new ManagerRoleRequest();
+                req.setRequestedBy(user);
+                req.setStatus(ManagerRequestStatus.PENDING.name());
+                managerRoleRequestRepository.save(req);
+                logger.info("Admin role request created for user: {}", user.getEmail());
+            }
+        }
     }
 
     @Override

@@ -153,7 +153,8 @@ export const eventService = {
       id: event.id || event.event_id,
       name: event.name || event.title || '',
       category: event.category || '',
-      status: event.status || 'PENDING',
+      // Use adminApprovalStatus if available, fallback to status
+      status: event.adminApprovalStatus || event.status || 'PENDING',
       createdBy: event.createdBy || event.creatorName || '',
       location: event.location || '',
       startDate: event.startDate || event.start_time || '',
@@ -162,6 +163,7 @@ export const eventService = {
       volunteerCount: event.volunteerCount ?? 0,
       pendingRegistrations: event.pendingRegistrations ?? 0,
       notes: event.notes || '',
+      thumbnailUrl: event.thumbnailUrl || null,
     });
 
     const res = await axios.get(`${API_BASE_URL}/api/admin/events`, {
@@ -173,10 +175,18 @@ export const eventService = {
     return rawEvents.map(normalizeAdminEvent);
   },
 
+  // Get pending events for admin
+  getPendingEvents: async () => {
+    const res = await axios.get(`${API_BASE_URL}/api/admin/events/pending`, {
+      headers: getAuthHeader(),
+    });
+    return res.data?.data || res.data || [];
+  },
+
   approveEvent: async (eventId) => {
     const res = await axios.put(
-      `${API_BASE_URL}/api/admin/events/${eventId}/approval`,
-      { status: 'APPROVED' },
+      `${API_BASE_URL}/api/admin/events/${eventId}/approve`,
+      {},
       { headers: getAuthHeader() }
     );
     return res.data;
@@ -184,8 +194,8 @@ export const eventService = {
 
   rejectEvent: async (eventId, reason) => {
     const res = await axios.put(
-      `${API_BASE_URL}/api/admin/events/${eventId}/approval`,
-      { status: 'REJECTED', reason },
+      `${API_BASE_URL}/api/admin/events/${eventId}/reject`,
+      { reason },
       { headers: getAuthHeader() }
     );
     return res.data;

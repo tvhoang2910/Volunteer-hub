@@ -63,13 +63,14 @@ export default function useUserProfile() {
             // Create new request
             pendingRequest = (async () => {
                 try {
-                    const response = await userService.getUserById(userId);
+                    const response = await userService.getUserById();
+                    const resData = response.data || response;
                     const userData: UserProfile = {
-                        id: response.data?.userId || userId,
-                        name: response.data?.name || '',
-                        email: response.data?.email || '',
-                        avatarUrl: response.data?.avatarUrl || null,
-                        ...response.data,
+                        id: resData?.userId || resData?.id || userId,
+                        name: resData?.name || '',
+                        email: resData?.email || '',
+                        avatarUrl: resData?.avatarUrl || null,
+                        ...resData,
                     };
 
                     // Update cache

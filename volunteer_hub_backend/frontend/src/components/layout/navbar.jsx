@@ -201,23 +201,8 @@ export default function Navbar() {
                     <BsPersonCircle size={isScrolled ? 18 : 22} />
                   </motion.button>
                 </PopoverTrigger>
-                <PopoverContent className="w-64 rounded-xl border-gray-200 shadow-lg backdrop-blur-sm bg-white/95">
+                <PopoverContent className="w-48 rounded-xl border-gray-200 shadow-lg backdrop-blur-sm bg-white/95">
                   <div className="grid gap-2">
-                    <Link
-                      href="/my-account"
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-600 transition-all duration-200"
-                    >
-                      <BsPersonCircle size={18} />
-                      <span>Thông tin tài khoản</span>
-                    </Link>
-                    <Link
-                      href="/settings"
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-600 transition-all duration-200"
-                    >
-                      <FiSettings size={18} />
-                      <span>Cài đặt</span>
-                    </Link>
-                    <div className="border-t border-gray-100 my-1"></div>
                     <button
                       onClick={handleLogout}
                       className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-all duration-200"
@@ -342,15 +327,6 @@ export default function Navbar() {
                   <div className="border-t border-gray-200 my-2"></div>
                   {isAuthenticated ? (
                     <>
-                      <motion.li variants={mobileItemVariants}>
-                        <Link
-                          href="/my-account"
-                          onClick={handleLinkClick}
-                          className="block px-4 py-3 rounded-xl text-base font-medium text-gray-700 hover:text-green-500 hover:bg-green-50 transition-all duration-200"
-                        >
-                          Thông tin tài khoản
-                        </Link>
-                      </motion.li>
                       <motion.li variants={mobileItemVariants}>
                         <button
                           onClick={handleLogout}

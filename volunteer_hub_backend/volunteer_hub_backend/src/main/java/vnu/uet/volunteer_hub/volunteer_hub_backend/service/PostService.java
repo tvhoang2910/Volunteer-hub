@@ -58,12 +58,13 @@ public interface PostService {
     /**
      * Get posts by event ID with pagination.
      * 
-     * @param eventId the event ID
-     * @param page    page number (0-based)
-     * @param size    page size
+     * @param eventId  the event ID
+     * @param viewerId the viewer ID (can be null for anonymous)
+     * @param page     page number (0-based)
+     * @param size     page size
      * @return paginated posts for the event
      */
-    Page<ScoredPostDTO> getPostsByEventId(UUID eventId, int page, int size);
+    Page<ScoredPostDTO> getPostsByEventId(UUID eventId, UUID viewerId, int page, int size);
 
     /**
      * Like a post by a viewer.

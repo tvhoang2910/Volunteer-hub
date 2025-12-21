@@ -40,16 +40,40 @@ export const statisticService = {
     },
 
     /**
-     * Get admin dashboard stats - uses the same endpoint
+     * Get admin dashboard stats - transformed response with fallback
      */
-    getAdminDashboardStats: async (): Promise<DashboardStats> => {
+    getAdminDashboardStats: async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/api/dashboard/stats`, {
+            const response = await axios.get(`${API_BASE_URL}/api/admin/dashboard`, {
                 headers: getAuthHeader()
             });
-            return response.data?.data || response.data;
+            const data = response.data?.data || response.data;
+            
+            // Transform backend response to match frontend expectations
+            // Admin dashboard cards expect: totalMembers, totalRegistrations, totalEvents, approvedEvents, pendingEvents
+            return {
+                overview: {
+                    totalMembers: data.totalVolunteers || 0,
+                    totalRegistrations: data.totalRegistrations || 0,
+                    totalEvents: data.totalEvents || 0,
+                    approvedEvents: data.approvedEvents || 0,
+                    pendingEvents: data.pendingEvents || 0,
+
+                    // Backward-compatible aliases (in case other components used these)
+                    totalVolunteers: data.totalVolunteers || 0,
+                    pendingApprovals: data.pendingEvents || 0,
+                    activeEvents: data.activeEvents || data.approvedEvents || 0,
+                },
+                chartData: data.chartData || [],
+                weeklyData: {
+                    newEvents: data.newEventsThisWeek || 0,
+                    newVolunteers: data.newVolunteersThisWeek || 0,
+                    newPosts: data.newPostsThisWeek || 0,
+                }
+            };
         } catch (error) {
             console.error("Error in getAdminDashboardStats:", error);
+            // Avoid silently returning mock/incorrect data (causes wrong counts on dashboard)
             throw error;
         }
     },

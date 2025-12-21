@@ -56,7 +56,7 @@ const EventCardMobile = ({ event, onApprove, onReject, onDelete, onView }) => (
       <div>
         <h3 className="font-semibold text-gray-900 line-clamp-2 mb-1">{event.name}</h3>
         <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
-          {event.category}
+          {event.category || 'Tình nguyện'}
         </span>
       </div>
       <div>{getStatusBadge(event.status)}</div>
@@ -178,7 +178,7 @@ const EventTableDesktop = ({ events, onApprove, onReject, onDelete, onView }) =>
               </TableCell>
               <TableCell>
                 <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 whitespace-nowrap">
-                  {event.category}
+                  {event.category || 'Tình nguyện'}
                 </Badge>
               </TableCell>
               <TableCell className="text-sm text-gray-600 whitespace-nowrap">
@@ -280,8 +280,10 @@ const EventManagement = () => {
 
   // Filter Logic
   const filteredEvents = events.filter(event => {
-    const matchesSearch = event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const eventName = (event.name || '').toLowerCase();
+    const eventCategory = (event.category || '').toLowerCase();
+    const search = searchTerm.toLowerCase();
+    const matchesSearch = eventName.includes(search) || eventCategory.includes(search);
     const matchesStatus = statusFilter === 'ALL' || event.status === statusFilter;
     return matchesSearch && matchesStatus;
   });

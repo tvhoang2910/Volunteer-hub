@@ -94,36 +94,37 @@ export default function AdminNotificationsPage() {
                   onDelete={deleteNotification}
                 />
                 
-                {/* PAGINATION */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between p-4 border-t border-slate-200 bg-slate-50/30">
-                    <div className="text-sm text-slate-600">
-                      Trang <span className="font-semibold">{currentPage + 1}</span> / <span className="font-semibold">{totalPages}</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => changePage(currentPage - 1)}
-                        disabled={currentPage === 0}
-                        className="gap-1"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                        Trước
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => changePage(currentPage + 1)}
-                        disabled={currentPage >= totalPages - 1}
-                        className="gap-1"
-                      >
-                        Sau
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
+                {/* PAGINATION - Luôn hiển thị khi có thông báo */}
+                <div className="flex items-center justify-between p-4 border-t border-slate-200 bg-slate-50/30">
+                  <div className="text-sm text-slate-600">
+                    Trang <span className="font-semibold">{currentPage + 1}</span> / <span className="font-semibold">{totalPages}</span>
+                    <span className="ml-2 text-slate-400">
+                      (Hiển thị {notifications.length} / {totalElements} thông báo)
+                    </span>
                   </div>
-                )}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => changePage(currentPage - 1)}
+                      disabled={currentPage === 0 || loading}
+                      className="gap-1"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Trước
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => changePage(currentPage + 1)}
+                      disabled={currentPage >= totalPages - 1 || loading}
+                      className="gap-1"
+                    >
+                      Sau
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               </>
             )}
           </CardContent>

@@ -34,7 +34,7 @@ type UseLoginOptions = {
 
 export const useLogin = (
   onSuccess,
-  initialRole = "VOLUNTEER",
+  initialRole = "",
   options: UseLoginOptions = {}
 ) => {
   const { login } = useAuth();
@@ -83,12 +83,26 @@ export const useLogin = (
       }
 
       const jwtPayload = tryGetJwtPayload(token);
+      
+      // Resolve role from backend response or JWT - DO NOT use formData.role as fallback
       const resolvedRole = normalizeRole(
         response?.data?.role ||
           response?.role ||
           jwtPayload?.role ||
-          formData.role
+          null
       );
+      
+      if (!resolvedRole) {
+        const message = "Không thể xác định vai trò của tài khoản.";
+        setErrorMessage(message);
+        toast({
+          title: "Lỗi đăng nhập",
+          description: message,
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const userId =
         response?.data?.userId || response?.userId || jwtPayload?.sub || null;
 
@@ -114,10 +128,12 @@ export const useLogin = (
       onSuccess && onSuccess(resolvedRole, response);
     } catch (error) {
       console.error("Lỗi khi đăng nhập:", error);
-      const message = "Không thể kết nối đến server.";
+      // Extract backend error message if available
+      const backendMessage = error.response?.data?.message || error.response?.data?.detail;
+      const message = backendMessage || error.message || "Không thể kết nối đến server.";
       setErrorMessage(message);
       toast({
-        title: "Lỗi hệ thống",
+        title: backendMessage ? "Lỗi đăng nhập" : "Lỗi hệ thống",
         description: message,
         variant: "destructive",
       });

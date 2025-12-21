@@ -138,4 +138,13 @@ public interface NotificationService {
      * @param volunteer User hoàn thành
      */
     void notifyRegistrationCompleted(Event event, User volunteer);
+
+    /**
+     * Thông báo cho Manager khi có volunteer post bài mới trong kênh trao đổi
+     * 
+     * @param event     Event chứa bài viết
+     * @param volunteer User đăng bài
+     * @param postContent Nội dung bài viết (để preview)
+     */
+    void notifyNewPostInExchange(Event event, User volunteer, String postContent);
 }

@@ -34,14 +34,18 @@ export function useManagerNotifications(initialPage = 0, limit = 10) {
             const response = await notificationService.getNotifications({ page, limit });
             
             // Handle API response structure
-            // Backend returns: { message, data: Page<NotificationResponseDTO>, detail }
-            // Page has: { content: [...], totalElements, totalPages, ... }
-            const pageData = response?.data || response || {};
-            const content = pageData?.content || (Array.isArray(pageData) ? pageData : []);
+            // Backend returns: { data: { content: [...], page: { totalElements, totalPages, ... } }, message }
+            const pageData = response?.data || {};
+            const content = pageData?.content || [];
+            
+            // Pagination info is in response.data.page
+            const paginationInfo = pageData?.page || {};
+            const total = paginationInfo?.totalElements ?? pageData?.totalElements ?? 0;
+            const pages = paginationInfo?.totalPages ?? pageData?.totalPages ?? 1;
             
             // Update pagination info
-            setTotalElements(pageData?.totalElements || content.length || 0);
-            setTotalPages(pageData?.totalPages || (content.length > 0 ? 1 : 0));
+            setTotalElements(total);
+            setTotalPages(pages > 0 ? pages : 1);
             
             // Transform notifications for UI display
             // Backend DTO: { notificationId, recipientId, eventId, title, body, notificationType, isRead, createdAt }
@@ -100,6 +104,36 @@ export function useManagerNotifications(initialPage = 0, limit = 10) {
         }
     }, []);
 
+    // Delete single notification
+    const deleteNotification = useCallback(async (id: string) => {
+        try {
+            // Optimistic update
+            setNotifications((prev) => prev.filter((n) => n.id !== id));
+            setTotalElements((prev) => Math.max(0, prev - 1));
+            
+            await notificationService.deleteNotification(id);
+            triggerRefetchUnreadCount();
+        } catch (err) {
+            console.error("Failed to delete notification:", err);
+            // Rollback on error
+            fetchNotifications(currentPage);
+        }
+    }, [currentPage, fetchNotifications]);
+
+    // Delete all notifications
+    const deleteAllNotifications = useCallback(async () => {
+        try {
+            await notificationService.deleteAllNotifications();
+            setNotifications([]);
+            setTotalElements(0);
+            setTotalPages(1);
+            setCurrentPage(0);
+            triggerRefetchUnreadCount();
+        } catch (err) {
+            console.error("Failed to delete all notifications:", err);
+        }
+    }, []);
+
     // Refresh notifications
     const refresh = useCallback(() => {
         fetchNotifications(currentPage);
@@ -119,7 +153,9 @@ export function useManagerNotifications(initialPage = 0, limit = 10) {
         totalPages,
         totalElements,
         markAsRead, 
-        markAllAsRead, 
+        markAllAsRead,
+        deleteNotification,
+        deleteAllNotifications,
         changePage,
         refresh 
     };

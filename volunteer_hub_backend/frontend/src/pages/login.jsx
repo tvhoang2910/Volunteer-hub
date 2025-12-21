@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { Eye, EyeOff } from "lucide-react";
@@ -12,10 +12,10 @@ export default function LoginForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
 
-  // Login bằng BE (email/password)
+  // Login bằng BE (email/password) - điều hướng theo role từ backend
   const handleLoginSuccess = (role) => {
     if (role === "ADMIN") {
-      router.push("/admin/dashboard");
+      router.push("/admin/overview");
     } else if (role === "MANAGER") {
       router.push("/manager/dashboard");
     } else {
@@ -29,13 +29,7 @@ export default function LoginForm() {
     errorMessage,
     handleInputChange,
     handleSubmit,
-    setFieldValue,
-  } = useLogin(handleLoginSuccess, "VOLUNTEER", { expectedRole: "VOLUNTEER" });
-
-  // Luồng user login cố định VOLUNTEER
-  useEffect(() => {
-    setFieldValue("role", "VOLUNTEER");
-  }, [setFieldValue]);
+  } = useLogin(handleLoginSuccess); // Không truyền expectedRole để cho phép mọi role
 
   // Google Login via backend OAuth2
   const handleGoogleLogin = () => {
@@ -121,21 +115,10 @@ export default function LoginForm() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Vai trò
-                </label>
-                <input
-                  value="Tình nguyện viên"
-                  disabled
-                  className="w-full px-4 py-3 rounded-xl border bg-gray-50"
-                />
-              </div>
-
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-green-600 text-white rounded-xl font-semibold"
+                className="w-full py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors"
               >
                 {loading ? "Đang đăng nhập..." : "Đăng nhập"}
               </button>

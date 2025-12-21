@@ -127,7 +127,11 @@ public class PostAPI {
                         @RequestParam(defaultValue = "0") int page,
                         @RequestParam(defaultValue = "20") int size) {
                 try {
-                        Page<ScoredPostDTO> pageResult = postService.getPostsByEventId(eventId, page, size);
+                        // Get viewerId from authentication to check like status
+                        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                        UUID viewerId = userService.getViewerIdFromAuthentication(auth);
+
+                        Page<ScoredPostDTO> pageResult = postService.getPostsByEventId(eventId, viewerId, page, size);
                         return ResponseEntity.ok(ResponseDTO.<Page<ScoredPostDTO>>builder()
                                         .message("Posts retrieved successfully")
                                         .data(pageResult)

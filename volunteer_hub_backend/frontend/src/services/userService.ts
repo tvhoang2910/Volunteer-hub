@@ -1,5 +1,5 @@
 /**
- * @file userService.js
+ * @file userService.ts
  * @description Service for managing user accounts and profiles.
  */
 import axios from "axios";
@@ -12,16 +12,56 @@ const getAuthHeader = () => {
   return { Authorization: `Bearer ${token}` };
 };
 
+// Create axios instance with timeout and error handling
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 15000,
+});
+
+// Add response interceptor for consistent error handling
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('[UserService] API Error:', {
+      url: error.config?.url,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
+    if (error.code === 'ECONNABORTED') {
+      console.error('[UserService] Request timeout');
+      throw new Error('Yêu cầu hết thời gian. Vui lòng thử lại.');
+    }
+    if (!error.response) {
+      console.error('[UserService] Network error:', error.message);
+      throw new Error('Không thể kết nối đến máy chủ.');
+    }
+    // Extract backend error message if available
+    const backendMessage = error.response?.data?.message || error.response?.data?.detail;
+    if (backendMessage) {
+      const customError = new Error(backendMessage);
+      customError.response = error.response;
+      throw customError;
+    }
+    throw error;
+  }
+);
+
 export const userService = {
   /**
-   * Get user by ID
-   * @param {string} userId
+   * Get current authenticated user profile
+   * Backend extracts userId from JWT token
    */
-  getUserById: async (_userId?: string) => {
-    // Backend endpoint /api/users returns current authenticated user's profile (userId from JWT)
-    const response = await axios.get(`${API_BASE_URL}/api/users`, {
+  getUserById: async () => {
+    const token = localStorage.getItem("token");
+    console.log('[UserService] getUserById - token exists:', !!token);
+    console.log('[UserService] getUserById - calling /api/users');
+    
+    const response = await apiClient.get(`/api/users`, {
       headers: getAuthHeader(),
     });
+    
+    console.log('[UserService] getUserById - response:', response.data);
     return response.data;
   },
 
@@ -29,9 +69,9 @@ export const userService = {
    * Upload user avatar
    * @param {FormData} formData - Contains the file
    */
-  uploadAvatar: async (formData) => {
-    const response = await axios.post(
-      `${API_BASE_URL}/api/upload/avatar`,
+  uploadAvatar: async (formData: FormData) => {
+    const response = await apiClient.post(
+      `/api/upload/avatar`,
       formData,
       {
         headers: {
@@ -48,9 +88,9 @@ export const userService = {
    * Uses auth/change-password endpoint
    * @param {Object} data - { currentPassword, newPassword, confirmPassword }
    */
-  changePassword: async (data) => {
-    const response = await axios.post(
-      `${API_BASE_URL}/api/auth/change-password`,
+  changePassword: async (data: { currentPassword: string; newPassword: string; confirmPassword: string }) => {
+    const response = await apiClient.post(
+      `/api/auth/change-password`,
       data,
       {
         headers: getAuthHeader(),
@@ -63,7 +103,7 @@ export const userService = {
    * Deactivate user account
    */
   deactivateAccount: async () => {
-    const response = await axios.delete(`${API_BASE_URL}/api/users/me`, {
+    const response = await apiClient.delete(`/api/users/me`, {
       headers: getAuthHeader(),
     });
     return response.data;
@@ -72,18 +112,11 @@ export const userService = {
   /**
    * Update user profile
    * Backend gets userId from JWT token, no need to pass in URL
-   * Accepts either (profileData) or (userId, profileData) for legacy callsites.
-   * @param {Object|string} profileDataOrUserId
-   * @param {Object} maybeProfileData
+   * @param {Object} profileData - Profile fields to update
    */
-  updateUserProfile: async (profileDataOrUserId, maybeProfileData?) => {
-    const profileData =
-      typeof profileDataOrUserId === "string" || profileDataOrUserId == null
-        ? maybeProfileData
-        : profileDataOrUserId;
-
-    const response = await axios.put(
-      `${API_BASE_URL}/api/users/profile`,
+  updateUserProfile: async (profileData: Record<string, any>) => {
+    const response = await apiClient.put(
+      `/api/users/profile`,
       profileData,
       {
         headers: {
@@ -97,10 +130,10 @@ export const userService = {
 
   /**
    * Delete (deactivate) current authenticated account.
-   * Backend uses userId from JWT, ignores any provided userId.
+   * Backend uses userId from JWT.
    */
-  deleteUserAccount: async (_userId?: string) => {
-    const response = await axios.delete(`${API_BASE_URL}/api/users/me`, {
+  deleteUserAccount: async () => {
+    const response = await apiClient.delete(`/api/users/me`, {
       headers: getAuthHeader(),
     });
     return response.data;

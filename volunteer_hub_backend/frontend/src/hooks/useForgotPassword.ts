@@ -51,7 +51,8 @@ export const useForgotPassword = (onSuccess) => {
       onSuccess && onSuccess();
     } catch (err) {
       console.error("forgot-password error:", err);
-      const errMsg = "Không thể kết nối tới server. Vui lòng thử lại sau.";
+      const backendMsg = err.response?.data?.message || err.response?.data?.detail;
+      const errMsg = backendMsg || err.message || "Không thể kết nối tới server. Vui lòng thử lại sau.";
       setMessage(errMsg);
       toast({
         title: "Lỗi hệ thống",

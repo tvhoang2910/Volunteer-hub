@@ -36,8 +36,22 @@ const FloatingIcon = ({ icon: Icon, delay, position }) => {
 };
 
 export default function Hero() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, userRole } = useAuth();
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Get dashboard URL based on user role
+  const getDashboardUrl = () => {
+    if (!isAuthenticated) return "/login";
+    switch (userRole) {
+      case "ADMIN":
+        return "/admin/overview";
+      case "MANAGER":
+        return "/manager/dashboard";
+      case "USER":
+      default:
+        return "/user/dashboard";
+    }
+  };
 
   useEffect(() => {
     setIsLoaded(true);
@@ -144,7 +158,7 @@ export default function Hero() {
               className="flex flex-col sm:flex-row items-center lg:items-start gap-4 lg:gap-6 w-full sm:w-auto"
             >
               {/* Primary Button - Gradient with Glow */}
-              <Link href={isAuthenticated ? "/user/dashboard" : "/login"}>
+              <Link href={getDashboardUrl()}>
                 <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}

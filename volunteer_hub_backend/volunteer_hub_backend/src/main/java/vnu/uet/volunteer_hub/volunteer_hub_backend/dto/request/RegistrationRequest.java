@@ -25,4 +25,13 @@ public class RegistrationRequest {
 
     @NotBlank(message = "Họ và tên không được để trống")
     private String name;
+
+    /**
+     * Optional: Requested role for registration.
+     * Possible values: VOLUNTEER (default), MANAGER, ADMIN
+     * - VOLUNTEER: Granted immediately
+     * - MANAGER: Granted immediately
+     * - ADMIN: Requires approval from existing admin
+     */
+    private String role;
 }

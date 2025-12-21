@@ -1,5 +1,6 @@
 package vnu.uet.volunteer_hub.volunteer_hub_backend.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -23,6 +24,7 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.EventApprovalStat
 import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.ReactionType;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.model.enums.RegistrationStatus;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.repository.*;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.service.NotificationService;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.PostRankingService;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.PostReactionService;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.PostService;
@@ -37,6 +39,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 // @RequiredArgsConstructor
 public class PostServiceImpl implements PostService {
@@ -51,6 +54,7 @@ public class PostServiceImpl implements PostService {
     private final PostReactionService postReactionService;
     private final CommentRepository commentRepository;
     private final PostImageRepository postImageRepository;
+    private final NotificationService notificationService;
     private final int candidateMultiplier;
 
     public PostServiceImpl(PostRepository postRepository, PostRankingService postRankingService,
@@ -60,6 +64,7 @@ public class PostServiceImpl implements PostService {
             PostReactionService postReactionService,
             CommentRepository commentRepository,
             PostImageRepository postImageRepository,
+            NotificationService notificationService,
             @Value("${posts.feed.candidate-multiplier:5}") int candidateMultiplier) {
         this.postRepository = postRepository;
         this.postRankingService = postRankingService;
@@ -71,6 +76,7 @@ public class PostServiceImpl implements PostService {
         this.postReactionService = postReactionService;
         this.commentRepository = commentRepository;
         this.postImageRepository = postImageRepository;
+        this.notificationService = notificationService;
         this.candidateMultiplier = candidateMultiplier;
     }
 
@@ -130,7 +136,7 @@ public class PostServiceImpl implements PostService {
                                 EventApprovalStatus.APPROVED,
                                 pageable);
                 List<ScoredPostDTO> dtos = pagePosts.getContent().stream().map(p -> {
-                    ScoredPostDTO dto = mapToDTO(p, null, Optional.empty());
+                    ScoredPostDTO dto = mapToDTO(p, null, Optional.empty(), viewerId);
                     dto.setPersonalizedScore(scoringService.computePersonalizedScore(p, viewerId));
                     return dto;
                 }).collect(Collectors.toList());
@@ -165,7 +171,7 @@ public class PostServiceImpl implements PostService {
 
             // compute personalized score for each
             List<ScoredPostDTO> personalized = visible.stream().map(p -> {
-                ScoredPostDTO dto = mapToDTO(p, null, Optional.empty());
+                ScoredPostDTO dto = mapToDTO(p, null, Optional.empty(), viewerId);
                 dto.setPersonalizedScore(scoringService.computePersonalizedScore(p, viewerId));
                 return dto;
             }).sorted(Comparator
@@ -232,6 +238,10 @@ public class PostServiceImpl implements PostService {
     }
 
     private ScoredPostDTO mapToDTO(Post p, Double totalScoreOverride, Optional<User> viewer) {
+        return mapToDTO(p, totalScoreOverride, viewer, null);
+    }
+
+    private ScoredPostDTO mapToDTO(Post p, Double totalScoreOverride, Optional<User> viewer, UUID viewerId) {
         double total = totalScoreOverride == null ? scoringService.computeTotalScore(p) : totalScoreOverride;
         Double personalized = viewer.isEmpty() ? null
                 : scoringService.computePersonalizedScore(p, viewer);
@@ -244,6 +254,15 @@ public class PostServiceImpl implements PostService {
                         .map(img -> img.getImageUrl())
                         .collect(Collectors.toList());
 
+        // Check if liked by viewer
+        boolean likedByViewer = false;
+        String viewerReactionType = null;
+        if (viewerId != null) {
+            Optional<PostReaction> reactionOpt = postReactionRepository.findByPostIdAndUserId(p.getId(), viewerId);
+            likedByViewer = reactionOpt.isPresent();
+            viewerReactionType = reactionOpt.map(r -> r.getReactionType().name()).orElse(null);
+        }
+
         ScoredPostDTO dto = ScoredPostDTO.builder().postId(p.getId())
                 .eventId(p.getEvent() == null ? null : p.getEvent().getId())
                 .eventTitle(p.getEvent() == null ? "" : p.getEvent().getTitle())
@@ -252,7 +271,10 @@ public class PostServiceImpl implements PostService {
                 .createdAt(p.getCreatedAt()).commentCount(commentCount).reactionCount(reactionCount)
                 .affinityScore(scoringService.computeAffinityScore(p))
                 .recencyFactor(scoringService.computeRecencyFactor(p))
-                .totalScore(total).personalizedScore(personalized).build();
+                .totalScore(total).personalizedScore(personalized)
+                .likedByViewer(likedByViewer)
+                .viewerReactionType(viewerReactionType)
+                .build();
 
         try {
             if (p.getAuthor() != null) {
@@ -306,6 +328,14 @@ public class PostServiceImpl implements PostService {
         // Add to ranking
         postRankingService.addOrUpdatePostRanking(savedPost.getId().toString(),
                 scoringService.computeTotalScore(savedPost));
+
+        // Notify manager about new post in exchange channel
+        try {
+            notificationService.notifyNewPostInExchange(event, author, request.getContent());
+        } catch (Exception e) {
+            // Log but don't fail the post creation if notification fails
+            log.error("Failed to send notification for new post: {}", e.getMessage());
+        }
 
         // Return DTO
         return mapToDTO(savedPost, null, Optional.of(author));
@@ -540,13 +570,13 @@ public class PostServiceImpl implements PostService {
      */
     @Override
     @Transactional(readOnly = true)
-    public Page<ScoredPostDTO> getPostsByEventId(UUID eventId, int page, int size) {
+    public Page<ScoredPostDTO> getPostsByEventId(UUID eventId, UUID viewerId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Post> postsPage = postRepository.findByEventId(eventId, pageable);
 
-        // Map to DTOs
+        // Map to DTOs with viewerId to check like status
         List<ScoredPostDTO> dtos = postsPage.getContent().stream()
-                .map(p -> mapToDTO(p, null, Optional.empty()))
+                .map(p -> mapToDTO(p, null, Optional.empty(), viewerId))
                 .collect(Collectors.toList());
 
         return new PageImpl<>(dtos, pageable, postsPage.getTotalElements());

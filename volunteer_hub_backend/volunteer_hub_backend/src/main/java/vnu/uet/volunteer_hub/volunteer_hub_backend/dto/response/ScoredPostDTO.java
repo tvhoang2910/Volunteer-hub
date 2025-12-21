@@ -4,6 +4,7 @@ import java.util.UUID;
 import java.util.List;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -29,4 +30,9 @@ public class ScoredPostDTO {
     private AuthorSummaryDTO author;
     private EventSummaryDTO event;
     private Double personalizedScore;
+
+    // Like status for viewer - use @JsonProperty to ensure correct JSON field name
+    @JsonProperty("likedByViewer")
+    private boolean likedByViewer;
+    private String viewerReactionType;
 }

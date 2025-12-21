@@ -41,48 +41,46 @@ export default function AdminProfilePage() {
   }, [router])
 
   const getAdmin = async () => {
-    const getAdminApi = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin`
+    const getAdminApi = `${API_BASE_URL}/api/users`
 
     try {
-      // const response = await fetch(getAdminApi, {
-      //   method: "GET",
-      //   headers: {
-      //     "admin": "true",
-      //     "authorization": "Bearer " + localStorage.getItem("token")
-      //   },
-      // })
       const response = await axios.get(
           getAdminApi,
           {
             headers: {
-              "admin": "true",
-              "authorization": "Bearer " + localStorage.getItem("token")
+              "Authorization": "Bearer " + localStorage.getItem("token")
             },
           },
       );
-      if (!response.ok) {
-        throw new Error("Send request failed")
-      }
 
-      const res = await response.json()
+      const res = response.data;
+      const userData = res.data || res;
+      
+      // Parse name into firstName and lastName
+      const fullName = userData.name || '';
+      const nameParts = fullName.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
       setAdmin({ 
-        "uid": res.data.uid, 
-        "firstName": res.data.firstName, 
-        "lastName": res.data.lastName, 
-        "email": res.data.email,
-        "avatarUrl": res.data.avatarUrl || ''
+        "uid": userData.userId || userData.id, 
+        "firstName": firstName, 
+        "lastName": lastName, 
+        "email": userData.email,
+        "avatarUrl": userData.avatarUrl || ''
       })
       setEditForm({ 
-        "uid": res.data.uid, 
-        "firstName": res.data.firstName, 
-        "lastName": res.data.lastName, 
-        "email": res.data.email,
-        "avatarUrl": res.data.avatarUrl || ''
+        "uid": userData.userId || userData.id, 
+        "firstName": firstName, 
+        "lastName": lastName, 
+        "email": userData.email,
+        "avatarUrl": userData.avatarUrl || ''
       })
     } catch (error) {
+      const errorMsg = error.response?.data?.message || error.response?.data?.detail || error.message || "Đã có lỗi xảy ra khi kết nối với máy chủ, vui lòng tải lại trang hoặc đăng nhập lại";
       toast({
         title: "Lỗi",
-        description: "Đã có lỗi xảy ra khi kết nối với máy chủ, vui lòng tải lại trang hoặc đăng nhập lại",
+        description: errorMsg,
         variant: "destructive"
       })
     }
@@ -90,7 +88,7 @@ export default function AdminProfilePage() {
 
   const handleUpdateAdmin = async (e) => {
     e.preventDefault()
-    const updateAdminApi = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin`
+    const updateAdminApi = `${API_BASE_URL}/api/users/profile`
 
     try {
       // Upload avatar if a new file was selected
@@ -115,29 +113,22 @@ export default function AdminProfilePage() {
         }
       }
 
-      // const response = await fetch(updateAdminApi, {
-      //   method: "PUT",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //     "admin": "true",
-      //     "authorization": "Bearer " + localStorage.getItem("token")
-      //   },
-      //   body: JSON.stringify(editForm)
-      // })
-      const response = await axios.put(
+      // Combine firstName and lastName into name for the API
+      const updateData = {
+        name: `${editForm.firstName} ${editForm.lastName}`.trim(),
+        avatarUrl: editForm.avatarUrl
+      };
+
+      await axios.put(
           updateAdminApi,
-          editForm,
+          updateData,
           {
             headers: {
               "Content-Type": "application/json",
-              "admin": "true",
-              "authorization": "Bearer " + localStorage.getItem("token")
+              "Authorization": "Bearer " + localStorage.getItem("token")
             },
           },
       );
-      if (!response.ok) {
-        throw new Error("Send request failed")
-      }
       toast({
         title: "Thành công",
         description: "Thông tin của bạn đã được cập nhật",
@@ -146,41 +137,33 @@ export default function AdminProfilePage() {
       setAvatarPreview(null);
       getAdmin()
     } catch (error) {
+      console.error('Update profile error:', error);
+      const errorMsg = error.response?.data?.message || error.response?.data?.detail || error.message || "Đã có lỗi xảy ra khi kết nối với máy chủ, vui lòng tải lại trang hoặc đăng nhập lại";
       toast({
         title: "Cập nhật thông tin thất bại",
-        description: "Đã có lỗi xảy ra khi kết nối với máy chủ, vui lòng tải lại trang hoặc đăng nhập lại",
+        description: errorMsg,
         variant: "destructive"
       })
     }
   }
 
   const handleDeleteAccount = async () => {
-    const deleteAdminApi = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/admin`
+    const deleteAdminApi = `${API_BASE_URL}/api/users/me`
 
     try {
-      // const response = await fetch(deleteAdminApi, {
-      //   method: "DELETE",
-      //   headers: {
-      //     "admin": "true",
-      //     "authorization": "Bearer " + localStorage.getItem("token")
-      //   },
-      // })
-      const response = await axios.delete(
+      await axios.delete(
           deleteAdminApi,
           {
             headers: {
-              "admin": "true",
-              "authorization": "Bearer " + localStorage.getItem("token")
+              "Authorization": "Bearer " + localStorage.getItem("token")
             },
           },
       );
-      if (!response.ok) {
-        throw new Error("Send request failed")
-      }
     } catch (error) {
+      const errorMsg = error.response?.data?.message || error.response?.data?.detail || error.message || "Đã có lỗi xảy ra khi kết nối với máy chủ, vui lòng tải lại trang hoặc đăng nhập lại";
       toast({
         title: "Xóa tài khoản thất bại",
-        description: "Đã có lỗi xảy ra khi kết nối với máy chủ, vui lòng tải lại trang hoặc đăng nhập lại",
+        description: errorMsg,
         variant: "destructive"
       })
     }
@@ -191,7 +174,7 @@ export default function AdminProfilePage() {
 
   const handlePasswordReset = async (e) => {
     e.preventDefault()
-    const changePasswordApi = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/customer/change-password?`
+    const changePasswordApi = `${API_BASE_URL}/api/auth/change-password`
 
     if (newPassword !== confirmPassword) {
       toast({
@@ -203,50 +186,30 @@ export default function AdminProfilePage() {
     }
 
     try {
-      // const response = await fetch(changePasswordApi +
-      //   new URLSearchParams({
-      //     id: admin.uid,
-      //     admin: "true",
-      //   }).toString(), {
-      //   method: "PUT",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //     "admin": "true",
-      //     "authorization": "Bearer " + localStorage.getItem("token")
-      //   },
-      //   body: JSON.stringify({ "email": admin.email, "oldPassword": oldPassword, "newPassword": newPassword })
-      // })
-      const response = await axios.put(
+      await axios.post(
           changePasswordApi,
           {
-            "email": admin.email,
-            "oldPassword": oldPassword,
+            "currentPassword": oldPassword,
             "newPassword": newPassword,
+            "confirmPassword": confirmPassword,
           },
           {
-            params: {
-              id: admin.uid,
-              admin: true,
-            },
             headers: {
               "Content-Type": "application/json",
-              "admin": "true",
-              "authorization": "Bearer " + localStorage.getItem("token")
+              "Authorization": "Bearer " + localStorage.getItem("token")
             },
           },
       );
-      if (!response.ok) {
-        throw new Error("Send request failed")
-      }
       toast({
         title: "Thành công",
         description: "Đổi mật khẩu thành công. Vui lòng đăng nhập lại",
       })
       router.push("/admin")
     } catch (error) {
+      const errorMsg = error.response?.data?.message || error.response?.data?.detail || error.message || "Đã có lỗi xảy ra khi kết nối với máy chủ, vui lòng tải lại trang hoặc đăng nhập lại";
       toast({
         title: "Đổi mật khẩu thất bại",
-        description: "Đã có lỗi xảy ra khi kết nối với máy chủ, vui lòng tải lại trang hoặc đăng nhập lại",
+        description: errorMsg,
         variant: "destructive"
       })
     }
@@ -266,6 +229,59 @@ export default function AdminProfilePage() {
         setAvatarPreview(reader.result);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const [savingAvatar, setSavingAvatar] = useState(false);
+
+  const handleSaveAvatar = async () => {
+    if (!avatarFile) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng chọn ảnh trước khi lưu",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSavingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', avatarFile);
+      
+      const token = localStorage.getItem('token');
+      const avatarResponse = await axios.post(
+        `${API_BASE_URL}/api/upload/avatar`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+      
+      if (avatarResponse.data?.data?.avatarUrl) {
+        setAdmin(prev => ({ ...prev, avatarUrl: avatarResponse.data.data.avatarUrl }));
+        setEditForm(prev => ({ ...prev, avatarUrl: avatarResponse.data.data.avatarUrl }));
+      }
+      
+      toast({
+        title: "Thành công",
+        description: "Ảnh đại diện đã được cập nhật",
+      });
+      setAvatarFile(null);
+      setAvatarPreview(null);
+      getAdmin();
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể tải lên ảnh đại diện. Vui lòng thử lại.",
+        variant: "destructive"
+      });
+    } finally {
+      setSavingAvatar(false);
     }
   };
 
@@ -304,13 +320,24 @@ export default function AdminProfilePage() {
                 onChange={handleAvatarChange} 
                 className="hidden" 
               />
-              <Button 
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                variant="outline"
-              >
-                Chọn ảnh
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  variant="outline"
+                >
+                  Chọn ảnh
+                </Button>
+                {avatarFile && (
+                  <Button 
+                    type="button"
+                    onClick={handleSaveAvatar}
+                    disabled={savingAvatar}
+                  >
+                    {savingAvatar ? 'Đang lưu...' : 'Lưu ảnh'}
+                  </Button>
+                )}
+              </div>
               {avatarFile && (
                 <p className="text-sm text-gray-500 mt-2">
                   Đã chọn: {avatarFile.name}

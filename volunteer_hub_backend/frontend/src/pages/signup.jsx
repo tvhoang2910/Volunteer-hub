@@ -144,6 +144,7 @@ export default function SignupForm() {
               >
                 <option value="VOLUNTEER">Tình nguyện viên</option>
                 <option value="MANAGER">Quản lý</option>
+                <option value="ADMIN">Quản trị viên</option>
               </select>
 
               <button

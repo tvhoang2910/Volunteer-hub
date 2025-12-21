@@ -1,6 +1,6 @@
 /**
- * @file adminService.js
- * @description Service for admin management tasks (users, events, exports, broadcasts).
+ * @file adminService.ts
+ * @description Service for admin management tasks (users, events, exports, broadcasts, cache).
  */
 import axios from 'axios';
 
@@ -18,8 +18,9 @@ export const adminService = {
      * @param {number} limit
      * @param {string} role
      */
-    getAllUsers: async (page = 1, limit = 10, role) => {
-        const params = { page, limit, role };
+    getAllUsers: async (page = 1, limit = 10, role?: string) => {
+        const params: any = { page, limit };
+        if (role) params.role = role;
         const response = await axios.get(`${API_BASE_URL}/api/admin/users`, {
             params,
             headers: getAuthHeader()
@@ -28,90 +29,246 @@ export const adminService = {
     },
 
     /**
-     * Update user status (ban/unban)
+     * Lock user account
+     * PUT /api/admin/users/{userId}/lock
+     * @param {string} userId
+     */
+    lockUser: async (userId: string) => {
+        const response = await axios.put(`${API_BASE_URL}/api/admin/users/${userId}/lock`, {}, {
+            headers: getAuthHeader()
+        });
+        return response.data;
+    },
+
+    /**
+     * Unlock user account
+     * PUT /api/admin/users/{userId}/unlock
+     * @param {string} userId
+     */
+    unlockUser: async (userId: string) => {
+        const response = await axios.put(`${API_BASE_URL}/api/admin/users/${userId}/unlock`, {}, {
+            headers: getAuthHeader()
+        });
+        return response.data;
+    },
+
+    /**
+     * Update user status (ban/unban) - Legacy method using lock/unlock
      * @param {string} userId
      * @param {boolean} isActive
-     * @param {string} reason
+     * @param {string} reason (unused - kept for backward compatibility)
      */
-    updateUserStatus: async (userId, isActive, reason) => {
-        const response = await axios.put(`${API_BASE_URL}/api/admin/users/${userId}/status`, { is_active: isActive, reason }, {
-            headers: getAuthHeader()
-        });
-        return response.data;
+    updateUserStatus: async (userId: string, isActive: boolean, reason?: string) => {
+        // isActive = false means lock, isActive = true means unlock
+        if (isActive) {
+            const response = await axios.put(`${API_BASE_URL}/api/admin/users/${userId}/unlock`, {}, {
+                headers: getAuthHeader()
+            });
+            return response.data;
+        } else {
+            const response = await axios.put(`${API_BASE_URL}/api/admin/users/${userId}/lock`, {}, {
+                headers: getAuthHeader()
+            });
+            return response.data;
+        }
     },
 
     /**
-     * Approve or reject an event
+     * Approve event
+     * PUT /api/admin/events/{eventId}/approve
      * @param {string} eventId
-     * @param {string} status
-     * @param {string} reason
      */
-    approveEvent: async (eventId, status, reason) => {
-        const response = await axios.put(`${API_BASE_URL}/api/admin/events/${eventId}/approval`, { status, reason }, {
+    approveEvent: async (eventId: string) => {
+        const response = await axios.put(`${API_BASE_URL}/api/admin/events/${eventId}/approve`, {}, {
             headers: getAuthHeader()
         });
         return response.data;
     },
 
     /**
-     * Export data
-     * @param {string} type
-     * @param {string} format
-     * @param {Object} filters
+     * Reject event
+     * PUT /api/admin/events/{eventId}/reject
+     * @param {string} eventId
      */
-    exportData: async (type, format, filters) => {
-        const params = { format, ...filters };
-        const response = await axios.get(`${API_BASE_URL}/api/admin/export/${type}`, {
-            params,
+    rejectEvent: async (eventId: string) => {
+        const response = await axios.put(`${API_BASE_URL}/api/admin/events/${eventId}/reject`, {}, {
+            headers: getAuthHeader()
+        });
+        return response.data;
+    },
+
+    /**
+     * Delete event
+     * DELETE /api/admin/events/{eventId}
+     * @param {string} eventId
+     */
+    deleteEvent: async (eventId: string) => {
+        const response = await axios.delete(`${API_BASE_URL}/api/admin/events/${eventId}`, {
+            headers: getAuthHeader()
+        });
+        return response.data;
+    },
+
+    /**
+     * Export events
+     * GET /api/admin/events/export
+     * @param {string} format - 'json' or 'csv'
+     */
+    exportEvents: async (format: string = 'json') => {
+        const response = await axios.get(`${API_BASE_URL}/api/admin/events/export`, {
+            params: { format },
             headers: getAuthHeader(),
-            responseType: 'blob' // Assuming file download
+            responseType: format === 'csv' ? 'blob' : 'json'
         });
         return response.data;
     },
 
     /**
-     * Broadcast notification
-     * @param {Object} payload - { title, body, target }
+     * Export volunteers
+     * GET /api/admin/volunteers/export
+     * @param {string} format - 'json' or 'csv'
      */
-    broadcastNotification: async (payload) => {
-        const response = await axios.post(`${API_BASE_URL}/api/admin/notifications/broadcast`, payload, {
+    exportVolunteers: async (format: string = 'json') => {
+        const response = await axios.get(`${API_BASE_URL}/api/admin/volunteers/export`, {
+            params: { format },
+            headers: getAuthHeader(),
+            responseType: format === 'csv' ? 'blob' : 'json'
+        });
+        return response.data;
+    },
+
+    /**
+     * Get admin dashboard stats
+     * GET /api/admin/dashboard
+     */
+    getDashboard: async () => {
+        const response = await axios.get(`${API_BASE_URL}/api/admin/dashboard`, {
             headers: getAuthHeader()
         });
         return response.data;
     },
 
-    // Create a new admin user
-    createAdmin: async (payload) => {
+    /**
+     * Broadcast notification to users
+     * POST /api/notifications/broadcast
+     * @param {Object} payload - { title, content, targetUserIds?, sendToAll? }
+     */
+    broadcastNotification: async (payload: {
+        title: string;
+        content: string;
+        targetUserIds?: string[];
+        sendToAll?: boolean;
+    }) => {
+        const response = await axios.post(`${API_BASE_URL}/api/notifications/broadcast`, payload, {
+            headers: getAuthHeader()
+        });
+        return response.data;
+    },
+
+    /**
+     * Refresh top posts cache
+     * PUT /api/admin/cache/top-posts/refresh
+     */
+    refreshTopPostsCache: async () => {
+        const response = await axios.put(`${API_BASE_URL}/api/admin/cache/top-posts/refresh`, {}, {
+            headers: getAuthHeader()
+        });
+        return response.data;
+    },
+
+    /**
+     * Invalidate top posts cache
+     * PUT /api/admin/cache/top-posts/invalidate
+     */
+    invalidateTopPostsCache: async () => {
+        const response = await axios.put(`${API_BASE_URL}/api/admin/cache/top-posts/invalidate`, {}, {
+            headers: getAuthHeader()
+        });
+        return response.data;
+    },
+
+    /**
+     * Rebuild post ranking from database
+     * PUT /api/admin/cache/top-posts/rebuild-ranking
+     */
+    rebuildPostRanking: async () => {
+        const response = await axios.put(`${API_BASE_URL}/api/admin/cache/top-posts/rebuild-ranking`, {}, {
+            headers: getAuthHeader()
+        });
+        return response.data;
+    },
+
+    /**
+     * Get cached top posts
+     * GET /api/admin/cache/top-posts
+     * @param {number} limit - Number of posts to retrieve (default 5)
+     */
+    getCachedTopPosts: async (limit: number = 5) => {
+        const response = await axios.get(`${API_BASE_URL}/api/admin/cache/top-posts`, {
+            params: { limit },
+            headers: getAuthHeader()
+        });
+        return response.data;
+    },
+
+    /**
+     * Get all events (admin view)
+     * GET /api/admin/events
+     */
+    getAllEvents: async () => {
+        const response = await axios.get(`${API_BASE_URL}/api/admin/events`, {
+            headers: getAuthHeader()
+        });
+        return response.data;
+    },
+
+    /**
+     * Create a new admin user
+     * POST /api/admin/users
+     * @param {Object} payload - User data
+     */
+    createAdmin: async (payload: any) => {
         const response = await axios.post(
             `${API_BASE_URL}/api/admin/users`,
             payload,
             { headers: getAuthHeader() }
-        )
+        );
         return response.data;
     },
 
     /**
-     * Export events data
-     * @param {string} format - 'json' or 'csv'
+     * Admin role requests
+     * GET /api/admin/admin-requests?status=PENDING
      */
-    exportEvents: async (format = 'json') => {
-        const response = await axios.get(`${API_BASE_URL}/api/admin/events/export`, {
-            params: { format },
+    getAdminRoleRequests: async (status: string = 'PENDING') => {
+        const response = await axios.get(`${API_BASE_URL}/api/admin/admin-requests`, {
+            params: { status },
             headers: getAuthHeader()
         });
         return response.data;
     },
 
     /**
-     * Export volunteers data
-     * @param {string} format - 'json' or 'csv'
+     * Approve admin role request
+     * PUT /api/admin/admin-requests/{requestId}/approve
      */
-    exportVolunteers: async (format = 'json') => {
-        const response = await axios.get(`${API_BASE_URL}/api/admin/volunteers/export`, {
-            params: { format },
+    approveAdminRoleRequest: async (requestId: string, note?: string) => {
+        const response = await axios.put(`${API_BASE_URL}/api/admin/admin-requests/${requestId}/approve`, {}, {
+            params: note ? { note } : undefined,
             headers: getAuthHeader()
         });
         return response.data;
     },
 
+    /**
+     * Reject admin role request
+     * PUT /api/admin/admin-requests/{requestId}/reject
+     */
+    rejectAdminRoleRequest: async (requestId: string, note?: string) => {
+        const response = await axios.put(`${API_BASE_URL}/api/admin/admin-requests/${requestId}/reject`, {}, {
+            params: note ? { note } : undefined,
+            headers: getAuthHeader()
+        });
+        return response.data;
+    }
 };

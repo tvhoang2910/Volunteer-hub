@@ -33,16 +33,28 @@ export const useNotifications = (initialPage = 0, limit = 10) => {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await notificationService.getNotifications(page, limit);
-
-        const content = response.data?.content || response || [];
-        const total = response.totalElements || response.length || 0;
+        const response = await notificationService.getNotifications({ page, limit });
+        
+        // Backend returns: { data: { content: [...], page: { totalPages, totalElements, ... } }, message: "..." }
+        const pageData = response?.data || {};
+        const content = pageData?.content || [];
+        
+        // Pagination info is in response.data.page (not response.data.totalPages)
+        const paginationInfo = pageData?.page || {};
+        const total = paginationInfo?.totalElements ?? pageData?.totalElements ?? 0;
+        const pages = paginationInfo?.totalPages ?? pageData?.totalPages ?? 1;
+        
+        console.log('Parsed pagination:', { contentLength: content.length, total, pages });
 
         setNotifications(Array.isArray(content) ? content.map(mapNotification) : []);
         setTotalElements(total);
-        setTotalPages(total > 0 ? Math.ceil(total / limit) : 1);
+        setTotalPages(pages > 0 ? pages : 1);
       } catch (err) {
+        console.error('Fetch notifications error:', err);
         setError(err.message);
+        setNotifications([]);
+        setTotalElements(0);
+        setTotalPages(1);
       } finally {
         setIsLoading(false);
       }
@@ -92,9 +104,6 @@ export const useNotifications = (initialPage = 0, limit = 10) => {
       await notificationService.markAllAsRead();
       
       // Trigger refetch unread count
-    markAllAsRead,
-    deleteNotification,
-    deleteAllNotifications,
       triggerRefetchUnreadCount();
     } catch (error) {
       console.error("Lỗi đánh dấu tất cả đã đọc:", error);
@@ -142,12 +151,15 @@ export const useNotifications = (initialPage = 0, limit = 10) => {
 
   return {
     notifications,
+    loading: isLoading,
     currentPage,
     totalPages,
     totalElements,
-    isLoading,
     error,
     markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    deleteAllNotifications,
     changePage,
     refresh: () => fetchNotifications(currentPage),
   };
