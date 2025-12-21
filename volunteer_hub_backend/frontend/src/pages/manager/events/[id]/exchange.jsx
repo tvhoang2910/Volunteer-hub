@@ -47,7 +47,7 @@ export default function ManagerEventExchange() {
 
                     {/* Main Feed */}
                     <div className="lg:col-span-2">
-                        <PostContainer />
+                        <PostContainer eventId={eventId} />
                     </div>
                 </div>
             </div>

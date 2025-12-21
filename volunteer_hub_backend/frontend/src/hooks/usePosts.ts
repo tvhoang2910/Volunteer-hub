@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { postService } from '../services/postService';
 
-export const usePosts = () => {
+/**
+ * Hook for fetching posts with optional eventId filter.
+ * @param eventId - Optional event ID to filter posts by event
+ */
+export const usePosts = (eventId?: string) => {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(0);
@@ -11,7 +15,11 @@ export const usePosts = () => {
     const fetchPosts = useCallback(async (pageNum = 0, isRefresh = false) => {
         try {
             setLoading(true);
-            const response = await postService.getPosts(pageNum);
+            
+            // Use getPostsByEvent if eventId is provided, otherwise getPosts for all posts
+            const response = eventId 
+                ? await postService.getPostsByEvent(eventId, pageNum)
+                : await postService.getPosts(pageNum);
 
             if (isRefresh) {
                 setPosts(response.data);
@@ -26,9 +34,12 @@ export const usePosts = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [eventId]);
 
     useEffect(() => {
+        // Reset when eventId changes
+        setPage(0);
+        setHasMore(true);
         fetchPosts(0, true);
     }, [fetchPosts]);
 

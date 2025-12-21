@@ -4,7 +4,12 @@ import Post from '../components/post/Post';
 import CreatePostInput from '../components/post/CreatePostInput';
 import PostSkeleton from '../components/post/PostSkeleton';
 
-const PostContainer = () => {
+/**
+ * PostContainer component for displaying a feed of posts.
+ * @param {Object} props - Component props
+ * @param {string} props.eventId - Optional event ID to filter posts by event (for exchange channel)
+ */
+const PostContainer = ({ eventId }) => {
     const {
         posts,
         loading,
@@ -12,7 +17,7 @@ const PostContainer = () => {
         hasMore,
         loadMore,
         setPosts
-    } = usePosts();
+    } = usePosts(eventId);
 
     const observer = useRef();
     const lastPostElementRef = useCallback(node => {
@@ -38,7 +43,7 @@ const PostContainer = () => {
 
     return (
         <div className="max-w-2xl mx-auto py-8 px-4">
-            <CreatePostInput onPostCreated={handlePostCreated} />
+            <CreatePostInput onPostCreated={handlePostCreated} eventId={eventId} />
 
             {error && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
