@@ -54,16 +54,28 @@ export const useSignup = (onSuccess, initialRole = "VOLUNTEER") => {
       console.error("Lỗi khi đăng ký:", error);
 
       // Lấy message lỗi từ server response (nếu có)
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.response?.data?.detail ||
-        error?.message ||
-        "Không thể tạo tài khoản. Vui lòng thử lại.";
+      const responseData = error?.response?.data;
+      let errorTitle = "Lỗi đăng ký";
+      let errorMessage = "Không thể tạo tài khoản. Vui lòng thử lại.";
+
+      // Kiểm tra nếu có mảng validation errors trong data
+      if (Array.isArray(responseData?.data) && responseData.data.length > 0) {
+        // Hiển thị từng lỗi validation với bullet points
+        errorTitle = "Lỗi xác thực dữ liệu";
+        errorMessage = responseData.data.map((err: string) => `• ${err}`).join('\n');
+      } else if (responseData?.detail) {
+        errorMessage = responseData.detail;
+      } else if (responseData?.message && responseData.message !== "Validation failed") {
+        errorMessage = responseData.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
 
       toast({
-        title: "Lỗi đăng ký",
+        title: errorTitle,
         description: errorMessage,
         variant: "destructive",
+        style: { whiteSpace: 'pre-line' }, // Cho phép xuống dòng
       });
     } finally {
       setLoading(false);

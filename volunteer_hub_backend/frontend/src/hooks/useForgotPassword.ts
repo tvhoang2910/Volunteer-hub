@@ -32,17 +32,11 @@ export const useForgotPassword = (onSuccess) => {
           },
       );
 
-      const data = await res.json().catch(() => ({}));
-
+      // Axios trả về data trực tiếp qua res.data (không cần res.json())
+      const data = res.data || {};
       const serverMessage = data?.message || data?.data || null;
 
-      if (!res.ok) {
-        const err = serverMessage || "Yêu cầu khôi phục mật khẩu thất bại.";
-        setMessage(err);
-        toast({ title: "Lỗi", description: err, variant: "destructive" });
-        return;
-      }
-
+      // Axios throw error cho non-2xx, nên nếu đến đây là thành công
       const successMsg =
         serverMessage ||
         "Nếu email tồn tại, bạn sẽ nhận được hướng dẫn khôi phục.";
