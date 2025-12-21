@@ -8,6 +8,7 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.CreateEventReques
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.RegistrationCompletionRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.UpdateEventRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.CheckInResponseDTO;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.EventReportDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.EventResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.JoinEventResponse;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.ParticipantResponseDTO;
@@ -155,4 +156,12 @@ public interface EventService {
         List<Event> getPendingEvents();
 
         long countRegisteredEvents(UUID volunteerId);
+
+        /**
+         * Get event report with statistics.
+         *
+         * @param eventId the event id
+         * @return EventReportDTO with statistics and volunteer details
+         */
+        EventReportDTO getEventReport(UUID eventId);
 }

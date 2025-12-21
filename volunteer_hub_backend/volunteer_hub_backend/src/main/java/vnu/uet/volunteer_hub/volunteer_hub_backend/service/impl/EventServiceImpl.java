@@ -9,6 +9,7 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.CreateEventReques
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.RegistrationCompletionRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.UpdateEventRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.CheckInResponseDTO;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.EventReportDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.EventResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.JoinEventResponse;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.ParticipantResponseDTO;
@@ -28,6 +29,8 @@ import vnu.uet.volunteer_hub.volunteer_hub_backend.service.NotificationService;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.service.PostRankingService;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -688,5 +691,125 @@ public class EventServiceImpl implements EventService {
     @Override
     public List<Event> getPendingEvents() {
         return eventRepository.findAllByAdminApprovalStatusAndIsArchived(EventApprovalStatus.PENDING, false);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public EventReportDTO getEventReport(UUID eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new EntityNotFoundException("Event not found with id: " + eventId));
+
+        List<Registration> registrations = event.getRegistrations().stream()
+                .filter(r -> !r.getRegistrationStatus().equals(RegistrationStatus.WITHDRAWN))
+                .collect(Collectors.toList());
+
+        // Count statistics
+        int totalApproved = 0;
+        int checkedInCount = 0;
+        int completedCount = 0;
+        int incompleteCount = 0;
+        int absentCount = 0;
+
+        LocalDateTime now = LocalDateTime.now();
+        boolean eventEnded = event.getEndTime() != null && event.getEndTime().isBefore(now);
+
+        // Calculate event duration in hours
+        double eventDurationHours = 0;
+        if (event.getStartTime() != null && event.getEndTime() != null) {
+            eventDurationHours = ChronoUnit.MINUTES.between(event.getStartTime(), event.getEndTime()) / 60.0;
+        }
+
+        List<EventReportDTO.VolunteerReportDTO> volunteerReports = new ArrayList<>();
+
+        for (Registration reg : registrations) {
+            RegistrationStatus status = reg.getRegistrationStatus();
+            
+            // Skip PENDING and REJECTED
+            if (status.equals(RegistrationStatus.PENDING) || status.equals(RegistrationStatus.REJECTED)) {
+                continue;
+            }
+
+            totalApproved++;
+
+            String volunteerStatus;
+            double contributionHours = 0;
+
+            if (status.equals(RegistrationStatus.COMPLETED)) {
+                completedCount++;
+                volunteerStatus = "completed";
+                contributionHours = eventDurationHours; // Full event duration
+            } else if (status.equals(RegistrationStatus.CHECKED_IN)) {
+                checkedInCount++;
+                volunteerStatus = "participating";
+                // Partial hours based on check-in time
+                if (reg.getCheckedInAt() != null && event.getEndTime() != null) {
+                    LocalDateTime checkedInTime = LocalDateTime.ofInstant(reg.getCheckedInAt(), java.time.ZoneId.systemDefault());
+                    LocalDateTime endTime = eventEnded ? event.getEndTime() : now;
+                    contributionHours = Math.max(0, ChronoUnit.MINUTES.between(checkedInTime, endTime) / 60.0);
+                }
+            } else if (status.equals(RegistrationStatus.APPROVED)) {
+                if (eventEnded) {
+                    absentCount++;
+                    volunteerStatus = "absent";
+                } else {
+                    incompleteCount++;
+                    volunteerStatus = "participating";
+                }
+            } else {
+                incompleteCount++;
+                volunteerStatus = "incomplete";
+            }
+
+            User volunteer = reg.getVolunteer();
+            volunteerReports.add(EventReportDTO.VolunteerReportDTO.builder()
+                    .id(volunteer.getId())
+                    .name(volunteer.getName())
+                    .email(volunteer.getEmail())
+                    .avatarUrl(volunteer.getAvatarUrl())
+                    .role("Tình nguyện viên")
+                    .contributionHours(Math.round(contributionHours * 10.0) / 10.0)
+                    .status(volunteerStatus)
+                    .registrationStatus(status.toString())
+                    .build());
+        }
+
+        // Calculate total contribution hours
+        double totalContributionHours = volunteerReports.stream()
+                .mapToDouble(EventReportDTO.VolunteerReportDTO::getContributionHours)
+                .sum();
+
+        // Calculate progress percentage
+        int progress = 0;
+        if (totalApproved > 0) {
+            progress = (int) Math.round((completedCount * 100.0) / totalApproved);
+        }
+
+        // Generate highlights
+        List<String> highlights = new ArrayList<>();
+        if (completedCount > 0) {
+            highlights.add(completedCount + " tình nguyện viên đã hoàn thành");
+        }
+        if (checkedInCount > 0) {
+            highlights.add(checkedInCount + " tình nguyện viên đã check-in");
+        }
+        if (totalContributionHours > 0) {
+            highlights.add("Tổng cộng " + Math.round(totalContributionHours * 10.0) / 10.0 + " giờ đóng góp");
+        }
+
+        return EventReportDTO.builder()
+                .eventId(event.getId())
+                .eventTitle(event.getTitle())
+                .progress(progress)
+                .totalContributionHours(Math.round(totalContributionHours * 10.0) / 10.0)
+                .satisfactionScore("N/A") // Chưa có hệ thống đánh giá
+                .incidentCount(0) // Chưa có hệ thống báo cáo sự cố
+                .totalApprovedVolunteers(totalApproved)
+                .checkedInCount(checkedInCount)
+                .completedCount(completedCount)
+                .incompleteCount(incompleteCount)
+                .absentCount(absentCount)
+                .highlights(highlights)
+                .volunteers(volunteerReports)
+                .build();
     }
 }

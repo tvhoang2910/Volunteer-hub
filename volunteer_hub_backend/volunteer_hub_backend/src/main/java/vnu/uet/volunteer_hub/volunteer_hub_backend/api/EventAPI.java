@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.CreateEventRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.request.UpdateEventRequest;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.CheckInResponseDTO;
+import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.EventReportDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.EventResponseDTO;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.JoinEventResponse;
 import vnu.uet.volunteer_hub.volunteer_hub_backend.dto.response.ParticipantResponseDTO;
@@ -551,6 +552,36 @@ public class EventAPI {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ResponseDTO.builder()
                             .message("Failed to check-in")
+                            .detail(e.getMessage())
+                            .build());
+        }
+    }
+
+    /**
+     * Get event report with statistics.
+     * GET /api/events/{eventId}/report
+     * Response: EventReportDTO with statistics and volunteer details
+     */
+    @GetMapping("/{eventId}/report")
+    @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
+    public ResponseEntity<?> getEventReport(@PathVariable UUID eventId) {
+        try {
+            EventReportDTO report = eventService.getEventReport(eventId);
+            return ResponseEntity.ok(
+                    ResponseDTO.<EventReportDTO>builder()
+                            .message("Event report retrieved successfully")
+                            .data(report)
+                            .build());
+        } catch (jakarta.persistence.EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ResponseDTO.builder()
+                            .message("Event not found")
+                            .detail(e.getMessage())
+                            .build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ResponseDTO.builder()
+                            .message("Failed to retrieve event report")
                             .detail(e.getMessage())
                             .build());
         }
