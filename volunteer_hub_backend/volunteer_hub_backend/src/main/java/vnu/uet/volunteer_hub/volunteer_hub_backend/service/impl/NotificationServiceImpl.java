@@ -353,10 +353,14 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
         String title = "Đăng ký mới: " + event.getTitle();
-        String body = String.format("Tình nguyện viên %s đã đăng ký tham gia sự kiện \"%s\". Vui lòng xem xét và phê duyệt.",
+        String body = String.format(
+                "Tình nguyện viên %s đã đăng ký tham gia sự kiện \"%s\". Vui lòng xem xét và phê duyệt.",
                 volunteer.getName(), event.getTitle());
 
         createNotification(manager, event, title, body, NotificationType.REGISTRATION_SUBMITTED);
+
+        // Send web push notification to the manager
+        sendWebPushToRecipients(List.of(manager), title, body);
     }
 
     /**
@@ -366,10 +370,14 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional
     public void notifyRegistrationApproved(Event event, User volunteer) {
         String title = "Đăng ký được duyệt: " + event.getTitle();
-        String body = String.format("Chúc mừng! Đơn đăng ký của bạn cho sự kiện \"%s\" đã được phê duyệt. Hãy chuẩn bị tham gia nhé!",
+        String body = String.format(
+                "Chúc mừng! Đơn đăng ký của bạn cho sự kiện \"%s\" đã được phê duyệt. Hãy chuẩn bị tham gia nhé!",
                 event.getTitle());
 
         createNotification(volunteer, event, title, body, NotificationType.REGISTRATION_CONFIRMED);
+
+        // Send web push notification to the volunteer
+        sendWebPushToRecipients(List.of(volunteer), title, body);
     }
 
     /**
@@ -379,10 +387,14 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional
     public void notifyRegistrationRejected(Event event, User volunteer) {
         String title = "Đăng ký bị từ chối: " + event.getTitle();
-        String body = String.format("Rất tiếc, đơn đăng ký của bạn cho sự kiện \"%s\" không được phê duyệt. Bạn có thể tham gia các sự kiện khác.",
+        String body = String.format(
+                "Rất tiếc, đơn đăng ký của bạn cho sự kiện \"%s\" không được phê duyệt. Bạn có thể tham gia các sự kiện khác.",
                 event.getTitle());
 
         createNotification(volunteer, event, title, body, NotificationType.REGISTRATION_REJECTED);
+
+        // Send web push notification to the volunteer
+        sendWebPushToRecipients(List.of(volunteer), title, body);
     }
 
     /**
@@ -392,10 +404,15 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional
     public void notifyRegistrationCompleted(Event event, User volunteer) {
         String title = "Hoàn thành sự kiện: " + event.getTitle();
-        String body = String.format("Cảm ơn bạn đã tham gia và hoàn thành sự kiện \"%s\". Đóng góp của bạn rất có ý nghĩa!",
+        String body = String.format(
+                "Cảm ơn bạn đã tham gia và hoàn thành sự kiện \"%s\". Đóng góp của bạn rất có ý nghĩa!",
                 event.getTitle());
 
+        // Save notification to database
         createNotification(volunteer, event, title, body, NotificationType.COMPLETION_MARKED);
+
+        // Send web push notification to the volunteer
+        sendWebPushToRecipients(List.of(volunteer), title, body);
     }
 
     // ==================== WEB PUSH HELPERS ====================
@@ -407,23 +424,23 @@ public class NotificationServiceImpl implements NotificationService {
     private void sendWebPushToRecipients(List<User> recipients, String title, String content) {
         log.info("[WebPush] ====== BẮT ĐẦU GỬI WEB PUSH ======");
         log.info("[WebPush] Số recipients: {}", recipients.size());
-        
+
         int pushCount = 0;
         int usersWithSubscription = 0;
-        
+
         for (User recipient : recipients) {
             // Lấy tất cả subscriptions của user
             List<PushSubscription> subscriptions = pushSubscriptionRepository.findByUserId(recipient.getId());
-            
-            log.info("[WebPush] User {} ({}) có {} subscriptions", 
+
+            log.info("[WebPush] User {} ({}) có {} subscriptions",
                     recipient.getName(), recipient.getId(), subscriptions.size());
-            
+
             if (subscriptions.isEmpty()) {
                 continue;
             }
-            
+
             usersWithSubscription++;
-            
+
             // Tạo payload
             WebPushPayload payload = WebPushPayload.builder()
                     .title(title)
@@ -432,21 +449,21 @@ public class NotificationServiceImpl implements NotificationService {
                     .badge("/badge.png")
                     .tag("broadcast-" + System.currentTimeMillis())
                     .build();
-            
+
             // Gửi push tới tất cả devices của user
             for (PushSubscription subscription : subscriptions) {
                 try {
-                    log.info("[WebPush] Gửi push tới endpoint: {}...", 
+                    log.info("[WebPush] Gửi push tới endpoint: {}...",
                             subscription.getEndpoint().substring(0, Math.min(50, subscription.getEndpoint().length())));
                     pushService.sendPushAsync(subscription, payload);
                     pushCount++;
                 } catch (Exception e) {
-                    log.error("[WebPush] Lỗi gửi push tới subscription {}: {}", 
+                    log.error("[WebPush] Lỗi gửi push tới subscription {}: {}",
                             subscription.getId(), e.getMessage());
                 }
             }
         }
-        
+
         log.info("[WebPush] ====== KẾT THÚC GỬI WEB PUSH ======");
         log.info("[WebPush] Tổng: {} users có subscription, {} push đã gửi", usersWithSubscription, pushCount);
     }
@@ -456,12 +473,12 @@ public class NotificationServiceImpl implements NotificationService {
      */
     private void sendWebPushToUser(User recipient, String title, String body) {
         List<PushSubscription> subscriptions = pushSubscriptionRepository.findByUserId(recipient.getId());
-        
+
         if (subscriptions.isEmpty()) {
             log.debug("No push subscriptions for user: {}", recipient.getId());
             return;
         }
-        
+
         WebPushPayload payload = WebPushPayload.builder()
                 .title(title)
                 .body(body)
@@ -469,7 +486,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .badge("/badge.png")
                 .tag("notification-" + System.currentTimeMillis())
                 .build();
-        
+
         for (PushSubscription subscription : subscriptions) {
             try {
                 pushService.sendPushAsync(subscription, payload);
@@ -499,21 +516,71 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
         String title = "Bài viết mới: " + event.getTitle();
-        
+
         // Truncate content for preview (max 100 characters)
         String contentPreview = postContent;
         if (postContent != null && postContent.length() > 100) {
             contentPreview = postContent.substring(0, 100) + "...";
         }
-        
+
         String body = String.format("Tình nguyện viên %s đã đăng bài mới trong kênh trao đổi của sự kiện \"%s\": %s",
                 volunteer.getName(), event.getTitle(), contentPreview);
 
         // Tạo notification trong database
         createNotification(manager, event, title, body, NotificationType.NEW_POST);
-        
+
         // Gửi Web Push notification
         log.info("Sending push notification to manager {} for new post in event {}", manager.getId(), event.getId());
+        sendWebPushToUser(manager, title, body);
+    }
+
+    /**
+     * Thông báo cho Manager khi sự kiện được Admin phê duyệt
+     */
+    @Override
+    @Transactional
+    public void notifyEventApproved(Event event) {
+        User manager = event.getCreatedBy();
+        if (manager == null) {
+            log.warn("Event {} has no creator, skipping notification", event.getId());
+            return;
+        }
+
+        String title = "Sự kiện được duyệt: " + event.getTitle();
+        String body = String.format(
+                "Chúc mừng! Sự kiện \"%s\" của bạn đã được Admin phê duyệt. Sự kiện giờ đã hiển thị công khai cho mọi người.",
+                event.getTitle());
+
+        // Tạo notification trong database
+        createNotification(manager, event, title, body, NotificationType.EVENT_APPROVED);
+
+        // Gửi Web Push notification
+        log.info("Sending push notification to manager {} for event approval: {}", manager.getId(), event.getId());
+        sendWebPushToUser(manager, title, body);
+    }
+
+    /**
+     * Thông báo cho Manager khi sự kiện bị Admin từ chối
+     */
+    @Override
+    @Transactional
+    public void notifyEventRejected(Event event) {
+        User manager = event.getCreatedBy();
+        if (manager == null) {
+            log.warn("Event {} has no creator, skipping notification", event.getId());
+            return;
+        }
+
+        String title = "Sự kiện bị từ chối: " + event.getTitle();
+        String body = String.format(
+                "Rất tiếc, sự kiện \"%s\" của bạn không được phê duyệt. Vui lòng kiểm tra lại nội dung và liên hệ Admin nếu cần hỗ trợ.",
+                event.getTitle());
+
+        // Tạo notification trong database
+        createNotification(manager, event, title, body, NotificationType.EVENT_REJECTED);
+
+        // Gửi Web Push notification
+        log.info("Sending push notification to manager {} for event rejection: {}", manager.getId(), event.getId());
         sendWebPushToUser(manager, title, body);
     }
 }

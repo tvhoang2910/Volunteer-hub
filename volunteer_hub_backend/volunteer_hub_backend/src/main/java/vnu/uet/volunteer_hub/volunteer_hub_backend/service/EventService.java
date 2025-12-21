@@ -139,6 +139,15 @@ public interface EventService {
                         RegistrationCompletionRequest request, UUID completedByUserId);
 
         /**
+         * Revert a completed registration back to APPROVED status.
+         *
+         * @param registrationId the registration id
+         * @param userId         the id of the manager performing the action
+         * @return RegistrationCompletionResponseDTO with status
+         */
+        RegistrationCompletionResponseDTO uncompleteRegistration(UUID registrationId, UUID userId);
+
+        /**
          * Get list of pending events (adminApprovalStatus = PENDING).
          *
          * @return List of events awaiting admin approval

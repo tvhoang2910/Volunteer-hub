@@ -57,16 +57,20 @@ export const useManagerEvent = () => {
               registrationStatus: p.registrationStatus
             }));
           
+          // Include APPROVED, CHECKED_IN, and COMPLETED as "approved" volunteers
           const approvedVolunteers = participantsList
-            .filter(p => p.registrationStatus === 'APPROVED')
+            .filter(p => ['APPROVED', 'CHECKED_IN', 'COMPLETED'].includes(p.registrationStatus))
             .map(p => ({
               id: p.registrationId || p.id,
+              oderId: p.userId,
               userId: p.userId,
               name: p.userName || p.name || 'Unknown',
               email: p.email || '',
               joinedAt: p.registeredAt ? new Date(p.registeredAt).toLocaleDateString('vi-VN') : 'N/A',
               isActive: p.isUserActive ?? true,
-              registrationStatus: p.registrationStatus
+              registrationStatus: p.registrationStatus,
+              isCompleted: p.isCompleted ?? (p.registrationStatus === 'COMPLETED'),
+              role: 'Tình nguyện viên' // Default role
             }));
 
           // Build full thumbnail URL for heroImage
@@ -88,7 +92,7 @@ export const useManagerEvent = () => {
               end: data.endTime ? new Date(data.endTime).toLocaleString('vi-VN') : "Chưa cập nhật"
             },
             volunteersNeeded: data.maxVolunteers || 0,
-            volunteers: approvedVolunteers, // Only show approved volunteers in main list
+            volunteers: approvedVolunteers, // Show approved, checked-in, and completed volunteers
             pendingVolunteers: pendingVolunteers, // Add pending volunteers for approval page
             allParticipants: participantsList, // Keep all participants for reference
             tags: data.tags || ["Tình nguyện", "Cộng đồng"], // Default tags
@@ -99,8 +103,10 @@ export const useManagerEvent = () => {
               email: data.contactEmail || "Chưa cập nhật"
             }
           };
-          console.log('[useManagerEvent] Normalized event:', normalizedEvent);
+          console.log('[useManagerEvent] Participants from API:', participantsList);
+          console.log('[useManagerEvent] Approved volunteers (includes COMPLETED):', approvedVolunteers);
           console.log('[useManagerEvent] Pending volunteers:', pendingVolunteers);
+          console.log('[useManagerEvent] Normalized event:', normalizedEvent);
           setEvent(normalizedEvent);
         })
         .catch(err => {

@@ -142,9 +142,23 @@ public interface NotificationService {
     /**
      * Thông báo cho Manager khi có volunteer post bài mới trong kênh trao đổi
      * 
-     * @param event     Event chứa bài viết
-     * @param volunteer User đăng bài
+     * @param event       Event chứa bài viết
+     * @param volunteer   User đăng bài
      * @param postContent Nội dung bài viết (để preview)
      */
     void notifyNewPostInExchange(Event event, User volunteer, String postContent);
+
+    /**
+     * Thông báo cho Manager khi sự kiện được Admin phê duyệt
+     * 
+     * @param event Event được phê duyệt
+     */
+    void notifyEventApproved(Event event);
+
+    /**
+     * Thông báo cho Manager khi sự kiện bị Admin từ chối
+     * 
+     * @param event Event bị từ chối
+     */
+    void notifyEventRejected(Event event);
 }

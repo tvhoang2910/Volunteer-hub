@@ -77,50 +77,56 @@ export default function ManagerEventCompletion() {
 
         {/* Danh sách đánh giá */}
         <div className="space-y-4">
-          {event.volunteers.map((vol) => {
-            const status = evaluations[vol.id] || "pending";
-            return (
-              <div
-                key={vol.id}
-                className="border border-gray-100 rounded-2xl p-5 space-y-4"
-              >
-                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <p className="font-semibold text-gray-900">{vol.name}</p>
-                    <p className="text-sm text-gray-500">{vol.role}</p>
+          {(!event.volunteers || event.volunteers.length === 0) ? (
+            <div className="text-center py-8 text-gray-500">
+              Chưa có tình nguyện viên nào được phê duyệt cho sự kiện này.
+            </div>
+          ) : (
+            event.volunteers.map((vol) => {
+              const status = evaluations[vol.id] || (vol.isCompleted ? "completed" : "pending");
+              return (
+                <div
+                  key={vol.id}
+                  className="border border-gray-100 rounded-2xl p-5 space-y-4"
+                >
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className="font-semibold text-gray-900">{vol.name}</p>
+                      <p className="text-sm text-gray-500">{vol.role || 'Tình nguyện viên'}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => evaluate(vol.id, "completed")}
+                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition ${status === "completed"
+                            ? "bg-emerald-600 border-emerald-600 text-white"
+                            : "border-gray-200 text-gray-600 hover:border-emerald-300"
+                          }`}
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        Hoàn thành
+                      </button>
+                      <button
+                        onClick={() => evaluate(vol.id, "pending")}
+                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition ${status === "pending"
+                            ? "bg-amber-100 border-amber-200 text-amber-700"
+                            : "border-gray-200 text-gray-600 hover:border-amber-300"
+                          }`}
+                      >
+                        Không hoàn thành
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => evaluate(vol.id, "completed")}
-                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition ${status === "completed"
-                          ? "bg-emerald-600 border-emerald-600 text-white"
-                          : "border-gray-200 text-gray-600 hover:border-emerald-300"
-                        }`}
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      Hoàn thành
-                    </button>
-                    <button
-                      onClick={() => evaluate(vol.id, "pending")}
-                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition ${status === "pending"
-                          ? "bg-amber-100 border-amber-200 text-amber-700"
-                          : "border-gray-200 text-gray-600 hover:border-amber-300"
-                        }`}
-                    >
-                      Không hoàn thành
-                    </button>
-                  </div>
+                  <textarea
+                    value={notes[vol.id] || ""}
+                    onChange={(e) => updateNote(vol.id, e.target.value)}
+                    placeholder="Ghi chú đánh giá, hành động tiếp theo..."
+                    className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500"
+                    rows={3}
+                  />
                 </div>
-                <textarea
-                  value={notes[vol.id] || ""}
-                  onChange={(e) => updateNote(vol.id, e.target.value)}
-                  placeholder="Ghi chú đánh giá, hành động tiếp theo..."
-                  className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500"
-                  rows={3}
-                />
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
 
         {/* Thanh lưu trạng thái */}

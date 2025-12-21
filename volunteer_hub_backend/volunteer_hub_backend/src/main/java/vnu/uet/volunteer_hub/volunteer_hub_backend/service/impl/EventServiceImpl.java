@@ -47,6 +47,10 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findById(id).orElseThrow(() -> new RuntimeException("Event not found"));
         event.setAdminApprovalStatus(EventApprovalStatus.APPROVED);
         eventRepository.save(event);
+
+        // Thông báo cho Manager khi sự kiện được duyệt
+        notificationService.notifyEventApproved(event);
+
         // rebuild ranking as visibility of posts under this event may have changed
         try {
             postRankingService.rebuildRankingFromDatabase();
@@ -60,6 +64,10 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findById(id).orElseThrow(() -> new RuntimeException("Event not found"));
         event.setAdminApprovalStatus(EventApprovalStatus.REJECTED);
         eventRepository.save(event);
+
+        // Thông báo cho Manager khi sự kiện bị từ chối
+        notificationService.notifyEventRejected(event);
+
         try {
             postRankingService.rebuildRankingFromDatabase();
         } catch (Exception e) {
@@ -634,6 +642,47 @@ public class EventServiceImpl implements EventService {
         long count = registrationRepository.countByVolunteerIdAndRegistrationStatusIn(volunteerId, eligibleStatuses);
         System.out.println("[DEBUG] countRegisteredEvents - result count: " + count);
         return count;
+    }
+
+    @Override
+    @Transactional
+    public RegistrationCompletionResponseDTO uncompleteRegistration(UUID registrationId, UUID userId) {
+        Registration registration = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(
+                        "Registration not found: " + registrationId));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(
+                        "User not found: " + userId));
+
+        // Check if registration is actually completed
+        if (!registration.getRegistrationStatus().equals(RegistrationStatus.COMPLETED)) {
+            return RegistrationCompletionResponseDTO.builder()
+                    .registrationId(registration.getId().toString())
+                    .userId(registration.getVolunteer().getId().toString())
+                    .userName(registration.getVolunteer().getName())
+                    .eventTitle(registration.getEvent().getTitle())
+                    .isCompleted(false)
+                    .message("Registration is not completed, current status: " + registration.getRegistrationStatus())
+                    .build();
+        }
+
+        // Revert to APPROVED status
+        registration.setRegistrationStatus(RegistrationStatus.APPROVED);
+        registration.setCompletedAt(null);
+        registration.setCompletedByUserId(null);
+        registration.setCompletionNotes(null);
+
+        Registration savedRegistration = registrationRepository.save(registration);
+
+        return RegistrationCompletionResponseDTO.builder()
+                .registrationId(savedRegistration.getId().toString())
+                .userId(savedRegistration.getVolunteer().getId().toString())
+                .userName(savedRegistration.getVolunteer().getName())
+                .eventTitle(savedRegistration.getEvent().getTitle())
+                .isCompleted(false)
+                .message("Registration reverted to APPROVED status successfully")
+                .build();
     }
 
     @Override

@@ -93,6 +93,16 @@ export const eventService = {
     return res.data;
   },
 
+  // Uncomplete a registration (revert to APPROVED status)
+  uncompleteRegistration: async (registrationId) => {
+    const res = await axios.put(
+      `${API_BASE_URL}/api/registrations/${registrationId}/uncomplete`,
+      {},
+      { headers: getAuthHeader() }
+    );
+    return res.data;
+  },
+
   // Get current user's registered events
   getMyRegisteredEvents: async () => {
     const res = await axios.get(

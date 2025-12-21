@@ -14,7 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  BarChart3
+  BarChart3,
+  Send
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useUnreadCount } from '@/hooks/useUnreadCount'
@@ -25,6 +26,7 @@ const navItems = [
   { name: 'Quản lý sự kiện', href: '/admin/eventManage', icon: CalendarDays },
   { name: 'Quản lý người dùng', href: '/admin/userManage', icon: Users },
   { name: 'Thông báo', href: '/admin/notifications', icon: BellRing, showBadge: true },
+  { name: 'Push Notification', href: '/admin/push-notifications', icon: Send },
   { name: 'Xuất dữ liệu', href: '/admin/export', icon: FileText },
   { name: 'Hồ sơ cá nhân', href: '/admin/profile', icon: User }
 ]

@@ -1,12 +1,19 @@
 import { useState, useEffect, useMemo } from "react";
 import { eventService } from "@/services/eventService";
 
-const defaultEvaluations = (event) =>
-    event?.volunteers?.reduce((acc, vol) => {
-        // Check if volunteer already has completed status
-        acc[vol.id] = vol.registrationStatus === "COMPLETED" ? "completed" : "pending";
+const defaultEvaluations = (event) => {
+    if (!event?.volunteers || event.volunteers.length === 0) {
+        return {};
+    }
+    console.log('[useEventCompletion] Initializing evaluations from volunteers:', event.volunteers);
+    return event.volunteers.reduce((acc, vol) => {
+        // Check if volunteer already has completed status from API
+        const isCompleted = vol.isCompleted || vol.registrationStatus === "COMPLETED";
+        console.log(`[useEventCompletion] Volunteer ${vol.name}: isCompleted=${vol.isCompleted}, status=${vol.registrationStatus} -> ${isCompleted ? 'completed' : 'pending'}`);
+        acc[vol.id] = isCompleted ? "completed" : "pending";
         return acc;
-    }, {}) ?? {};
+    }, {});
+};
 
 export const useEventCompletion = (event, eventId) => {
     const [evaluations, setEvaluations] = useState({});
@@ -40,18 +47,24 @@ export const useEventCompletion = (event, eventId) => {
     const saveEvaluations = async () => {
         setLoading(true);
         try {
-            // Filter only volunteers marked as "completed"
+            // Separate volunteers into completed and pending
             const completedVolunteers = Object.entries(evaluations)
                 .filter(([, status]) => status === "completed");
+            const pendingVolunteers = Object.entries(evaluations)
+                .filter(([, status]) => status !== "completed");
             
             // Call complete registration API for each completed volunteer
-            // volId here is the registrationId from useManagerEvent
-            const updates = completedVolunteers.map(([volId]) => {
+            const completeUpdates = completedVolunteers.map(([volId]) => {
                 const note = notes[volId] || "";
                 return eventService.completeRegistration(volId, note);
             });
             
-            await Promise.all(updates);
+            // Call uncomplete registration API for each pending volunteer
+            const uncompleteUpdates = pendingVolunteers.map(([volId]) => {
+                return eventService.uncompleteRegistration(volId);
+            });
+            
+            await Promise.all([...completeUpdates, ...uncompleteUpdates]);
             const time = new Date().toLocaleTimeString("vi-VN");
             setSavedAt(time);
             return { success: true, time };

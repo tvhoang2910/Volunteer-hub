@@ -14,6 +14,15 @@ export default function ManagerEventReports() {
     return <EventNotFound />;
   }
 
+  // Default report values if not available from API
+  const report = event.report || {
+    progress: 0,
+    satisfaction: 'N/A',
+    incidents: 0,
+    highlights: [],
+    files: []
+  };
+
   return (
     <EventDetailLayout event={event} eventId={eventId} activeTab="reports">
       <div className="space-y-6">
@@ -36,7 +45,7 @@ export default function ManagerEventReports() {
           <div className="p-4 rounded-2xl bg-emerald-50">
             <p className="text-sm text-gray-500">Tiến độ</p>
             <p className="text-3xl font-semibold text-emerald-700">
-              {event.report.progress}%
+              {report.progress}%
             </p>
           </div>
           <div className="p-4 rounded-2xl bg-blue-50">
@@ -46,13 +55,13 @@ export default function ManagerEventReports() {
           <div className="p-4 rounded-2xl bg-amber-50">
             <p className="text-sm text-gray-500">Điểm hài lòng</p>
             <p className="text-3xl font-semibold text-amber-700">
-              {event.report.satisfaction}
+              {report.satisfaction}
             </p>
           </div>
           <div className="p-4 rounded-2xl bg-gray-100">
             <p className="text-sm text-gray-500">Sự cố</p>
             <p className="text-3xl font-semibold text-gray-800">
-              {event.report.incidents}
+              {report.incidents}
             </p>
           </div>
         </div>
@@ -63,7 +72,7 @@ export default function ManagerEventReports() {
               Điểm nhấn gần đây
             </p>
             <ul className="space-y-3">
-              {event.report.highlights.map((highlight) => (
+              {report.highlights.map((highlight) => (
                 <li
                   key={highlight}
                   className="flex items-start gap-3 text-gray-700"
@@ -79,7 +88,7 @@ export default function ManagerEventReports() {
               File báo cáo
             </p>
             <div className="space-y-3">
-              {event.report.files.map((file) => (
+              {report.files.map((file) => (
                 <div
                   key={file.name}
                   className="flex items-center justify-between gap-4 border border-gray-100 rounded-xl px-4 py-3"
