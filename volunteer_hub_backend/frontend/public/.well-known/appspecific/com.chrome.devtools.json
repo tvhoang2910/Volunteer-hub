@@ -1,0 +1,8 @@
+{
+    "endpoints": [
+        {
+            "name": "Volunteer Hub",
+            "url": "http://localhost:3000"
+        }
+    ]
+}

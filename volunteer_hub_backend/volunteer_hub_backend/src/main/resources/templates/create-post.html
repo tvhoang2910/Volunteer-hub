@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Post - Volunteer Hub</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar h1 {
+            color: #667eea;
+            font-size: 24px;
+        }
+
+        .navbar a {
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .navbar a:hover {
+            transform: translateY(-2px);
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .container h2 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: 'Segoe UI', sans-serif;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        button,
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-cancel {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-cancel:hover {
+            background: #e0e0e0;
+        }
+
+        .success {
+            background-color: #efe;
+            border: 1px solid #cfc;
+            color: #3c3;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .error {
+            background-color: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .info-box {
+            background-color: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .info-box h4 {
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="navbar">
+        <h1>🤝 Volunteer Hub</h1>
+        <a href="/ui/logout">Logout</a>
+    </div>
+
+    <div class="container">
+        <h2>✨ Create New Post</h2>
+
+        <div class="info-box">
+            <h4>💡 Tip:</h4>
+            <p>Fill in the details below to create a new volunteer opportunity or event post. Your post will be visible
+                to other volunteers in the community.</p>
+        </div>
+
+        <div id="successMessage" class="success" style="display: none;"></div>
+        <div id="errorMessage" class="error" style="display: none;"></div>
+
+        <form id="createPostForm">
+            <div class="form-group">
+                <label for="eventId">Select Event *</label>
+                <select id="eventId" name="eventId" required>
+                    <option value="">-- Loading events --</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="content">Post Content *</label>
+                <textarea id="content" name="content" required
+                    placeholder="Share your thoughts, updates, or details about this event..."></textarea>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn-submit">🚀 Create Post</button>
+                <a href="/ui/posts" class="btn btn-cancel">Cancel</a>
+            </div>
+        </form>
+
+        <div id="loadingMessage" class="loading">
+            <span class="spinner"></span>
+            <span>Creating post...</span>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        // Get JWT token directly from Thymeleaf
+        const jwtToken = /*[[${jwtToken}]]*/ '';
+
+        console.log('JWT Token:', jwtToken);
+
+        if (!jwtToken || jwtToken === '' || jwtToken === 'null') {
+            console.log('No valid JWT token, redirecting to login');
+            window.location.href = '/ui/login';
+        }
+
+        // Load events on page load
+        async function loadEvents() {
+            try {
+                const response = await fetch('/api/events', {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    showError('Failed to load events');
+                    return;
+                }
+
+                const data = await response.json();
+                const events = data.data || [];
+                const select = document.getElementById('eventId');
+                select.innerHTML = '<option value="">-- Select an event --</option>';
+
+                events.forEach(event => {
+                    const option = document.createElement('option');
+                    option.value = event.id;
+                    option.textContent = `${event.title} (${event.location})`;
+                    select.appendChild(option);
+                });
+
+                if (events.length === 0) {
+                    select.innerHTML = '<option value="">No events available</option>';
+                    showError('No events available. Please create an event first.');
+                }
+            } catch (error) {
+                showError('Error loading events: ' + error.message);
+            }
+        }
+
+        document.getElementById('createPostForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const eventId = document.getElementById('eventId').value;
+            const content = document.getElementById('content').value.trim();
+
+            if (!eventId || !content) {
+                showError('Please fill in all required fields');
+                return;
+            }
+
+            showLoading(true);
+            hideMessages();
+
+            try {
+                const response = await fetch('/api/posts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${jwtToken}`
+                    },
+                    body: JSON.stringify({
+                        eventId: eventId,
+                        content: content
+                    })
+                });
+
+                showLoading(false);
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    showError(error.message || 'Failed to create post');
+                    return;
+                }
+
+                const data = await response.json();
+                showSuccess('Post created successfully! Redirecting...');
+
+                setTimeout(() => {
+                    window.location.href = '/ui/posts';
+                }, 1500);
+
+            } catch (error) {
+                showLoading(false);
+                showError(error.message || 'An error occurred while creating the post');
+            }
+        });
+
+        function showSuccess(message) {
+            const msgDiv = document.getElementById('successMessage');
+            msgDiv.textContent = message;
+            msgDiv.style.display = 'block';
+        }
+
+        function showError(message) {
+            const msgDiv = document.getElementById('errorMessage');
+            msgDiv.textContent = message;
+            msgDiv.style.display = 'block';
+        }
+
+        function hideMessages() {
+            document.getElementById('successMessage').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        function showLoading(show) {
+            const loading = document.getElementById('loadingMessage');
+            loading.classList.toggle('show', show);
+        }
+
+        // Load events when page loads
+        loadEvents();
+    </script>
+</body>
+
+</html>

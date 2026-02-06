@@ -1,0 +1,74 @@
+import { useState, useEffect, useCallback } from 'react';
+import { postService } from '../services/postService';
+
+/**
+ * Hook for fetching posts with optional eventId filter.
+ * @param eventId - Optional event ID to filter posts by event
+ */
+export const usePosts = (eventId?: string) => {
+    const [posts, setPosts] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [page, setPage] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const [error, setError] = useState(null);
+
+    const fetchPosts = useCallback(async (pageNum = 0, isRefresh = false) => {
+        try {
+            setLoading(true);
+            
+            // Use getPostsByEvent if eventId is provided, otherwise getPosts for all posts
+            const response = eventId 
+                ? await postService.getPostsByEvent(eventId, pageNum)
+                : await postService.getPosts(pageNum);
+
+            if (isRefresh) {
+                setPosts(response.data);
+            } else {
+                setPosts(prev => [...prev, ...response.data]);
+            }
+
+            setHasMore(response.hasMore);
+            setError(null);
+        } catch (err) {
+            setError(err.message || 'Failed to fetch posts');
+        } finally {
+            setLoading(false);
+        }
+    }, [eventId]);
+
+    useEffect(() => {
+        // Reset when eventId changes
+        setPage(0);
+        setHasMore(true);
+        fetchPosts(0, true);
+    }, [fetchPosts]);
+
+    const loadMore = () => {
+        if (!loading && hasMore) {
+            const nextPage = page + 1;
+            setPage(nextPage);
+            fetchPosts(nextPage, false);
+        }
+    };
+
+    const refresh = () => {
+        setPage(0);
+        setHasMore(true);
+        fetchPosts(0, true);
+    };
+
+    // Helper to manually update local state (e.g. after create/delete/update)
+    const setLocalPosts = (callback) => {
+        setPosts(callback);
+    };
+
+    return {
+        posts,
+        loading,
+        error,
+        hasMore,
+        loadMore,
+        refresh,
+        setPosts: setLocalPosts
+    };
+};

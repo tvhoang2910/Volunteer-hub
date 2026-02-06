@@ -1,0 +1,4 @@
+.idea/
+volunteer_hub_backend/src/main/resources/application.properties
+.vscode
+volunteer_hub_backend/uploads

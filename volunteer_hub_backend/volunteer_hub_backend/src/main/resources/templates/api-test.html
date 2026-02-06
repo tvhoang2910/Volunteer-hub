@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volunteer Hub - API Test Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .auth-section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .auth-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 18px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+
+        .button-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .button-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .button-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .button-success:hover {
+            background: #38a169;
+        }
+
+        .button-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .button-danger:hover {
+            background: #e53e3e;
+        }
+
+        .button-secondary {
+            background: #e2e8f0;
+            color: #333;
+        }
+
+        .button-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .api-section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .api-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 18px;
+            border-bottom: 2px solid #48bb78;
+            padding-bottom: 10px;
+        }
+
+        .api-info {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .api-method {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 3px;
+            font-weight: 600;
+            font-size: 12px;
+            margin-right: 10px;
+            color: white;
+        }
+
+        .method-post {
+            background: #48bb78;
+        }
+
+        .method-delete {
+            background: #f56565;
+        }
+
+        .method-get {
+            background: #4299e1;
+        }
+
+        .api-endpoint {
+            font-family: 'Courier New', monospace;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .response-section {
+            margin-top: 20px;
+        }
+
+        .response-section h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .response-box {
+            background: #1a202c;
+            color: #48bb78;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .response-status {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-error {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .status-loading {
+            background: #bee3f8;
+            color: #2c5282;
+        }
+
+        .info-box {
+            background: #edf2f7;
+            border-left: 4px solid #4299e1;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            color: #2d3748;
+            font-size: 14px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .success-icon::before {
+            content: "✓";
+            color: #48bb78;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        .error-icon::before {
+            content: "✕";
+            color: #f56565;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .tab-button {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #718096;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            font-size: 12px;
+        }
+
+        .debug-info {
+            background: #fff5e6;
+            border-left: 4px solid #ed8936;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            color: #7c2d12;
+            font-size: 13px;
+        }
+
+        .debug-info p {
+            margin-bottom: 8px;
+        }
+
+        code {
+            background: #f7fafc;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #667eea;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎉 Volunteer Hub - API Test Dashboard</h1>
+            <p>Test các API với JWT Authentication</p>
+        </div>
+
+        <!-- Auth Section -->
+        <div class="auth-section">
+            <h2>🔐 Xác Thực (Authentication)</h2>
+            <div class="info-box">
+                <strong>ℹ️ Hướng dẫn:</strong> Trước tiên, hãy login để lấy JWT token. Copy token vào trường bên dưới.
+            </div>
+            <div class="form-group">
+                <label for="jwtToken">JWT Token:</label>
+                <textarea id="jwtToken" placeholder="Paste your JWT token here... (starts with eyJ...)"></textarea>
+            </div>
+            <button class="button button-secondary" onclick="clearAuth()">🗑️ Clear Token</button>
+            <div id="authStatus" style="margin-top: 15px;"></div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div
+            style="background: white; padding: 0 25px; border-radius: 10px 10px 0 0; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <div class="tabs">
+                <button class="tab-button active" onclick="switchTab('join-event')">📍 Join Event</button>
+                <button class="tab-button" onclick="switchTab('leave-event')">👋 Leave Event</button>
+                <button class="tab-button" onclick="switchTab('create-comment')">💬 Create Comment</button>
+            </div>
+        </div>
+
+        <!-- Tab 1: Join Event -->
+        <div id="join-event" class="tab-content active api-section"
+            style="border-radius: 0 0 10px 10px; margin-bottom: 30px;">
+            <h2>📍 Đăng Ký Tham Gia Sự Kiện (Join Event)</h2>
+
+            <div class="api-info">
+                <span class="api-method method-post">POST</span>
+                <span class="api-endpoint">/api/events/{eventId}/join</span>
+            </div>
+
+            <div class="info-box">
+                <strong>Mô tả:</strong> Người dùng đăng ký tham gia một sự kiện. Status sẽ là PENDING cho đến khi được
+                admin duyệt.
+            </div>
+
+            <div class="form-group">
+                <label for="joinEventId">Event ID:</label>
+                <input type="text" id="joinEventId" placeholder="e.g., 550e8400-e29b-41d4-a716-446655440000">
+            </div>
+
+            <div class="button-group">
+                <button class="button button-success" onclick="joinEvent()">
+                    <span id="joinLoadingIcon"></span>📝 Đăng Ký Tham Gia
+                </button>
+                <button class="button button-secondary" onclick="fillSampleJoinEventId()">📋 Fill Sample</button>
+            </div>
+
+            <div class="response-section">
+                <h3>Response:</h3>
+                <div id="joinStatusMessage" class="response-status" style="display: none;"></div>
+                <div id="joinResponse" class="response-box" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Leave Event -->
+        <div id="leave-event" class="tab-content api-section"
+            style="border-radius: 0 0 10px 10px; margin-bottom: 30px;">
+            <h2>👋 Hủy Đăng Ký Sự Kiện (Leave Event)</h2>
+
+            <div class="api-info">
+                <span class="api-method method-delete">DELETE</span>
+                <span class="api-endpoint">/api/events/{eventId}/leave</span>
+            </div>
+
+            <div class="info-box">
+                <strong>Mô tả:</strong> Người dùng hủy đăng ký tham gia một sự kiện. Không thể hủy nếu event đã hoàn
+                thành.
+            </div>
+
+            <div class="form-group">
+                <label for="leaveEventId">Event ID:</label>
+                <input type="text" id="leaveEventId" placeholder="e.g., 550e8400-e29b-41d4-a716-446655440000">
+            </div>
+
+            <div class="button-group">
+                <button class="button button-danger" onclick="leaveEvent()">
+                    <span id="leaveLoadingIcon"></span>🚪 Hủy Đăng Ký
+                </button>
+                <button class="button button-secondary" onclick="fillSampleLeaveEventId()">📋 Fill Sample</button>
+            </div>
+
+            <div class="response-section">
+                <h3>Response:</h3>
+                <div id="leaveStatusMessage" class="response-status" style="display: none;"></div>
+                <div id="leaveResponse" class="response-box" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Create Comment -->
+        <div id="create-comment" class="tab-content api-section"
+            style="border-radius: 0 0 10px 10px; margin-bottom: 30px;">
+            <h2>💬 Tạo Comment (Create Comment)</h2>
+
+            <div class="api-info">
+                <span class="api-method method-post">POST</span>
+                <span class="api-endpoint">/api/posts/{postId}/comments</span>
+            </div>
+
+            <div class="info-box">
+                <strong>Mô tả:</strong> Tạo một bình luận trên một bài viết. Hỗ trợ bình luận đa cấp (reply to comment).
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="commentPostId">Post ID:</label>
+                    <input type="text" id="commentPostId" placeholder="e.g., 550e8400-e29b-41d4-a716-446655440000">
+                </div>
+                <div class="form-group">
+                    <label for="commentParentId">Parent Comment ID (Optional - for reply):</label>
+                    <input type="text" id="commentParentId" placeholder="Leave empty for root comment">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="commentContent">Comment Content:</label>
+                <textarea id="commentContent" placeholder="Nhập nội dung bình luận..."></textarea>
+            </div>
+
+            <div class="button-group">
+                <button class="button button-success" onclick="createComment()">
+                    <span id="commentLoadingIcon"></span>✍️ Tạo Bình Luận
+                </button>
+                <button class="button button-secondary" onclick="fillSampleComment()">📋 Fill Sample</button>
+            </div>
+
+            <div class="response-section">
+                <h3>Response:</h3>
+                <div id="commentStatusMessage" class="response-status" style="display: none;"></div>
+                <div id="commentResponse" class="response-box" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Debug Info -->
+        <div class="debug-info">
+            <p><strong>🔧 Debug Info:</strong></p>
+            <p id="debugInfo">API Base URL: http://localhost:8080</p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Volunteer Hub © 2025 | API Test Dashboard</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8080';
+
+        // Initialize debug info
+        document.addEventListener('DOMContentLoaded', function () {
+            updateDebugInfo();
+            // Check if token is in localStorage
+            const savedToken = localStorage.getItem('jwtToken');
+            if (savedToken) {
+                document.getElementById('jwtToken').value = savedToken;
+                updateAuthStatus();
+            }
+        });
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // Remove active from all buttons
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+
+            // Mark button as active
+            event.target.classList.add('active');
+        }
+
+        // Get JWT token from input
+        function getJwtToken() {
+            const token = document.getElementById('jwtToken').value.trim();
+            if (!token) {
+                showError('Auth', 'Vui lòng nhập JWT token');
+                return null;
+            }
+            return token;
+        }
+
+        // Save token to localStorage
+        function saveToken(token) {
+            localStorage.setItem('jwtToken', token);
+            updateAuthStatus();
+        }
+
+        // Update auth status
+        function updateAuthStatus() {
+            const token = document.getElementById('jwtToken').value.trim();
+            const statusDiv = document.getElementById('authStatus');
+            if (token) {
+                const tokenPreview = token.substring(0, 20) + '...';
+                statusDiv.innerHTML = '<div class="response-status status-success"><span class="success-icon"></span>Token đã được tải (' + tokenPreview + ')</div>';
+            } else {
+                statusDiv.innerHTML = '';
+            }
+        }
+
+        // Clear auth
+        function clearAuth() {
+            document.getElementById('jwtToken').value = '';
+            localStorage.removeItem('jwtToken');
+            updateAuthStatus();
+        }
+
+        // Update debug info
+        function updateDebugInfo() {
+            const timestamp = new Date().toLocaleString();
+            document.getElementById('debugInfo').innerHTML = `
+                API Base URL: ${API_BASE_URL}<br>
+                Last Updated: ${timestamp}<br>
+                Browser: ${navigator.userAgent.substring(0, 50)}...
+            `;
+        }
+
+        // Join Event API Call
+        async function joinEvent() {
+            const token = getJwtToken();
+            if (!token) return;
+
+            const eventId = document.getElementById('joinEventId').value.trim();
+            if (!eventId) {
+                showError('join', 'Vui lòng nhập Event ID');
+                return;
+            }
+
+            showLoading('join');
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/events/${eventId}/join`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showSuccess('join', data);
+                } else {
+                    showError('join', data);
+                }
+            } catch (error) {
+                showError('join', { detail: error.message });
+            } finally {
+                hideLoading('join');
+            }
+        }
+
+        // Leave Event API Call
+        async function leaveEvent() {
+            const token = getJwtToken();
+            if (!token) return;
+
+            const eventId = document.getElementById('leaveEventId').value.trim();
+            if (!eventId) {
+                showError('leave', 'Vui lòng nhập Event ID');
+                return;
+            }
+
+            showLoading('leave');
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/events/${eventId}/leave`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showSuccess('leave', data);
+                } else {
+                    showError('leave', data);
+                }
+            } catch (error) {
+                showError('leave', { detail: error.message });
+            } finally {
+                hideLoading('leave');
+            }
+        }
+
+        // Create Comment API Call
+        async function createComment() {
+            const token = getJwtToken();
+            if (!token) return;
+
+            const postId = document.getElementById('commentPostId').value.trim();
+            const content = document.getElementById('commentContent').value.trim();
+            const parentId = document.getElementById('commentParentId').value.trim();
+
+            if (!postId) {
+                showError('comment', 'Vui lòng nhập Post ID');
+                return;
+            }
+
+            if (!content) {
+                showError('comment', 'Vui lòng nhập nội dung bình luận');
+                return;
+            }
+
+            const requestBody = {
+                content: content
+            };
+
+            if (parentId) {
+                requestBody.parentId = parentId;
+            }
+
+            showLoading('comment');
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/posts/${postId}/comments`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showSuccess('comment', data);
+                    // Clear comment content after success
+                    document.getElementById('commentContent').value = '';
+                } else {
+                    showError('comment', data);
+                }
+            } catch (error) {
+                showError('comment', { detail: error.message });
+            } finally {
+                hideLoading('comment');
+            }
+        }
+
+        // UI Helper Functions
+        function showLoading(type) {
+            const icons = {
+                'join': 'joinLoadingIcon',
+                'leave': 'leaveLoadingIcon',
+                'comment': 'commentLoadingIcon'
+            };
+
+            const prefix = type === 'join' ? 'join' : (type === 'leave' ? 'leave' : 'comment');
+            const iconId = icons[type];
+
+            if (iconId) {
+                document.getElementById(iconId).innerHTML = '<span class="loading"></span>';
+            }
+        }
+
+        function hideLoading(type) {
+            const icons = {
+                'join': 'joinLoadingIcon',
+                'leave': 'leaveLoadingIcon',
+                'comment': 'commentLoadingIcon'
+            };
+
+            const iconId = icons[type];
+            if (iconId) {
+                document.getElementById(iconId).innerHTML = '';
+            }
+        }
+
+        function showSuccess(type, data) {
+            const prefix = type === 'join' ? 'join' : (type === 'leave' ? 'leave' : 'comment');
+
+            document.getElementById(prefix + 'StatusMessage').innerHTML =
+                '<div class="response-status status-success"><span class="success-icon"></span>Success!</div>';
+            document.getElementById(prefix + 'StatusMessage').style.display = 'block';
+
+            document.getElementById(prefix + 'Response').innerHTML = JSON.stringify(data, null, 2);
+            document.getElementById(prefix + 'Response').style.display = 'block';
+
+            // Save token on success
+            saveToken(document.getElementById('jwtToken').value.trim());
+        }
+
+        function showError(type, data) {
+            const prefix = type === 'join' ? 'join' : (type === 'leave' ? 'leave' : 'comment');
+
+            document.getElementById(prefix + 'StatusMessage').innerHTML =
+                '<div class="response-status status-error"><span class="error-icon"></span>Error!</div>';
+            document.getElementById(prefix + 'StatusMessage').style.display = 'block';
+
+            const errorMsg = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+            document.getElementById(prefix + 'Response').innerHTML = errorMsg;
+            document.getElementById(prefix + 'Response').style.display = 'block';
+        }
+
+        // Fill sample data
+        function fillSampleJoinEventId() {
+            // You can replace with actual event IDs from your database
+            document.getElementById('joinEventId').value = '550e8400-e29b-41d4-a716-446655440000';
+        }
+
+        function fillSampleLeaveEventId() {
+            document.getElementById('leaveEventId').value = '550e8400-e29b-41d4-a716-446655440000';
+        }
+
+        function fillSampleComment() {
+            document.getElementById('commentPostId').value = '550e8400-e29b-41d4-a716-446655440000';
+            document.getElementById('commentContent').value = 'This is a test comment! Great event 🎉';
+        }
+
+        // Auto-save token on change
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('jwtToken').addEventListener('change', function () {
+                if (this.value.trim()) {
+                    saveToken(this.value.trim());
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

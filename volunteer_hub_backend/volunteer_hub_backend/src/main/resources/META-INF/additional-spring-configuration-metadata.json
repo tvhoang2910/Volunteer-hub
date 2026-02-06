@@ -1,0 +1,29 @@
+{
+    "properties": [
+        {
+            "name": "dashboard.top-posts.cache-ttl-seconds",
+            "type": "java.lang.String",
+            "description": "A description for 'dashboard.top-posts.cache-ttl-seconds'"
+        },
+        {
+            "name": "recovery.token.ttl-minutes",
+            "type": "java.lang.String",
+            "description": "A description for 'recovery.token.ttl-minutes'"
+        },
+        {
+            "name": "app.frontend.url",
+            "type": "java.lang.String",
+            "description": "A description for 'app.frontend.url'"
+        },
+        {
+            "name": "rate-limit.forgot-password.window-minutes",
+            "type": "java.lang.String",
+            "description": "A description for 'rate-limit.forgot-password.window-minutes'"
+        },
+        {
+            "name": "rate-limit.forgot-password.max-attempts",
+            "type": "java.lang.String",
+            "description": "A description for 'rate-limit.forgot-password.max-attempts'"
+        }
+    ]
+}
